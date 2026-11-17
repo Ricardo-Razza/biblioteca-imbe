@@ -248,3 +248,48 @@ export interface DadosBiblioteca {
   prazoRetiradaDiasUteis: number;
   limiteLivros: number;
 }
+
+export interface PainelEmprestimo {
+  id: number;
+  tombo: string;
+  obraId: number;
+  titulo: string;
+  leitorId: number;
+  leitor: string;
+  telefone: string | null;
+  dataPrevista: string;
+  diasAtraso: number;
+}
+
+export interface PainelReserva {
+  id: number;
+  protocolo: string;
+  obraId: number;
+  titulo: string;
+  tombo: string;
+  localizacao: string | null;
+  leitorId: number;
+  leitor: string;
+  prazoRetirada: string;
+}
+
+export interface DiaMovimento {
+  data: string;
+  saidas: number;
+  devolucoes: number;
+}
+
+export interface Painel {
+  hoje: string;
+  contadores: {
+    emprestados: number;
+    atrasados: number;
+    venceHoje: number;
+    reservasParaSeparar: number;
+    leitoresBloqueados: number;
+  };
+  venceHoje: PainelEmprestimo[];
+  atrasados: PainelEmprestimo[];
+  paraSeparar: PainelReserva[];
+  movimento: DiaMovimento[];
+}

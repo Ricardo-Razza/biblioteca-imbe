@@ -74,7 +74,7 @@ Um único app com duas áreas, cada uma com layout próprio e carregada sob dema
 | `/login` | Equipe | Login AD ou local |
 | `/painel/...` | Equipe | Gestão. Sem token, vai para `/login` |
 
-Na gestão, o acervo fica em `/painel/acervo` (lista e busca), `/painel/acervo/novo` (cadastro por ISBN), `/painel/acervo/{id}` (ficha com capa e exemplares) e `/painel/acervo/{id}/editar`. Leitores em `/painel/leitores` (busca por nome ou CPF), `/painel/leitores/novo`, `/painel/leitores/{id}` (ficha com situação, livros em uso e histórico) e `/painel/leitores/{id}/editar`. O balcão tem `/painel/emprestar` (escolhe o leitor, `?leitor=` vindo da ficha, e bipa os tombos em sequência) e `/painel/devolver` (bipa o tombo, Enter confere e Enter confirma; `?tombo=` vindo das listas), sempre à mão no topo da gestão. `/painel/emprestimos` lista em abas Ativos, Atrasados e Histórico, com filtro e renovação. `/painel/configuracoes` (só administrador) tem as abas Funcionários, Prazos e limites, Feriados e Auditoria; `/painel/senha` troca a própria senha (obrigatória com senha provisória: até trocar, a gestão só abre essa tela). Ações de administrador (mudar exemplar, desbloquear leitor) não aparecem para o atendente. `/painel/reservas` tem as abas Para separar (por prazo, com tombo e localização; Entregar e Cancelar) e Histórico. Os itens do menu ainda não feitos mostram em que fase chegam.
+Na gestão, o acervo fica em `/painel/acervo` (lista e busca), `/painel/acervo/novo` (cadastro por ISBN), `/painel/acervo/{id}` (ficha com capa e exemplares) e `/painel/acervo/{id}/editar`. Leitores em `/painel/leitores` (busca por nome ou CPF), `/painel/leitores/novo`, `/painel/leitores/{id}` (ficha com situação, livros em uso e histórico) e `/painel/leitores/{id}/editar`. O balcão tem `/painel/emprestar` (escolhe o leitor, `?leitor=` vindo da ficha, e bipa os tombos em sequência) e `/painel/devolver` (bipa o tombo, Enter confere e Enter confirma; `?tombo=` vindo das listas), sempre à mão no topo da gestão. `/painel/emprestimos` lista em abas Ativos, Atrasados e Histórico, com filtro e renovação. `/painel/configuracoes` (só administrador) tem as abas Funcionários, Prazos e limites, Feriados e Auditoria; `/painel/senha` troca a própria senha (obrigatória com senha provisória: até trocar, a gestão só abre essa tela). Ações de administrador (mudar exemplar, desbloquear leitor) não aparecem para o atendente. `/painel/reservas` tem as abas Para separar (por prazo, com tombo e localização; Entregar e Cancelar) e Histórico. `/painel` abre em `/painel/inicio` (indicadores do dia, listas e gráfico da semana) e `/painel/relatorios` baixa os CSVs.
 
 No site público, a busca e os filtros ficam na URL (`/?q=&assunto=&disponiveis=1&pagina=`). CPF e data de nascimento ficam só na memória da tela, nunca na URL nem no armazenamento do navegador.
 
@@ -190,6 +190,30 @@ Como foi implementado (fase 4):
 - **Rodapé e confirmação:** nome, endereço, horário e telefone vêm de `BIBLIOTECA_ENDERECO`, `BIBLIOTECA_HORARIO` e `BIBLIOTECA_TELEFONE` (vazios não aparecem); prazo e limite vêm dos parâmetros.
 
 ---
+
+## Painel e relatórios
+
+**Início (`/painel/inicio`)**, a tela que abre ao entrar na gestão:
+- Cartões: livros emprestados (em aberto, atrasados inclusive), vencem hoje, atrasados, reservas para separar e leitores bloqueados. Atrasados e reservas levam à lista correspondente; cartão com pendência ganha a cor de alerta ou erro, sempre com o número e o texto.
+- Listas de até 10 itens: reservas para separar (tombo e localização, prazo de retirada), vencem hoje e atrasados (com telefone e dias de atraso).
+- Gráfico de barras agrupadas com saídas e devoluções dos últimos 7 dias: uma escala só, legenda com o total da semana, detalhe do dia ao passar o mouse ou focar com o teclado e tabela equivalente para leitor de tela. Cores das duas séries conferidas para daltonismo.
+
+**Relatórios (`/painel/relatorios`)**, em CSV:
+
+| Relatório | Período | Colunas |
+| --- | --- | --- |
+| Empréstimos | saída no período | saída, devolução prevista, devolvido em, situação, renovações, ocorrência, tombo, título, leitor |
+| Atrasados | hoje | tombo, título, leitor, telefone, e-mail, saída, devolução prevista, dias de atraso |
+| Mais emprestados | saída no período | posição, título, autores, ISBN, empréstimos (100 primeiros) |
+| Reservas | feita no período | protocolo, feita em, título, tombo, leitor, situação, prazo, finalizada em, cancelada por |
+| Acervo | tudo | tombo, ISBN, título, autores, editora, ano, localização, estado, situação, aquisição, origem |
+
+Como foi implementado (fase 5):
+- Pacote `relatorio`: `RelatorioRepository` consulta em SQL direto (`JdbcClient`), sem carregar entidades; os relatórios vão linha a linha para o CSV.
+- Formato pensado para o Excel e o LibreOffice em português: UTF-8 com BOM, `;` entre colunas, datas `dd/MM/aaaa`, CRLF. Texto começando com `=`, `+`, `-`, `@`, tabulação ou retorno ganha um apóstrofo na frente, para não virar fórmula (proteção contra injeção de fórmula em CSV).
+- O CPF não sai em nenhum relatório. Telefone e e-mail só no de atrasados, que serve para cobrar a devolução.
+- Cada exportação fica na auditoria (`RELATORIO_EXPORTADO`, com o tipo e o período).
+- No front, o download passa pelo `HttpClient` (a API exige o token) e o nome do arquivo vem do `Content-Disposition`.
 
 ## Cadastro por ISBN
 
@@ -399,8 +423,8 @@ Como as regras foram implementadas (fase 2):
 | `POST /emprestimos`, `/{id}/renovacao`, `/{id}/devolucao` | Balcão | Atendente |
 | `GET /emprestimos?status=&leitorId=&tombo=&q=` | `ATIVO` (todos em aberto), `ATRASADO` ou `DEVOLVIDO` | Atendente |
 | `GET /parametros` · `PUT /parametros/{chave}` | Prazos e limites | Atendente · Admin |
-| `GET /painel` | Indicadores e gráfico de 7 dias | Atendente |
-| `GET /relatorios/{tipo}.csv` | Exportações | Atendente |
+| `GET /painel` | Contadores do dia, até 10 itens de vence hoje, atrasados e reservas para separar, saídas e devoluções dos últimos 7 dias | Atendente |
+| `GET /relatorios/{tipo}.csv?de=&ate=` | CSV: `emprestimos`, `atrasados`, `acervo`, `mais-emprestados`, `reservas` (período padrão: últimos 30 dias; máximo 5 anos) | Atendente |
 | `GET /reservas?status=&leitorId=&q=` · `GET /reservas/{id}` · `POST /reservas/{id}/retirada` · `POST /reservas/{id}/cancelamento` | Reservas na gestão (`status` aceita vários; padrão aguardando) | Atendente |
 | `GET/POST /funcionarios`, `PUT /funcionarios/{id}`, `POST /funcionarios/{id}/senha-provisoria` | Funcionários | Admin |
 | `GET /feriados?ano=` · `POST /feriados`, `DELETE /feriados/{data}`, `POST /feriados/importacao?ano=` | Feriados (importação dos nacionais pela BrasilAPI) | Atendente · Admin |
@@ -528,6 +552,7 @@ O servidor precisa de saída HTTPS para `brasilapi.com.br` (ISBN e feriados), `w
 | 2026-11-17 | Primeiro administrador criado pela variável `ADMIN_INICIAL_SENHA` quando não há funcionários; token do front no `sessionStorage` |
 | 2026-11-17 | Site público: catálogo só com obras em circulação; protocolo de 8 caracteres; reserva bipada no balcão vira retirada; limite de livros não impede a retirada; expiração de hora em hora |
 | 2026-11-17 | Limite de tentativas do site em memória (Caffeine), por IP e por CPF, no lugar do Bucket4j; feriados nacionais da BrasilAPI importados sozinhos, sem sobrescrever os municipais |
+| 2026-11-17 | Painel e relatórios por SQL direto; CSV com BOM, `;` e proteção contra fórmula; sem CPF nos relatórios; exportação auditada; gestão abre na tela Início |
 
 ## Documentação
 - Toda decisão nova ou mudança de escopo atualiza o README.md

@@ -41,6 +41,7 @@ cd frontend && ng test --watch=false
 - Nada com histórico é apagado (obra, exemplar, leitor, reserva): desativar ou dar baixa.
 - Reserva: travar sempre o exemplar antes da reserva (`ReservaRepository` explica). O balcão fala com a reserva só pela interface `ReservasAtivas`.
 - Testes do site público: use `Publico.ipNovo()` em cada teste (o limite por IP vive no contexto compartilhado) e CPFs novos de `Dados.cpf()`.
+- Painel e relatórios (`relatorio`) leem por SQL direto (`JdbcClient`): em teste `@Transactional`, `em.flush()` antes de consultar. CSV sempre pela classe `Csv` (BOM, `;`, proteção contra fórmula); CPF não sai em relatório.
 - Tarefas agendadas (expiração de reservas, feriados) ficam no `AgendamentoConfig`; nos testes a BrasilAPI de feriados aponta para a porta fechada.
 
 ## Frontend

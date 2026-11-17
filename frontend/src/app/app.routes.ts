@@ -2,13 +2,6 @@ import { Routes } from '@angular/router';
 
 import { guardaAdmin, guardaLogin, guardaSessao } from './core/auth/guardas';
 
-const emBreve = (path: string, titulo: string, fase: number) => ({
-  path,
-  title: `${titulo} · Biblioteca de Imbé`,
-  loadComponent: () => import('./gestao/em-breve').then((m) => m.EmBreve),
-  data: { titulo, fase },
-});
-
 export const routes: Routes = [
   {
     path: '',
@@ -49,8 +42,12 @@ export const routes: Routes = [
     runGuardsAndResolvers: 'always',
     loadComponent: () => import('./gestao/layout-gestao').then((m) => m.LayoutGestao),
     children: [
-      { path: '', pathMatch: 'full', redirectTo: 'acervo' },
-      emBreve('inicio', 'Início', 5),
+      { path: '', pathMatch: 'full', redirectTo: 'inicio' },
+      {
+        path: 'inicio',
+        title: 'Início · Biblioteca de Imbé',
+        loadComponent: () => import('./gestao/inicio/inicio').then((m) => m.Inicio),
+      },
       {
         path: 'acervo',
         loadChildren: () => import('./gestao/acervo/acervo.routes').then((m) => m.ACERVO_ROUTES),
@@ -79,7 +76,11 @@ export const routes: Routes = [
         title: 'Reservas · Biblioteca de Imbé',
         loadComponent: () => import('./gestao/reservas/reservas').then((m) => m.Reservas),
       },
-      emBreve('relatorios', 'Relatórios', 5),
+      {
+        path: 'relatorios',
+        title: 'Relatórios · Biblioteca de Imbé',
+        loadComponent: () => import('./gestao/relatorios/relatorios').then((m) => m.Relatorios),
+      },
       {
         path: 'configuracoes',
         title: 'Configurações · Biblioteca de Imbé',

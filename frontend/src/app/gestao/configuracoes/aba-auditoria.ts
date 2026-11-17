@@ -23,6 +23,7 @@ const ACOES: { valor: string; texto: string }[] = [
   { valor: 'FERIADO_REMOVIDO', texto: 'Feriados removidos' },
   { valor: 'FERIADOS_IMPORTADOS', texto: 'Feriados nacionais importados' },
   { valor: 'RESERVA_CANCELADA', texto: 'Reservas canceladas na gestão' },
+  { valor: 'RELATORIO_EXPORTADO', texto: 'Relatórios exportados' },
   { valor: 'EXEMPLAR_ALTERADO', texto: 'Baixas e extravios' },
   { valor: 'LEITOR_DESBLOQUEADO', texto: 'Desbloqueios de leitor' },
 ];

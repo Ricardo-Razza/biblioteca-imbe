@@ -15,7 +15,8 @@ public enum AcaoAuditoria {
     FERIADOS_IMPORTADOS("Importou feriados nacionais"),
     LEITOR_DESBLOQUEADO("Desbloqueou leitor"),
     EXEMPLAR_ALTERADO("Alterou exemplar"),
-    RESERVA_CANCELADA("Cancelou reserva");
+    RESERVA_CANCELADA("Cancelou reserva"),
+    RELATORIO_EXPORTADO("Exportou relatório");
 
     private final String descricao;
 
