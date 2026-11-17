@@ -63,7 +63,7 @@ public class ExemplarService {
         return ExemplarResposta.de(exemplar);
     }
 
-    static String normalizarTombo(String tombo) {
+    public static String normalizarTombo(String tombo) {
         return tombo == null ? null : tombo.strip().toUpperCase(Locale.ROOT);
     }
 

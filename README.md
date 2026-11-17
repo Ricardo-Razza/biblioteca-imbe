@@ -343,6 +343,17 @@ Os valores ficam na tabela `parametro` e o administrador pode editá-los. **Aind
 | Reservas | Só com exemplar disponível; contam junto com os empréstimos no limite de 3; no máximo 1 reserva por obra; leitor bloqueado ou com atraso não reserva |
 | Prazo de retirada da reserva | 2 dias úteis. Feriados nacionais carregados da BrasilAPI uma vez por ano; os municipais são cadastrados pelo administrador |
 
+Como as regras foram implementadas (fase 2):
+
+- **Dias de atendimento:** segunda a sexta, menos os feriados da tabela `feriado`. Devolução prevista que cai em fim de semana ou feriado passa para o próximo dia útil.
+- **Renovação:** conta a partir do dia da renovação (`DIAS_POR_RENOVACAO`), nunca encurta o prazo atual. Não renova empréstimo atrasado nem de leitor bloqueado ou com outro livro atrasado.
+- **Bloqueio por atraso:** N dias de atraso bloqueiam o leitor por N dias, contando o dia da devolução (3 dias de atraso: bloqueado hoje, amanhã e depois). Bloqueios só aumentam; o administrador pode desbloquear antes.
+- **Devolução com ocorrência:** `DANIFICADO` volta ao acervo marcado como danificado (a equipe decide se dá baixa); `EXTRAVIADO` (o leitor perdeu) deixa o exemplar extraviado.
+- **Limite:** empréstimos em aberto + reservas aguardando retirada, até `LIMITE_LIVROS_POR_LEITOR`.
+- **Leitor:** CPF obrigatório para todos, inclusive crianças (é o login da reserva pública). Menor de 18 exige o nome do responsável. Com livro emprestado, não pode ser desativado.
+- O banco garante um único empréstimo em aberto por exemplar (coluna gerada + índice único), e o exemplar é travado (`SELECT ... FOR UPDATE`) na saída e na devolução.
+- Parâmetros (tabela `parametro`): `PRAZO_EMPRESTIMO_DIAS`, `LIMITE_LIVROS_POR_LEITOR`, `MAXIMO_RENOVACOES`, `DIAS_POR_RENOVACAO`, `PRAZO_RETIRADA_RESERVA_DIAS_UTEIS`, cada um com faixa de valores aceitos.
+
 ---
 
 ## API REST (`/api/v1`)
@@ -356,9 +367,11 @@ Os valores ficam na tabela `parametro` e o administrador pode editá-los. **Aind
 | `GET /isbn/{isbn}/capa?tamanho=mini` | Prévia da capa da fonte, antes de salvar | Atendente |
 | `GET/POST /obras/{id}/exemplares` · `GET /exemplares/tombo/{tombo}` | Exemplares | Atendente |
 | `PATCH /exemplares/{id}` | Situação (baixa, extravio), estado e localização | Admin |
-| `GET/POST /leitores`, `PUT /leitores/{id}`, `GET /leitores/{id}/situacao` | Leitores | Atendente |
+| `GET/POST /leitores?q=`, `GET/PUT /leitores/{id}`, `GET /leitores/{id}/situacao` | Leitores (busca por nome ou CPF) | Atendente |
+| `POST /leitores/{id}/desbloqueio` | Tira o bloqueio por atraso | Admin |
 | `POST /emprestimos`, `/{id}/renovacao`, `/{id}/devolucao` | Balcão | Atendente |
-| `GET /emprestimos?status=` | `ATIVO`, `ATRASADO` ou `DEVOLVIDO` | Atendente |
+| `GET /emprestimos?status=&leitorId=&tombo=&q=` | `ATIVO` (todos em aberto), `ATRASADO` ou `DEVOLVIDO` | Atendente |
+| `GET /parametros` · `PUT /parametros/{chave}` | Prazos e limites | Atendente · Admin |
 | `GET /painel` | Indicadores e gráfico de 7 dias | Atendente |
 | `GET /relatorios/{tipo}.csv` | Exportações | Atendente |
 | `GET /reservas?status=` · `POST /reservas/{id}/retirada` · `POST /reservas/{id}/cancelamento` | Reservas na gestão | Atendente |
@@ -475,6 +488,7 @@ O servidor precisa de saída HTTPS para `brasilapi.com.br`, `www.googleapis.com`
 | 2026-11-17 | Autores e assuntos são reaproveitados sem diferenciar maiúsculas nem acentos ("JOSE SARAMAGO" = "José Saramago"); o primeiro nome cadastrado é o que aparece |
 | 2026-11-17 | `GET /obras?q=` busca por ISBN (se o termo for um ISBN válido) ou por trecho do título ou do autor |
 | 2026-11-17 | Capas sempre regravadas em JPEG (até 800 px e miniatura de 200 px), sem metadados; prévia da capa da fonte servida pelo backend |
+| 2026-11-17 | Prazos em dias úteis (seg a sex, sem feriados); bloqueio de N dias contando o dia da devolução; renovação conta do dia da renovação; CPF obrigatório também para crianças |
 | 2026-11-17 | Tela de cadastro: busca pelo ISBN, conferência em formulário de uma coluna, foto da capa opcional; o ISBN aparece sem hífens (a hifenização correta depende da tabela de faixas do ISBN) |
 | 2026-11-17 | Exemplar: tombo alfanumérico com ponto e hífen, em maiúsculas; mudança manual de situação só para extravio, baixa ou volta de extraviado; baixa é definitiva; total da obra sem os baixados |
 

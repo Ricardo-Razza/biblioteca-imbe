@@ -100,6 +100,52 @@ public class Exemplar {
         situacao = nova;
     }
 
+    /** Saída no balcão. Só exemplar disponível (a retirada de reserva usa {@link #retirarReserva()}). */
+    public void emprestar() {
+        if (situacao != SituacaoExemplar.DISPONIVEL) {
+            throw new RegraNegocioException("O exemplar " + tombo + " está " + descricao(situacao)
+                    + " e não pode ser emprestado.");
+        }
+        situacao = SituacaoExemplar.EMPRESTADO;
+    }
+
+    /**
+     * Devolução. Danificado volta ao acervo marcado como danificado (a equipe decide se dá baixa);
+     * extraviado (o leitor perdeu) fica extraviado.
+     */
+    public void devolver(boolean danificado, boolean extraviado) {
+        if (situacao != SituacaoExemplar.EMPRESTADO) {
+            throw new IllegalStateException("Exemplar " + tombo + " não está emprestado: " + situacao);
+        }
+        if (danificado) {
+            estado = EstadoExemplar.DANIFICADO;
+        }
+        situacao = extraviado ? SituacaoExemplar.EXTRAVIADO : SituacaoExemplar.DISPONIVEL;
+    }
+
+    /** Reserva pelo site: prende o exemplar até a retirada ou a expiração. */
+    public void reservar() {
+        if (situacao != SituacaoExemplar.DISPONIVEL) {
+            throw new RegraNegocioException("O exemplar " + tombo + " não está disponível.");
+        }
+        situacao = SituacaoExemplar.RESERVADO;
+    }
+
+    /** Reserva cancelada ou expirada: volta a ficar disponível. */
+    public void liberarReserva() {
+        if (situacao == SituacaoExemplar.RESERVADO) {
+            situacao = SituacaoExemplar.DISPONIVEL;
+        }
+    }
+
+    /** O leitor retirou a reserva: vira empréstimo com o mesmo exemplar. */
+    public void retirarReserva() {
+        if (situacao != SituacaoExemplar.RESERVADO) {
+            throw new RegraNegocioException("O exemplar " + tombo + " não está reservado.");
+        }
+        situacao = SituacaoExemplar.EMPRESTADO;
+    }
+
     void alterar(String localizacao, EstadoExemplar estado) {
         if (situacao == SituacaoExemplar.BAIXADO) {
             throw new RegraNegocioException("Exemplar " + tombo + " está baixado e não pode ser alterado.");
