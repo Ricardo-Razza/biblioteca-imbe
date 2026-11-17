@@ -6,7 +6,8 @@ import java.util.List;
 
 import br.gov.imbe.biblioteca.isbn.FonteIsbn;
 
-/** Obra na API da gestão. A capa sai pelo endpoint próprio ({@code GET /obras/{id}/capa}), não como arquivo. */
+/** Obra na API da gestão. A capa sai pelo endpoint próprio ({@code GET /obras/{id}/capa}), não como arquivo.
+ * {@code totalExemplares} não conta os baixados. */
 public record ObraResposta(
         Long id,
         String isbn13,
@@ -20,6 +21,8 @@ public record ObraResposta(
         String sinopse,
         List<String> assuntos,
         boolean temCapa,
+        int totalExemplares,
+        int exemplaresDisponiveis,
         FonteIsbn fonteDados,
         LocalDateTime criadoEm) {
 
@@ -37,6 +40,8 @@ public record ObraResposta(
                 o.getSinopse(),
                 o.getAssuntos().stream().map(Assunto::getNome).sorted(Comparator.naturalOrder()).toList(),
                 o.getCapaArquivo() != null,
+                o.getTotalExemplares(),
+                o.getExemplaresDisponiveis(),
                 o.getFonteDados(),
                 o.getCriadoEm());
     }

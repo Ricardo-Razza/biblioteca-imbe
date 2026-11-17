@@ -317,6 +317,9 @@ erDiagram
 
 - Um empréstimo está **atrasado** quando `data_devolucao` é nula e `data_prevista` é anterior a hoje. Não existe tabela de histórico: o histórico é a própria tabela `emprestimo`.
 - Os **disponíveis** de uma obra são os exemplares com `situacao = DISPONIVEL`.
+- O **total de exemplares** de uma obra não conta os baixados. A API devolve `totalExemplares` e `exemplaresDisponiveis` junto com a obra.
+- **Tombo:** até 30 letras, números, ponto ou hífen, sem barra nem espaço (vai no caminho da URL). Gravado em maiúsculas e único sem diferenciar caixa.
+- **Situação do exemplar:** `RESERVADO` e `EMPRESTADO` só mudam pelos fluxos de reserva e empréstimo. Manualmente (Admin) só se marca `EXTRAVIADO`, `BAIXADO` ou a volta de um extraviado para `DISPONIVEL`. `BAIXADO` é definitivo: o exemplar não muda mais. Localização e estado podem mudar com o exemplar emprestado.
 - Obra, exemplar e leitor com histórico nunca são apagados, só desativados ou baixados.
 - O esquema é versionado com Flyway (`V{n}__descricao.sql`). Migration já aplicada não se edita.
 
@@ -349,8 +352,8 @@ Os valores ficam na tabela `parametro` e o administrador pode editá-los. **Aind
 | `GET/POST /obras`, `PUT /obras/{id}` | Acervo | Atendente |
 | `POST /obras/{id}/capa` · `GET /obras/{id}/capa?tamanho=mini` | Capa | Atendente · público |
 | `GET /isbn/{isbn}/capa?tamanho=mini` | Prévia da capa da fonte, antes de salvar | Atendente |
-| `POST /obras/{id}/exemplares` · `GET /exemplares/tombo/{tombo}` | Exemplares | Atendente |
-| `PATCH /exemplares/{id}` | Baixa e extravio | Admin |
+| `GET/POST /obras/{id}/exemplares` · `GET /exemplares/tombo/{tombo}` | Exemplares | Atendente |
+| `PATCH /exemplares/{id}` | Situação (baixa, extravio), estado e localização | Admin |
 | `GET/POST /leitores`, `PUT /leitores/{id}`, `GET /leitores/{id}/situacao` | Leitores | Atendente |
 | `POST /emprestimos`, `/{id}/renovacao`, `/{id}/devolucao` | Balcão | Atendente |
 | `GET /emprestimos?status=` | `ATIVO`, `ATRASADO` ou `DEVOLVIDO` | Atendente |
@@ -441,7 +444,7 @@ O servidor precisa de saída HTTPS para `brasilapi.com.br`, `www.googleapis.com`
 - [ ] Prazo, limite de livros e penalidade por atraso, a confirmar com a Secretaria de Cultura.
 - [ ] Onde o sistema vai rodar, se há saída para a internet e a publicação de `biblioteca.imbe.rs.gov.br` (DNS e certificado) com a TI.
 - [ ] Tamanho do acervo atual e se há planilha para importar.
-- [ ] Padrão de numeração do tombo e etiquetas.
+- [ ] Padrão de numeração do tombo e etiquetas (o sistema já aceita letras, números, ponto e hífen).
 - [ ] Compra de leitor de código de barras USB.
 - [ ] Cores oficiais e logo da Prefeitura em alta resolução.
 - [ ] Validação do tratamento de dados dos leitores com o DPO da Prefeitura.
@@ -468,6 +471,7 @@ O servidor precisa de saída HTTPS para `brasilapi.com.br`, `www.googleapis.com`
 | 2026-11-17 | Autores e assuntos são reaproveitados sem diferenciar maiúsculas nem acentos ("JOSE SARAMAGO" = "José Saramago"); o primeiro nome cadastrado é o que aparece |
 | 2026-11-17 | `GET /obras?q=` busca por ISBN (se o termo for um ISBN válido) ou por trecho do título ou do autor |
 | 2026-11-17 | Capas sempre regravadas em JPEG (até 800 px e miniatura de 200 px), sem metadados; prévia da capa da fonte servida pelo backend |
+| 2026-11-17 | Exemplar: tombo alfanumérico com ponto e hífen, em maiúsculas; mudança manual de situação só para extravio, baixa ou volta de extraviado; baixa é definitiva; total da obra sem os baixados |
 
 ## Documentação
 - Toda decisão nova ou mudança de escopo atualiza o README.md

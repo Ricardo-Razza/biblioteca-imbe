@@ -10,6 +10,7 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import org.hibernate.annotations.Formula;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
@@ -75,6 +76,13 @@ public class Obra {
 
     @Column(nullable = false, updatable = false)
     private LocalDateTime criadoEm;
+
+    /** Exemplares que contam como acervo (sem os baixados). Lido do banco ao carregar a obra. */
+    @Formula("(select count(*) from exemplar e where e.obra_id = id and e.situacao <> 'BAIXADO')")
+    private int totalExemplares;
+
+    @Formula("(select count(*) from exemplar e where e.obra_id = id and e.situacao = 'DISPONIVEL')")
+    private int exemplaresDisponiveis;
 
     @OneToMany(mappedBy = "obra", cascade = CascadeType.ALL, orphanRemoval = true)
     @OrderBy("ordem")
@@ -198,6 +206,14 @@ public class Obra {
 
     public LocalDateTime getCriadoEm() {
         return criadoEm;
+    }
+
+    public int getTotalExemplares() {
+        return totalExemplares;
+    }
+
+    public int getExemplaresDisponiveis() {
+        return exemplaresDisponiveis;
     }
 
     public List<ObraAutor> getAutores() {
