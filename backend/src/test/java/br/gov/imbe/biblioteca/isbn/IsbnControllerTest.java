@@ -16,6 +16,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
+import br.gov.imbe.biblioteca.acervo.ObraService;
 import br.gov.imbe.biblioteca.comum.config.SecurityConfig;
 
 @WebMvcTest(IsbnController.class)
@@ -28,6 +29,22 @@ class IsbnControllerTest {
     @MockitoBean
     IsbnLookupService servico;
 
+    @MockitoBean
+    ObraService obras;
+
+    @Test
+    void obraJaCadastradaNaoConsultaAsFontes() throws Exception {
+        given(obras.idPorIsbn(Isbn.de("9788545702870"))).willReturn(Optional.of(42L));
+
+        mvc.perform(get("/api/v1/isbn/9788545702870"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.obraId").value(42))
+                .andExpect(jsonPath("$.encontrado").value(false))
+                .andExpect(jsonPath("$.dados").doesNotExist());
+
+        verifyNoInteractions(servico);
+    }
+
     @Test
     void devolveOsDadosSemAUrlExternaDaCapa() throws Exception {
         Isbn isbn = Isbn.de("9788545702870");
@@ -39,6 +56,7 @@ class IsbnControllerTest {
         mvc.perform(get("/api/v1/isbn/978-85-457-0287-0"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.isbn13").value("9788545702870"))
+                .andExpect(jsonPath("$.obraId").doesNotExist())
                 .andExpect(jsonPath("$.encontrado").value(true))
                 .andExpect(jsonPath("$.dados.titulo").value("Akira"))
                 .andExpect(jsonPath("$.dados.autores[0]").value("Katsuhiro Otomo"))

@@ -7,11 +7,14 @@ import java.util.List;
  * A URL externa da capa não sai daqui (a tela nunca usa link externo); {@code capaDisponivel} diz se há capa para
  * baixar ao salvar a obra.
  *
- * @param encontrado          falso: abrir o formulário manual
+ * @param obraId              preenchido quando a obra já está no acervo: a tela só oferece "Adicionar exemplar"
+ *                            e as fontes externas nem são consultadas
+ * @param encontrado          falso (e sem {@code obraId}): abrir o formulário manual
  * @param fontesIndisponiveis fontes que falharam; com {@code encontrado = false}, avisar que pode valer tentar de novo
  */
 public record IsbnResposta(
         String isbn13,
+        Long obraId,
         boolean encontrado,
         Dados dados,
         List<FonteIsbn> fontes,
@@ -31,11 +34,16 @@ public record IsbnResposta(
             FonteIsbn fonte) {
     }
 
+    static IsbnResposta jaCadastrada(Isbn isbn, Long obraId) {
+        return new IsbnResposta(isbn.valor(), obraId, false, null, List.of(), List.of());
+    }
+
     static IsbnResposta de(ResultadoIsbn r) {
         Dados dados = r.dados()
                 .map(d -> new Dados(d.titulo(), d.subtitulo(), d.autores(), d.editora(), d.ano(), d.paginas(),
                         d.idioma(), d.sinopse(), d.assuntos(), d.capaUrl() != null, d.fonte()))
                 .orElse(null);
-        return new IsbnResposta(r.isbn().valor(), r.encontrado(), dados, r.fontesComDados(), r.fontesIndisponiveis());
+        return new IsbnResposta(r.isbn().valor(), null, r.encontrado(), dados, r.fontesComDados(),
+                r.fontesIndisponiveis());
     }
 }

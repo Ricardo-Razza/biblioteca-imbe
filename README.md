@@ -179,7 +179,8 @@ Detalhes de implementação:
 - Interface `IsbnProvider`, uma implementação por fonte, orquestradas pelo `IsbnLookupService`.
 - `RestClient` com timeout de 4 s por fonte. Chamadas em paralelo com virtual threads.
 - Cache Caffeine de 24 h por ISBN, incluindo "não encontrado". Se alguma fonte falhou, o resultado não entra no cache.
-- `GET /api/v1/isbn/{isbn}` responde 200 com `encontrado`, os `dados` mesclados, as `fontes` que contribuíram e as `fontesIndisponiveis`. ISBN inválido dá 400 com o motivo. A URL externa da capa não sai na resposta, só `capaDisponivel`.
+- Se a obra já está no acervo, `GET /api/v1/isbn/{isbn}` devolve só o `obraId`, sem consultar as fontes externas, e a tela oferece "Adicionar exemplar".
+- Fora isso, `GET /api/v1/isbn/{isbn}` responde 200 com `encontrado`, os `dados` mesclados, as `fontes` que contribuíram e as `fontesIndisponiveis`. ISBN inválido dá 400 com o motivo. A URL externa da capa não sai na resposta, só `capaDisponivel`.
 - Na prática o Google Books exige `GOOGLE_BOOKS_API_KEY`: sem chave, a cota anônima compartilhada costuma estar esgotada (HTTP 429) e o Google fica de fora.
 - A capa é **baixada e guardada localmente**, com uma miniatura de cerca de 200 px. Nunca se usa link externo na tela.
 
@@ -460,6 +461,8 @@ O servidor precisa de saída HTTPS para `brasilapi.com.br`, `www.googleapis.com`
 | 2026-11-17 | Até a fase 3 (login), a API fica liberada por um `SecurityConfig` provisório |
 | 2026-11-17 | Enums do banco como `VARCHAR` + `CHECK`, não `ENUM` do MySQL |
 | 2026-11-17 | Busca por ISBN: fonte fora do ar não vai para o cache; resposta sempre 200 com `encontrado`; URL externa da capa não chega ao front |
+| 2026-11-17 | Autores e assuntos são reaproveitados sem diferenciar maiúsculas nem acentos ("JOSE SARAMAGO" = "José Saramago"); o primeiro nome cadastrado é o que aparece |
+| 2026-11-17 | `GET /obras?q=` busca por ISBN (se o termo for um ISBN válido) ou por trecho do título ou do autor |
 
 ## Documentação
 - Toda decisão nova ou mudança de escopo atualiza o README.md

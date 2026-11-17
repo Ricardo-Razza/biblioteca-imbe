@@ -26,7 +26,11 @@ cd frontend && ng test --watch=false
 - Erros: lançar `RequisicaoInvalidaException` (400), `RecursoNaoEncontradoException` (404), `ConflitoException` (409) ou `RegraNegocioException` (422), todas em `comum.erro`. O `TratadorGlobalDeErros` transforma em `ProblemDetail` com mensagem em português.
 - Flyway em `src/main/resources/db/migration`, `V{n}__descricao.sql`. **Migration já aplicada não se edita**: crie uma nova.
 - Hibernate roda com `ddl-auto: validate`. Toda mudança de esquema passa por migration.
-- Enums no banco são `VARCHAR` com `CHECK`, mapeados com `@Enumerated(EnumType.STRING)`.
+- Enums no banco são `VARCHAR` com `CHECK`, mapeados com `@Enumerated(EnumType.STRING)` **e** `@JdbcTypeCode(SqlTypes.VARCHAR)`: sem isso o Hibernate espera `ENUM` nativo do MySQL e o `validate` falha.
+- Colunas `CHAR`, `TEXT` e `SMALLINT`: use `columnDefinition = "CHAR(13)"`, `columnDefinition = "TEXT"` e `Short` na entidade, senão o `validate` reclama do tipo.
+- `LIKE` em JPQL: escape com `!` (`like :padrao escape '!'`). Barra invertida é escape nos literais do MySQL e quebra o SQL.
+- Listas paginadas saem como `comum.Pagina` (não o `Page` do Spring Data).
+- Testes de integração: anotar com `@TesteIntegracao` (+ `@Transactional`). Todas compartilham o mesmo contexto e o mesmo container MySQL; não crie variações de configuração sem necessidade, senão sobe outro container.
 - Configuração por variável de ambiente (`DB_URL`, `JWT_SECRET`, ...). Nenhum segredo no repositório.
 - Só o backend fala com APIs externas. Testes de API externa usam WireMock.
 - ISBN: sempre via `Isbn.de(...)` (valida e converte para ISBN-13). Cada fonte é um `IsbnProvider`: devolve vazio quando não conhece o ISBN e lança `FonteIsbnIndisponivelException` quando falha. "Não encontrado" pode ir para o cache; falha, não.

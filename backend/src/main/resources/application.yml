@@ -18,6 +18,12 @@ spring:
       hibernate:
         jdbc:
           time_zone: America/Sao_Paulo
+        # Carrega autores e assuntos das obras de uma página em poucas consultas (evita N+1)
+        default_batch_fetch_size: 50
+  data:
+    web:
+      pageable:
+        max-page-size: 100
   flyway:
     locations: classpath:db/migration
   threads:

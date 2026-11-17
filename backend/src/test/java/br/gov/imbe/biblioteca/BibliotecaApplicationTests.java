@@ -1,11 +1,9 @@
 package br.gov.imbe.biblioteca;
 
 import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.context.annotation.Import;
 
-@Import(TestcontainersConfiguration.class)
-@SpringBootTest
+/** Sobe a aplicação: aplica as migrations no MySQL e valida o mapeamento JPA contra o esquema. */
+@TesteIntegracao
 class BibliotecaApplicationTests {
 
 	@Test

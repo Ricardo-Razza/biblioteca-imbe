@@ -5,6 +5,8 @@ import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.core.PropertyReferenceException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
@@ -50,6 +52,28 @@ public class TratadorGlobalDeErros extends ResponseEntityExceptionHandler {
         problema.setTitle("Dados inválidos");
         problema.setProperty("campos", campos);
         return handleExceptionInternal(ex, problema, headers, HttpStatus.BAD_REQUEST, request);
+    }
+
+    /**
+     * Chave única ou estrangeira violada no banco. Acontece em corrida (dois cadastros do mesmo ISBN ou tombo
+     * ao mesmo tempo); o caso normal já é checado antes no service, com mensagem específica.
+     */
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    ProblemDetail tratarIntegridade(DataIntegrityViolationException ex) {
+        log.warn("Violação de integridade: {}", ex.getMostSpecificCause().getMessage());
+        ProblemDetail problema = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT,
+                "Os dados conflitam com um registro já cadastrado. Atualize a tela e confira.");
+        problema.setTitle("Conflito");
+        return problema;
+    }
+
+    /** {@code ?sort=} com campo que não existe. */
+    @ExceptionHandler(PropertyReferenceException.class)
+    ProblemDetail tratarOrdenacao(PropertyReferenceException ex) {
+        ProblemDetail problema = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST,
+                "Não é possível ordenar por " + ex.getPropertyName() + ".");
+        problema.setTitle("Parâmetro inválido");
+        return problema;
     }
 
     /** Erro inesperado: registra no log e devolve mensagem genérica, sem detalhes internos. */
