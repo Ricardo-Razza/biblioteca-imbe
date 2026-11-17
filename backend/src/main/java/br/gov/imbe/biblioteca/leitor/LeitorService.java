@@ -8,6 +8,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import br.gov.imbe.biblioteca.comum.Pagina;
+import br.gov.imbe.biblioteca.comum.auditoria.AcaoAuditoria;
+import br.gov.imbe.biblioteca.comum.auditoria.Auditoria;
 import br.gov.imbe.biblioteca.comum.erro.ConflitoException;
 import br.gov.imbe.biblioteca.comum.erro.RecursoNaoEncontradoException;
 import br.gov.imbe.biblioteca.comum.erro.RegraNegocioException;
@@ -17,10 +19,12 @@ public class LeitorService {
 
     private final LeitorRepository leitores;
     private final Clock relogio;
+    private final Auditoria auditoria;
 
-    public LeitorService(LeitorRepository leitores, Clock relogio) {
+    public LeitorService(LeitorRepository leitores, Clock relogio, Auditoria auditoria) {
         this.leitores = leitores;
         this.relogio = relogio;
+        this.auditoria = auditoria;
     }
 
     @Transactional
@@ -55,6 +59,10 @@ public class LeitorService {
     @Transactional
     public LeitorResposta desbloquear(Long id) {
         Leitor leitor = entidade(id);
+        if (leitor.getBloqueadoAte() != null) {
+            auditoria.registrar(AcaoAuditoria.LEITOR_DESBLOQUEADO, "LEITOR", id,
+                    "Bloqueado até " + leitor.getBloqueadoAte());
+        }
         leitor.desbloquear();
         return LeitorResposta.de(leitor, hoje());
     }

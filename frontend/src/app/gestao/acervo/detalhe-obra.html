@@ -200,7 +200,7 @@
                   }
                 </td>
                 <td class="acao">
-                  @if (e.situacao !== 'BAIXADO') {
+                  @if (e.situacao !== 'BAIXADO' && sessao.admin()) {
                     <button mat-icon-button type="button" [matMenuTriggerFor]="menu" [attr.aria-label]="'Ações do exemplar ' + e.tombo">
                       <mat-icon>more_vert</mat-icon>
                     </button>

@@ -74,7 +74,7 @@ Um único app com duas áreas, cada uma com layout próprio e carregada sob dema
 | `/login` | Equipe | Login AD ou local |
 | `/painel/...` | Equipe | Gestão. Sem token, vai para `/login` |
 
-Na gestão, o acervo fica em `/painel/acervo` (lista e busca), `/painel/acervo/novo` (cadastro por ISBN), `/painel/acervo/{id}` (ficha com capa e exemplares) e `/painel/acervo/{id}/editar`. Leitores em `/painel/leitores` (busca por nome ou CPF), `/painel/leitores/novo`, `/painel/leitores/{id}` (ficha com situação, livros em uso e histórico) e `/painel/leitores/{id}/editar`. O balcão tem `/painel/emprestar` (escolhe o leitor, `?leitor=` vindo da ficha, e bipa os tombos em sequência) e `/painel/devolver` (bipa o tombo, Enter confere e Enter confirma; `?tombo=` vindo das listas), sempre à mão no topo da gestão. `/painel/emprestimos` lista em abas Ativos, Atrasados e Histórico, com filtro e renovação. Os itens do menu ainda não feitos mostram em que fase chegam. Até o login (fase 3), `/` abre a gestão.
+Na gestão, o acervo fica em `/painel/acervo` (lista e busca), `/painel/acervo/novo` (cadastro por ISBN), `/painel/acervo/{id}` (ficha com capa e exemplares) e `/painel/acervo/{id}/editar`. Leitores em `/painel/leitores` (busca por nome ou CPF), `/painel/leitores/novo`, `/painel/leitores/{id}` (ficha com situação, livros em uso e histórico) e `/painel/leitores/{id}/editar`. O balcão tem `/painel/emprestar` (escolhe o leitor, `?leitor=` vindo da ficha, e bipa os tombos em sequência) e `/painel/devolver` (bipa o tombo, Enter confere e Enter confirma; `?tombo=` vindo das listas), sempre à mão no topo da gestão. `/painel/emprestimos` lista em abas Ativos, Atrasados e Histórico, com filtro e renovação. `/painel/configuracoes` (só administrador) tem as abas Funcionários, Prazos e limites, Feriados e Auditoria; `/painel/senha` troca a própria senha (obrigatória com senha provisória: até trocar, a gestão só abre essa tela). Ações de administrador (mudar exemplar, desbloquear leitor) não aparecem para o atendente. Os itens do menu ainda não feitos mostram em que fase chegam. Até o site público (fase 4), `/` abre a gestão.
 
 O Nginx devolve o `index.html` para qualquer rota que não seja arquivo nem `/api`, para os links funcionarem ao recarregar a página.
 
@@ -133,6 +133,17 @@ Regras:
 - Se a API do AD estiver fora do ar, o login mostra o motivo, e um administrador `LOCAL` continua entrando.
 - Usuário `LOCAL` troca a senha no primeiro acesso. Não existe login compartilhado.
 - O contrato da API (endpoint, campos, respostas de erro, certificado, validade do Bearer) fica em `docs/referencia/api-auth-ad.md`. **Ainda pendente.**
+
+Como ficou implementado (fase 3):
+
+- **Contrato provisório do AD** (`ValidadorAd`), até a Prefeitura documentar o real: `POST AD_AUTH_URL` com `Authorization: Bearer AD_AUTH_TOKEN` e `{"usuario", "senha"}`. 2xx aceita; 400, 401, 403 e 404 recusam; qualquer outra resposta ou 4 s sem resposta é "fora do ar" (503 com mensagem). Trocar o contrato mexe só nessa classe.
+- **JWT** HS256 com `JWT_SECRET` (mínimo 32 caracteres, senão a API não sobe), válido por 8 h. Leva só o id do funcionário (`fid`): perfil, ativo e troca de senha são lidos do banco a cada requisição, então desativar ou mudar o perfil vale na hora.
+- **Perfis:** `ADMIN` inclui tudo do `ATENDENTE`. Só admin: `PATCH /exemplares`, desbloqueio de leitor, `PUT /parametros`, incluir e remover feriado, `/funcionarios` e `/auditoria`.
+- **Senha local:** BCrypt; 8 a 72 caracteres, com letra e número, diferente do login. Cadastro e "nova senha provisória" geram uma senha de 10 caracteres mostrada uma única vez ao administrador; com ela o funcionário só consegue trocar a senha.
+- **Tentativas:** 5 senhas erradas seguidas travam o login por 15 minutos (acertar zera a conta). Login inexistente, desativado ou senha errada têm a mesma mensagem.
+- **Primeiro acesso:** com o banco sem funcionários, a API cria o administrador local `admin` com a senha provisória de `ADMIN_INICIAL_SENHA`.
+- **Auditoria** (tabela `auditoria`): logins (aceitos, recusados e travados), troca e redefinição de senha, cadastro e alteração de funcionário, parâmetros, feriados, mudança de situação do exemplar e desbloqueio de leitor. O empréstimo guarda quem registrou a saída e a devolução.
+- **Front:** token no `sessionStorage` (fechar o navegador do balcão encerra a sessão); 401 em qualquer chamada leva ao login guardando a tela de volta.
 
 ---
 
@@ -361,6 +372,7 @@ Como as regras foram implementadas (fase 2):
 | Método e rota | Descrição | Perfil |
 | --- | --- | --- |
 | `POST /auth/login` | Login AD ou local, devolve o JWT | público |
+| `GET /auth/eu` · `POST /auth/senha` | Quem está logado · troca da própria senha (usuário local) | qualquer funcionário, inclusive com senha provisória |
 | `GET /isbn/{isbn}` | Dados mesclados das APIs externas (não salva) | Atendente |
 | `GET/POST /obras`, `PUT /obras/{id}` | Acervo | Atendente |
 | `POST /obras/{id}/capa` · `GET /obras/{id}/capa?tamanho=mini` | Capa | Atendente · público |
@@ -375,7 +387,9 @@ Como as regras foram implementadas (fase 2):
 | `GET /painel` | Indicadores e gráfico de 7 dias | Atendente |
 | `GET /relatorios/{tipo}.csv` | Exportações | Atendente |
 | `GET /reservas?status=` · `POST /reservas/{id}/retirada` · `POST /reservas/{id}/cancelamento` | Reservas na gestão | Atendente |
-| `GET/POST /funcionarios`, `GET/PUT /parametros`, `GET/POST /feriados` | Administração | Admin |
+| `GET/POST /funcionarios`, `PUT /funcionarios/{id}`, `POST /funcionarios/{id}/senha-provisoria` | Funcionários | Admin |
+| `GET /feriados?ano=` · `POST /feriados`, `DELETE /feriados/{data}` | Feriados | Atendente · Admin |
+| `GET /auditoria?acao=` | Auditoria | Admin |
 
 ### Rotas públicas (`/api/v1/publico`, sem login, com limite por IP)
 
@@ -401,6 +415,7 @@ Os erros seguem o `ProblemDetail` (RFC 9457) com mensagem em português. A docum
 | `JWT_SECRET` | Assinatura do JWT do sistema |
 | `AD_AUTH_URL` | URL da API de login AD |
 | `AD_AUTH_TOKEN` | Bearer da API de login AD |
+| `ADMIN_INICIAL_SENHA` | Senha provisória do primeiro administrador (`admin`), usada só com o banco sem funcionários |
 | `GOOGLE_BOOKS_API_KEY` | Chave do Google Books |
 | `CAPAS_DIR` | Pasta das capas (padrão `/dados/capas`) |
 
@@ -492,6 +507,8 @@ O servidor precisa de saída HTTPS para `brasilapi.com.br`, `www.googleapis.com`
 | 2026-11-17 | Tela de cadastro: busca pelo ISBN, conferência em formulário de uma coluna, foto da capa opcional; o ISBN aparece sem hífens (a hifenização correta depende da tabela de faixas do ISBN) |
 | 2026-11-17 | Exemplar: tombo alfanumérico com ponto e hífen, em maiúsculas; mudança manual de situação só para extravio, baixa ou volta de extraviado; baixa é definitiva; total da obra sem os baixados |
 | 2026-11-17 | Balcão pensado para o leitor de código de barras: o campo do tombo fica sempre focado; na devolução, o primeiro Enter busca e o segundo confirma ("voltou em ordem" já marcado) |
+| 2026-11-17 | Login: JWT só com o id do funcionário, perfil e situação lidos do banco a cada requisição; senha provisória só permite trocar a senha; 5 erros travam o login por 15 min; contrato provisório da API do AD documentado no `ValidadorAd` |
+| 2026-11-17 | Primeiro administrador criado pela variável `ADMIN_INICIAL_SENHA` quando não há funcionários; token do front no `sessionStorage` |
 
 ## Documentação
 - Toda decisão nova ou mudança de escopo atualiza o README.md

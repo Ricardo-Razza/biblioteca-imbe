@@ -50,6 +50,24 @@ biblioteca:
       url: https://openlibrary.org
       capas-url: https://covers.openlibrary.org
 
+  auth:
+    jwt:
+      # Pelo menos 32 caracteres. Sem ele a aplicação não sobe.
+      segredo: ${JWT_SECRET:}
+      validade: 8h
+    ad:
+      # API de login da Prefeitura. Vazia: só usuários LOCAL entram.
+      url: ${AD_AUTH_URL:}
+      token: ${AD_AUTH_TOKEN:}
+      timeout: 4s
+    # Senhas erradas seguidas antes de travar o login, e por quanto tempo
+    tentativas: 5
+    bloqueio: 15m
+    admin-inicial:
+      # Só usado com o banco sem nenhum funcionário; a senha é provisória
+      login: ${ADMIN_INICIAL_LOGIN:admin}
+      senha: ${ADMIN_INICIAL_SENHA:}
+
   capas:
     diretorio: ${CAPAS_DIR:/dados/capas}
     lado-maximo: 800

@@ -12,6 +12,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,6 +25,7 @@ import jakarta.persistence.PersistenceContext;
 
 @TesteIntegracao
 @Transactional
+@WithMockUser(roles = "ADMIN")
 class ObraIntegracaoTest {
 
     @Autowired

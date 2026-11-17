@@ -15,6 +15,7 @@ import { Exemplar, ExemplarAlteracao, Obra, SituacaoExemplar } from '../../core/
 import { CapaLivro } from '../../shared/capa-livro/capa-livro';
 import { aplicarErrosDoServidor, hojeIso, mensagemDoCampo, textoOuNulo } from '../../shared/formularios';
 import { SeloSituacao } from '../../shared/selo-situacao/selo-situacao';
+import { Sessao } from '../../core/auth/sessao';
 import { AcervoApi } from './acervo-api';
 
 const TAMANHO_MAXIMO_CAPA = 10 * 1024 * 1024;
@@ -61,6 +62,8 @@ export class DetalheObra {
   readonly capa = input<string>();
 
   private readonly api = inject(AcervoApi);
+  /** Mudar exemplar (localização, estado, baixa, extravio) é do administrador. */
+  protected readonly sessao = inject(Sessao);
   private readonly fb = inject(FormBuilder).nonNullable;
   private readonly campoTombo = viewChild<ElementRef<HTMLInputElement>>('campoTombo');
 

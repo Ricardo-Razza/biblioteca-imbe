@@ -7,7 +7,8 @@ import org.springframework.http.HttpStatus;
  * e não pode conter dados pessoais (CPF, data de nascimento).
  */
 public abstract sealed class BibliotecaException extends RuntimeException
-        permits RecursoNaoEncontradoException, RegraNegocioException, ConflitoException, RequisicaoInvalidaException {
+        permits RecursoNaoEncontradoException, RegraNegocioException, ConflitoException, RequisicaoInvalidaException,
+        NaoAutenticadoException, IndisponivelException {
 
     private final HttpStatus status;
     private final String titulo;

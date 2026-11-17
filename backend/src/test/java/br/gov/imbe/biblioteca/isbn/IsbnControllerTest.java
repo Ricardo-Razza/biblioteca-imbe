@@ -13,16 +13,26 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.security.oauth2.jwt.JwtDecoder;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import br.gov.imbe.biblioteca.acervo.CapaService;
+import br.gov.imbe.biblioteca.auth.ConversorJwt;
 import br.gov.imbe.biblioteca.acervo.ObraService;
 import br.gov.imbe.biblioteca.comum.config.SecurityConfig;
 
 @WebMvcTest(IsbnController.class)
 @Import(SecurityConfig.class)
+@WithMockUser(roles = "ATENDENTE")
 class IsbnControllerTest {
+
+    @MockitoBean
+    JwtDecoder jwtDecoder;
+
+    @MockitoBean
+    ConversorJwt conversorJwt;
 
     @Autowired
     MockMvc mvc;

@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import br.gov.imbe.biblioteca.comum.Pagina;
+import br.gov.imbe.biblioteca.comum.seguranca.UsuarioAtual;
 import jakarta.validation.Valid;
 
 /** Balcão. Perfil: Atendente. */
@@ -33,7 +34,7 @@ public class EmprestimoController {
 
     @PostMapping("/emprestimos")
     public ResponseEntity<EmprestimoResposta> emprestar(@Valid @RequestBody EmprestimoRequisicao req) {
-        EmprestimoResposta e = servico.emprestar(req, null);
+        EmprestimoResposta e = servico.emprestar(req, UsuarioAtual.idOuNulo());
         return ResponseEntity.created(URI.create("/api/v1/emprestimos/" + e.id())).body(e);
     }
 
@@ -62,6 +63,6 @@ public class EmprestimoController {
     @PostMapping("/emprestimos/{id}/devolucao")
     public EmprestimoResposta devolver(@PathVariable Long id,
             @Valid @RequestBody(required = false) DevolucaoRequisicao req) {
-        return servico.devolver(id, req, null);
+        return servico.devolver(id, req, UsuarioAtual.idOuNulo());
     }
 }

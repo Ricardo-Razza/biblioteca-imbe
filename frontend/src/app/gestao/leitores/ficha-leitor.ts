@@ -11,6 +11,7 @@ import { dataBr, formatarCpf } from '../../shared/formatos';
 import { Selo } from '../../shared/selo/selo';
 import { EmprestimosApi } from '../emprestimos/emprestimos-api';
 import { ItemEmprestimo } from '../emprestimos/item-emprestimo';
+import { Sessao } from '../../core/auth/sessao';
 import { LeitoresApi } from './leitores-api';
 
 /** Ficha do leitor: dados, se pode emprestar, livros com ele e histórico. */
@@ -62,7 +63,7 @@ import { LeitoresApi } from './leitores-api';
                 {{ m }}
               }
             </span>
-            @if (l.bloqueadoAte) {
+            @if (l.bloqueadoAte && sessao.admin()) {
               <button mat-button type="button" (click)="desbloquear()" [disabled]="desbloqueando()">Desbloquear</button>
             }
           </div>
@@ -165,6 +166,7 @@ export class FichaLeitor {
   readonly id = input.required({ transform: numberAttribute });
 
   private readonly leitores = inject(LeitoresApi);
+  protected readonly sessao = inject(Sessao);
   private readonly emprestimos = inject(EmprestimosApi);
 
   protected readonly leitor = signal<Leitor | null>(null);

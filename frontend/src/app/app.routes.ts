@@ -1,5 +1,7 @@
 import { Routes } from '@angular/router';
 
+import { guardaAdmin, guardaLogin, guardaSessao } from './core/auth/guardas';
+
 const emBreve = (path: string, titulo: string, fase: number) => ({
   path,
   title: `${titulo} · Biblioteca de Imbé`,
@@ -8,10 +10,18 @@ const emBreve = (path: string, titulo: string, fase: number) => ({
 });
 
 export const routes: Routes = [
-  // Site público na fase 4; login na fase 3. Até lá, a raiz abre a gestão.
+  // Site público na fase 4. Até lá, a raiz abre a gestão.
   { path: '', pathMatch: 'full', redirectTo: 'painel' },
   {
+    path: 'login',
+    title: 'Entrar · Biblioteca de Imbé',
+    canActivate: [guardaLogin],
+    loadComponent: () => import('./gestao/conta/login').then((m) => m.Login),
+  },
+  {
     path: 'painel',
+    canActivate: [guardaSessao],
+    runGuardsAndResolvers: 'always',
     loadComponent: () => import('./gestao/layout-gestao').then((m) => m.LayoutGestao),
     children: [
       { path: '', pathMatch: 'full', redirectTo: 'acervo' },
@@ -41,7 +51,17 @@ export const routes: Routes = [
       },
       emBreve('reservas', 'Reservas', 4),
       emBreve('relatorios', 'Relatórios', 5),
-      emBreve('configuracoes', 'Configurações', 3),
+      {
+        path: 'configuracoes',
+        title: 'Configurações · Biblioteca de Imbé',
+        canActivate: [guardaAdmin],
+        loadComponent: () => import('./gestao/configuracoes/configuracoes').then((m) => m.Configuracoes),
+      },
+      {
+        path: 'senha',
+        title: 'Trocar senha · Biblioteca de Imbé',
+        loadComponent: () => import('./gestao/conta/troca-senha').then((m) => m.TrocaSenha),
+      },
     ],
   },
   { path: '**', redirectTo: 'painel' },

@@ -6,6 +6,8 @@ import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import br.gov.imbe.biblioteca.comum.auditoria.AcaoAuditoria;
+import br.gov.imbe.biblioteca.comum.auditoria.Auditoria;
 import br.gov.imbe.biblioteca.comum.erro.RecursoNaoEncontradoException;
 import br.gov.imbe.biblioteca.comum.erro.RequisicaoInvalidaException;
 
@@ -17,9 +19,11 @@ public class ParametroService {
     }
 
     private final ParametroRepository repositorio;
+    private final Auditoria auditoria;
 
-    public ParametroService(ParametroRepository repositorio) {
+    public ParametroService(ParametroRepository repositorio, Auditoria auditoria) {
         this.repositorio = repositorio;
+        this.auditoria = auditoria;
     }
 
     @Transactional(readOnly = true)
@@ -41,6 +45,10 @@ public class ParametroService {
                     "Use um valor entre " + c.minimo() + " e " + c.maximo() + ".");
         }
         Parametro p = buscar(c);
+        String antes = p.getValor().strip();
+        if (!antes.equals(String.valueOf(valor))) {
+            auditoria.registrar(AcaoAuditoria.PARAMETRO_ALTERADO, "PARAMETRO", null, c.name() + ": " + antes + " → " + valor);
+        }
         p.alterar(String.valueOf(valor));
         return resposta(c, p);
     }

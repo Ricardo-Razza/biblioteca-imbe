@@ -6,6 +6,8 @@ import java.util.Locale;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import br.gov.imbe.biblioteca.comum.auditoria.AcaoAuditoria;
+import br.gov.imbe.biblioteca.comum.auditoria.Auditoria;
 import br.gov.imbe.biblioteca.comum.erro.ConflitoException;
 import br.gov.imbe.biblioteca.comum.erro.RecursoNaoEncontradoException;
 
@@ -14,10 +16,12 @@ public class ExemplarService {
 
     private final ExemplarRepository exemplares;
     private final ObraRepository obras;
+    private final Auditoria auditoria;
 
-    public ExemplarService(ExemplarRepository exemplares, ObraRepository obras) {
+    public ExemplarService(ExemplarRepository exemplares, ObraRepository obras, Auditoria auditoria) {
         this.exemplares = exemplares;
         this.obras = obras;
+        this.auditoria = auditoria;
     }
 
     @Transactional
@@ -57,8 +61,11 @@ public class ExemplarService {
             String localizacao = alt.localizacao() == null ? exemplar.getLocalizacao() : texto(alt.localizacao());
             exemplar.alterar(localizacao, alt.estado());
         }
-        if (alt.situacao() != null) {
+        if (alt.situacao() != null && alt.situacao() != exemplar.getSituacao()) {
+            SituacaoExemplar antes = exemplar.getSituacao();
             exemplar.mudarSituacao(alt.situacao());
+            auditoria.registrar(AcaoAuditoria.EXEMPLAR_ALTERADO, "EXEMPLAR", id,
+                    "Tombo " + exemplar.getTombo() + ": " + antes + " → " + alt.situacao());
         }
         return ExemplarResposta.de(exemplar);
     }

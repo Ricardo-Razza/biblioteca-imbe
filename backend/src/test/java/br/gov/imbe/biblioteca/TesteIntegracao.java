@@ -24,7 +24,8 @@ import org.springframework.context.annotation.Import;
         "biblioteca.isbn.google-books.url=http://127.0.0.1:1",
         "biblioteca.isbn.open-library.url=http://127.0.0.1:1",
         "biblioteca.isbn.open-library.capas-url=http://127.0.0.1:1",
-        "biblioteca.capas.diretorio=target/capas-teste"
+        "biblioteca.capas.diretorio=target/capas-teste",
+        "biblioteca.auth.jwt.segredo=segredo-so-para-os-testes-0123456789abcdef"
 })
 @AutoConfigureMockMvc
 @Import(TestcontainersConfiguration.class)
