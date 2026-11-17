@@ -18,7 +18,8 @@ public record PublicoProperties(@DefaultValue Unidade unidade, @DefaultValue Lim
             @DefaultValue("Biblioteca Municipal de Imbé") String nome,
             @DefaultValue("") String endereco,
             @DefaultValue("") String horario,
-            @DefaultValue("") String telefone) {
+            @DefaultValue("") String telefone,
+            @DefaultValue("") String email) {
     }
 
     /**

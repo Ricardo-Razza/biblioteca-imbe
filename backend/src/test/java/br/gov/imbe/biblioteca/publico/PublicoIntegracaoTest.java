@@ -130,7 +130,11 @@ class PublicoIntegracaoTest {
     void dadosDaBibliotecaParaORodape() throws Exception {
         mvc.perform(get("/api/v1/publico/biblioteca").with(ip))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.nome").value("Biblioteca Municipal de Imbé"));
+                .andExpect(jsonPath("$.nome").value("Biblioteca Municipal de Imbé"))
+                .andExpect(jsonPath("$.email").value(""))
+                .andExpect(jsonPath("$.prazoRetiradaDiasUteis").isNumber())
+                .andExpect(jsonPath("$.limiteLivros").isNumber())
+                .andExpect(jsonPath("$.prazoEmprestimoDias").isNumber());
     }
 
     @Test

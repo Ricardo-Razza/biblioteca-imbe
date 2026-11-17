@@ -43,6 +43,7 @@ services:
       BIBLIOTECA_ENDERECO: ${BIBLIOTECA_ENDERECO:-}
       BIBLIOTECA_HORARIO: ${BIBLIOTECA_HORARIO:-}
       BIBLIOTECA_TELEFONE: ${BIBLIOTECA_TELEFONE:-}
+      BIBLIOTECA_EMAIL: ${BIBLIOTECA_EMAIL:-}
     volumes:
       - capas:/dados/capas
     logging:

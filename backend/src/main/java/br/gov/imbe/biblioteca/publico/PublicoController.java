@@ -33,13 +33,15 @@ import jakarta.validation.Valid;
 public class PublicoController {
 
     /**
-     * Dados da biblioteca para o rodapé e a reserva. Endereço, horário e telefone vazios quando não configurados.
+     * Dados da biblioteca para o rodapé e a reserva. Endereço, horário, telefone e e-mail vazios quando não
+     * configurados.
      *
-     * @param prazoRetiradaDiasUteis dias úteis para retirar uma reserva
-     * @param limiteLivros           livros ao mesmo tempo por leitor, somando empréstimos e reservas
+     * @param prazoRetiradaDiasUteis  dias úteis para retirar uma reserva
+     * @param limiteLivros            livros ao mesmo tempo por leitor, somando empréstimos e reservas
+     * @param prazoEmprestimoDias     dias úteis de cada empréstimo
      */
-    public record Biblioteca(String nome, String endereco, String horario, String telefone,
-            int prazoRetiradaDiasUteis, int limiteLivros) {
+    public record Biblioteca(String nome, String endereco, String horario, String telefone, String email,
+            int prazoRetiradaDiasUteis, int limiteLivros, int prazoEmprestimoDias) {
     }
 
     private final CatalogoService catalogo;
@@ -63,8 +65,10 @@ public class PublicoController {
     @GetMapping("/biblioteca")
     public Biblioteca biblioteca() {
         return new Biblioteca(unidade.nome(), unidade.endereco(), unidade.horario(), unidade.telefone(),
+                unidade.email(),
                 parametros.inteiro(ChaveParametro.PRAZO_RETIRADA_RESERVA_DIAS_UTEIS),
-                parametros.inteiro(ChaveParametro.LIMITE_LIVROS_POR_LEITOR));
+                parametros.inteiro(ChaveParametro.LIMITE_LIVROS_POR_LEITOR),
+                parametros.inteiro(ChaveParametro.PRAZO_EMPRESTIMO_DIAS));
     }
 
     @GetMapping("/obras")

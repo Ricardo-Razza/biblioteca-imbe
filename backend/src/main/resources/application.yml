@@ -80,6 +80,7 @@ biblioteca:
       endereco: ${BIBLIOTECA_ENDERECO:}
       horario: ${BIBLIOTECA_HORARIO:}
       telefone: ${BIBLIOTECA_TELEFONE:}
+      email: ${BIBLIOTECA_EMAIL:}
     # Por IP: navegação por minuto e identificações (CPF + nascimento) por janela; por CPF: identificações por janela
     limites:
       consultas-por-minuto: 300

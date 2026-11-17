@@ -190,7 +190,8 @@ Como foi implementado (fase 4):
 - **Travas:** sempre exemplar antes de reserva, em todos os fluxos, para não haver impasse entre balcão, reserva e job.
 - **Limites:** por IP, 300 consultas por minuto e 20 identificações (reservar, consultar, cancelar) a cada 10 minutos; por CPF, 10 identificações a cada 10 minutos, de qualquer IP. Passou: 429 "Muitas tentativas". Contadores em memória (Caffeine), suficientes para uma instância da API; o IP vem do Nginx (`server.forward-headers-strategy: native`).
 - **Feriados nacionais:** importados da BrasilAPI (`/api/feriados/v1/{ano}`) para o ano atual e o próximo, ao subir a API e todo dia às 3h10, só quando o ano ainda não tem nenhum. O administrador também pode buscar na aba Feriados. Data já cadastrada como municipal não é sobrescrita.
-- **Rodapé e confirmação:** nome, endereço, horário e telefone vêm de `BIBLIOTECA_ENDERECO`, `BIBLIOTECA_HORARIO` e `BIBLIOTECA_TELEFONE` (vazios não aparecem); prazo e limite vêm dos parâmetros.
+- **Rodapé e confirmação:** nome, endereço, horário, telefone e e-mail vêm de `BIBLIOTECA_ENDERECO`, `BIBLIOTECA_HORARIO`, `BIBLIOTECA_TELEFONE` e `BIBLIOTECA_EMAIL` (vazios não aparecem; sem nenhum deles, o rodapé diz "em breve"). Prazo de retirada, limite de livros e prazo do empréstimo vêm dos parâmetros.
+- **Rodapé do site:** marca da Prefeitura, "Visite a biblioteca" (contato, com telefone e e-mail clicáveis), "Como reservar" em 3 passos com os prazos configurados e "Acesso rápido" (catálogo, minhas reservas, site da Prefeitura e área da equipe).
 
 ---
 
@@ -459,7 +460,7 @@ Como as regras foram implementadas (fase 2):
 | `GET /publico/obras?q=&assunto=&disponiveis=true` | Catálogo paginado (só dados da obra e quantidade disponível) |
 | `GET /publico/obras/{id}` | Ficha do livro |
 | `GET /publico/assuntos` | Lista para os filtros, com a quantidade de obras |
-| `GET /publico/biblioteca` | Nome, endereço, horário, telefone, prazo de retirada e limite de livros |
+| `GET /publico/biblioteca` | Nome, endereço, horário, telefone, e-mail, prazo de retirada, limite de livros e prazo do empréstimo |
 | `POST /publico/reservas` | `{ obraId, cpf, dataNascimento }` → protocolo e prazo |
 | `POST /publico/reservas/consulta` | `{ cpf, dataNascimento }` → reservas do leitor |
 | `POST /publico/reservas/{protocolo}/cancelamento` | `{ cpf, dataNascimento }` |
@@ -481,7 +482,7 @@ Os erros seguem o `ProblemDetail` (RFC 9457) com mensagem em português. A docum
 | `GOOGLE_BOOKS_API_KEY` | Chave do Google Books |
 | `CAPAS_DIR` | Pasta das capas (padrão `/dados/capas`) |
 | `DOMINIO` | Endereço do site no `docker-compose.prod.yml` (`server_name` do Nginx) |
-| `BIBLIOTECA_ENDERECO`, `BIBLIOTECA_HORARIO`, `BIBLIOTECA_TELEFONE` | Aparecem no rodapé do site e na confirmação da reserva |
+| `BIBLIOTECA_ENDERECO`, `BIBLIOTECA_HORARIO`, `BIBLIOTECA_TELEFONE`, `BIBLIOTECA_EMAIL` | Aparecem no rodapé do site (e os três primeiros na confirmação da reserva) |
 
 Nenhum segredo vai para o repositório. Em desenvolvimento, as variáveis ficam no `.env` da raiz, que o Compose e o backend leem; variáveis de ambiente reais têm prioridade sobre ele.
 
@@ -552,7 +553,7 @@ O servidor precisa de saída HTTPS para `brasilapi.com.br` (ISBN e feriados), `w
 - A tela Início mostra o que vence hoje e os atrasados.
 - Menu da gestão com 7 itens: Início, Acervo, Leitores, Empréstimos (abas Ativos, Atrasados e Histórico), Reservas, Relatórios e Configurações.
 - A tela Início também mostra as reservas para separar.
-- **Site público:** pensado primeiro para celular. Logo da Prefeitura e uma busca grande no topo; grade de capas com "3 disponíveis" ou "Todos emprestados"; ficha do livro com um único botão Reservar; endereço e horário da biblioteca no rodapé.
+- **Site público:** pensado primeiro para celular. Logo da Prefeitura e uma busca grande no topo; grade de capas com "3 disponíveis" ou "Todos emprestados"; ficha do livro com um único botão Reservar; rodapé com contato da biblioteca, como reservar e acesso rápido.
 - Capa em miniatura nas listas. Texto base de 15 a 16 px. Formulários em uma coluna.
 - Mensagens e confirmações dentro da tela, nunca `alert()` ou `confirm()`.
 - **Identidade visual: Manual de Marca da Prefeitura de Imbé (2021-2028).**
@@ -591,7 +592,7 @@ O servidor precisa de saída HTTPS para `brasilapi.com.br` (ISBN e feriados), `w
 - [ ] Arquivos vetoriais da marca (SVG ou AI) com a Comunicação da Prefeitura. Hoje as logos são PNG recortados do PDF do manual.
 - [ ] Validação do tratamento de dados dos leitores com o DPO da Prefeitura.
 - [ ] CAPTCHA na reserva pública ou só limite de tentativas?
-- [ ] Feriados municipais de Imbé, endereço e horário de funcionamento da biblioteca (aparecem no site).
+- [ ] Feriados municipais de Imbé; endereço, horário, telefone e e-mail da biblioteca (aparecem no rodapé do site).
 
 ## Registro de decisões
 

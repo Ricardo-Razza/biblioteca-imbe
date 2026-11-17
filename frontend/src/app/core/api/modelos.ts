@@ -239,14 +239,17 @@ export interface MinhasReservas {
   reservas: ReservaPublica[];
 }
 
-/** Endereço, horário e telefone vêm vazios quando não configurados. */
+/** Endereço, horário, telefone e e-mail vêm vazios quando não configurados. */
 export interface DadosBiblioteca {
   nome: string;
   endereco: string;
   horario: string;
   telefone: string;
+  email: string;
   prazoRetiradaDiasUteis: number;
   limiteLivros: number;
+  /** Dias úteis de cada empréstimo. */
+  prazoEmprestimoDias: number;
 }
 
 export interface PainelEmprestimo {
