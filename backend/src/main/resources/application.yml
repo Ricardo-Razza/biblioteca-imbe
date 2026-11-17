@@ -24,6 +24,13 @@ spring:
     virtual:
       enabled: true
 
+biblioteca:
+  isbn:
+    # Timeout de conexão e de leitura por fonte
+    timeout: 4s
+    brasilapi:
+      url: https://brasilapi.com.br
+
 server:
   error:
     include-message: never
