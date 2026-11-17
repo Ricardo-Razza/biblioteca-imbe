@@ -30,7 +30,7 @@ cd frontend && ng test --watch=false
 - Configuração por variável de ambiente (`DB_URL`, `JWT_SECRET`, ...). Nenhum segredo no repositório.
 - Só o backend fala com APIs externas. Testes de API externa usam WireMock.
 - ISBN: sempre via `Isbn.de(...)` (valida e converte para ISBN-13). Cada fonte é um `IsbnProvider`: devolve vazio quando não conhece o ISBN e lança `FonteIsbnIndisponivelException` quando falha. "Não encontrado" pode ir para o cache; falha, não.
-- O Surefire define `jdk.net.unixdomain.tmpdir=target/`: em algumas máquinas Windows o Selector do NIO falha no `%TEMP%` ("Unable to establish loopback connection"). Não remover.
+- O Surefire define `jdk.net.unixdomain.tmpdir=target/`. Nos processos iniciados pelo app desktop do Claude Code, o Selector do NIO falha em qualquer pasta dentro de `AppData\Local`, inclusive o `%TEMP%` ("Unable to establish loopback connection"), e o WireMock não sobe. No terminal do usuário funciona. Não remover. Se precisar subir a API a partir do Claude, passe a mesma propriedade apontando para fora de `AppData\Local`.
 - Nada com histórico é apagado (obra, exemplar, leitor): desativar ou dar baixa.
 
 ## Frontend

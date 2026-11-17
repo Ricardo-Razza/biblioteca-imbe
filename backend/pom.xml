@@ -150,9 +150,10 @@
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-surefire-plugin</artifactId>
 				<configuration>
-					<!-- No Windows o Selector do NIO usa socket Unix no %TEMP%; em algumas máquinas o connect
-					     falha ali ("Unable to establish loopback connection") e derruba o WireMock.
-					     Apontar para o target/ evita isso e não muda nada no Linux. -->
+					<!-- No Windows o Selector do NIO cria um socket Unix no %TEMP%. Em processos iniciados pelo
+					     app desktop do Claude Code, o connect falha dentro de AppData\Local ("Unable to establish
+					     loopback connection") e derruba o WireMock. Num terminal comum funciona.
+					     Apontar para o target/ evita isso e não muda nada fora desse caso nem no Linux. -->
 					<argLine>-Djdk.net.unixdomain.tmpdir=${project.build.directory}</argLine>
 				</configuration>
 			</plugin>
