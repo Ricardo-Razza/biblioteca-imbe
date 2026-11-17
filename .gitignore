@@ -1,0 +1,11 @@
+# Segredos locais
+.env
+
+# Capas baixadas em desenvolvimento
+/dados/
+
+# IDEs e sistema
+.idea/
+*.iml
+.DS_Store
+Thumbs.db

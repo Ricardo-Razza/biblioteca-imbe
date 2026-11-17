@@ -31,7 +31,8 @@ biblioteca-imbe/
 │   ├── arquitetura.md
 │   ├── biblioteca-imbe.excalidraw
 │   └── referencia/       contrato da API de login AD, código de referência
-├── docker-compose.yml
+├── docker-compose.yml    MySQL local (lê o .env)
+├── .env.example          modelo do .env (o .env não vai para o git)
 ├── CLAUDE.md
 └── README.md
 ```
@@ -371,23 +372,32 @@ Os erros seguem o `ProblemDetail` (RFC 9457) com mensagem em português. A docum
 | Variável | Uso |
 | --- | --- |
 | `DB_URL`, `DB_USER`, `DB_PASSWORD` | MySQL |
+| `MYSQL_ROOT_PASSWORD` | Só o container do MySQL no `docker-compose.yml` |
 | `JWT_SECRET` | Assinatura do JWT do sistema |
 | `AD_AUTH_URL` | URL da API de login AD |
 | `AD_AUTH_TOKEN` | Bearer da API de login AD |
 | `GOOGLE_BOOKS_API_KEY` | Chave do Google Books |
 | `CAPAS_DIR` | Pasta das capas (padrão `/dados/capas`) |
 
-Nenhum segredo vai para o repositório.
+Nenhum segredo vai para o repositório. Em desenvolvimento, as variáveis ficam no `.env` da raiz, que o Compose e o backend leem; variáveis de ambiente reais têm prioridade sobre ele.
 
 ## Como rodar (local)
 
 ```bash
-docker compose up -d                 # MySQL 8
+cp .env.example .env                 # uma vez, preencher as senhas
+docker compose up -d                 # MySQL 8.4
 cd backend && ./mvnw spring-boot:run # API em http://localhost:8080
 cd frontend && ng serve              # Front em http://localhost:4200
 ```
 
-Testes: `cd backend && ./mvnw verify` · `cd frontend && ng test --watch=false`
+Testes: `cd backend && ./mvnw verify` (precisa do Docker rodando, por causa do Testcontainers) · `cd frontend && ng test --watch=false`
+
+O `ng serve` repassa `/api` para `http://localhost:8080` (`frontend/proxy.conf.json`).
+
+## Branches
+
+- `develop`: onde o desenvolvimento acontece, com um commit por etapa.
+- `main`: só versões prontas, promovidas a partir da `develop` quando decidido.
 
 O servidor precisa de saída HTTPS para `brasilapi.com.br`, `www.googleapis.com`, `openlibrary.org`, `covers.openlibrary.org` e para a API de login AD.
 
@@ -443,6 +453,10 @@ O servidor precisa de saída HTTPS para `brasilapi.com.br`, `www.googleapis.com`
 | 2026-11-17 | Banco MySQL 8 |
 | 2026-11-17 | Duas modalidades no mesmo domínio `biblioteca.imbe.rs.gov.br`: site público em `/` e gestão em `/login` e `/painel`, num único app Angular |
 | 2026-11-17 | Reserva pública com CPF + data de nascimento (só leitor cadastrado), apenas com exemplar disponível, retirada em 2 dias úteis, acompanhamento por protocolo, sem e-mail |
+| 2026-11-17 | Branches `develop` (desenvolvimento) e `main` (versões prontas, promovidas quando decidido) |
+| 2026-11-17 | MySQL fixado em 8.4 (LTS) no Compose e no Testcontainers; `docker-compose.yml` na raiz lendo o `.env` |
+| 2026-11-17 | Até a fase 3 (login), a API fica liberada por um `SecurityConfig` provisório |
+| 2026-11-17 | Enums do banco como `VARCHAR` + `CHECK`, não `ENUM` do MySQL |
 
 ## Documentação
 - Toda decisão nova ou mudança de escopo atualiza o README.md
