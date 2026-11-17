@@ -5,6 +5,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
 
 import { Sessao } from '../core/auth/sessao';
+import { Assinatura } from '../shared/assinatura/assinatura';
 
 interface ItemMenu {
   rota: string;
@@ -16,14 +17,13 @@ interface ItemMenu {
 /** Layout da gestão: menu lateral com os 7 itens e Emprestar/Devolver sempre no topo. */
 @Component({
   selector: 'app-layout-gestao',
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, MatButtonModule, MatIconModule, MatMenuModule],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, MatButtonModule, MatIconModule, MatMenuModule, Assinatura],
   template: `
     <div class="gestao">
       <nav class="menu" aria-label="Menu da gestão">
-        <div class="marca">
-          <span class="nome">Biblioteca Municipal</span>
-          <span class="cidade">Imbé</span>
-        </div>
+        <a class="marca" routerLink="inicio" aria-label="Biblioteca Municipal de Imbé: início da gestão">
+          <app-assinatura />
+        </a>
         @for (item of itensVisiveis(); track item.rota) {
           <a class="item" [routerLink]="item.rota" routerLinkActive="ativo">
             <mat-icon>{{ item.icone }}</mat-icon>
@@ -62,29 +62,25 @@ interface ItemMenu {
     .gestao {
       display: flex;
       min-height: 100vh;
+      border-top: 4px solid transparent;
+      border-image: var(--marca-faixa) 1;
     }
     .menu {
-      width: 232px;
+      width: 256px;
       flex: none;
       background: var(--mat-sys-surface-container-low);
       border-right: 1px solid var(--mat-sys-outline-variant);
-      padding: 16px 12px;
+      padding: 20px 12px 16px;
+      box-sizing: border-box;
       display: flex;
       flex-direction: column;
       gap: 2px;
     }
     .marca {
       display: flex;
-      flex-direction: column;
-      padding: 4px 12px 20px;
-    }
-    .nome {
-      font: var(--mat-sys-title-medium);
-      color: var(--mat-sys-primary);
-    }
-    .cidade {
-      font: var(--mat-sys-body-medium);
-      color: var(--mat-sys-on-surface-variant);
+      padding: 0 8px 24px;
+      text-decoration: none;
+      border-radius: 8px;
     }
     .item {
       display: flex;
@@ -99,9 +95,9 @@ interface ItemMenu {
       background: var(--mat-sys-surface-container-highest);
     }
     .item.ativo {
-      background: var(--mat-sys-secondary-container);
-      color: var(--mat-sys-on-secondary-container);
-      font-weight: 500;
+      background: color-mix(in srgb, var(--marca-azul) 12%, transparent);
+      color: var(--marca-azul);
+      font-weight: 600;
     }
     .area {
       flex: 1;

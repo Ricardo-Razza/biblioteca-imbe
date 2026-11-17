@@ -53,6 +53,7 @@ docker compose -f docker-compose.prod.yml up -d --build   # produção (precisa 
 - Pastas `publico`, `gestao`, `core`, `shared` (ver README).
 - Chamadas sempre para `/api/v1/...` (caminho relativo).
 - Diretrizes visuais no README: sem emojis, Material Symbols, sem `alert()`/`confirm()`.
+- Visual segue o Manual de Marca da Prefeitura: cores por `var(--marca-*)` ou pelos tokens do Material (nada de hex solto em componente), marca da Prefeitura sempre pelo `app-assinatura` ou pelos PNG de `public/marca/`, respeitando a largura mínima do manual.
 
 ## Documentação
 

@@ -1,8 +1,12 @@
 @use '@angular/material' as mat;
 @use './styles/theme-colors' as cores;
 
-// Cor principal provisória (azul-petróleo) até chegarem as cores oficiais da Prefeitura.
-// Para trocar: ng generate @angular/material:theme-color --primary-color=<hex> --directory=src/styles/
+// Identidade visual do Manual de Marca da Prefeitura de Imbé (2021-2028).
+// Paletas geradas de: primária #006EB7 (azul da marca), secundária #677A90 (cinza do golfinho),
+// terciária #F04E45 (coral institucional). Para regerar:
+// ng generate @angular/material:theme-color --primary-color=#006EB7 --secondary-color=#677A90 --tertiary-color=#F04E45 --directory=src/styles/
+// Fonte do manual: Termina (comercial). Enquanto a Prefeitura não fornecer a licença web, títulos em
+// Lexend Exa (larga e geométrica, a mais próxima) e texto em Lexend.
 html {
   height: 100%;
   @include mat.theme(
@@ -11,20 +15,50 @@ html {
         primary: cores.$primary-palette,
         tertiary: cores.$tertiary-palette,
       ),
-      typography: Roboto,
+      typography: (
+        plain-family: Lexend,
+        brand-family: 'Lexend Exa',
+        bold-weight: 600,
+        medium-weight: 500,
+        regular-weight: 400,
+      ),
       density: 0,
     )
   );
+  // O tom 40 gerado fica um pouco mais escuro: usa o azul exato da marca (contraste 5,3:1 com branco).
+  @include mat.theme-overrides(
+    (
+      primary: #006eb7,
+    )
+  );
 
-  // Situação: sempre com texto junto, nunca só a cor.
-  --situacao-ok: #1e6b34;
-  --situacao-ok-fundo: #e3f1e6;
-  --situacao-alerta: #7a4f00;
-  --situacao-alerta-fundo: #fbefd5;
-  --situacao-erro: #a01d1d;
-  --situacao-erro-fundo: #fbe4e2;
-  --situacao-neutra: #4a4f55;
-  --situacao-neutra-fundo: #eceef0;
+  // Cores do manual (págs. 7 e 8).
+  --marca-azul: #006eb7;
+  --marca-azul-claro: #47baec;
+  --marca-marinho: #1f305f;
+  --marca-cinza: #677a90;
+  --marca-amarelo: #fbbc43;
+  --marca-coral: #ec5f65;
+  --fonte-marca: 'Lexend Exa', Lexend, sans-serif;
+  // Faixa com os dois degradês da marca: o mar (azul) e o sol (amarelo ao coral).
+  --marca-faixa: linear-gradient(
+    90deg,
+    #006eb7 0%,
+    #47baec 62%,
+    #fbbc43 62%,
+    #ec5f65 100%
+  );
+
+  // Situação: sempre com texto junto, nunca só a cor. Tons do verde, amarelo e vermelho
+  // institucionais, escurecidos no texto para manter contraste AA.
+  --situacao-ok: #2b6a26;
+  --situacao-ok-fundo: #e6f4e4;
+  --situacao-alerta: #7a4d00;
+  --situacao-alerta-fundo: #fff1d4;
+  --situacao-erro: #b0241d;
+  --situacao-erro-fundo: #fde6e4;
+  --situacao-neutra: #3d4a5c;
+  --situacao-neutra-fundo: #ebeff4;
 }
 
 body {

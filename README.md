@@ -555,7 +555,14 @@ O servidor precisa de saída HTTPS para `brasilapi.com.br` (ISBN e feriados), `w
 - **Site público:** pensado primeiro para celular. Logo da Prefeitura e uma busca grande no topo; grade de capas com "3 disponíveis" ou "Todos emprestados"; ficha do livro com um único botão Reservar; endereço e horário da biblioteca no rodapé.
 - Capa em miniatura nas listas. Texto base de 15 a 16 px. Formulários em uma coluna.
 - Mensagens e confirmações dentro da tela, nunca `alert()` ou `confirm()`.
-- Cor principal provisória: azul-petróleo `#1f5c7a` (tema gerado em `frontend/src/styles/_theme-colors.scss`), até chegarem as cores oficiais. Cores de situação em variáveis CSS (`--situacao-ok`, `--situacao-alerta`, `--situacao-erro`) no `styles.scss`.
+- **Identidade visual: Manual de Marca da Prefeitura de Imbé (2021-2028).**
+  - Cores: azul da marca `#006EB7` como principal, azul-claro `#47BAEC`, marinho `#1F305F`, cinza `#677A90` e o sol de `#FBBC43` a `#EC5F65`. O tema do Material é gerado em `frontend/src/styles/_theme-colors.scss` (comando no `styles.scss`) e as cores da marca ficam em variáveis `--marca-*`.
+  - Logos em `frontend/public/marca/`, recortadas do PDF do manual: vertical 1 sem o conceito (colorida e branca), horizontal com "UM LUGAR CHEIO DE VIDA" (colorida e branca) e o símbolo no favicon.
+  - Assinatura da biblioteca (`app-assinatura`) no padrão das secretarias (pág. 18): marca vertical 1, fio vertical e "Biblioteca Municipal" alinhado à esquerda. Ela aparece no menu da gestão, no topo do site e no login.
+  - Respeitar o manual: a vertical 1 não fica com menos de 100 px de largura e a horizontal com menos de 170 px (pág. 15). Em fundo claro, a versão colorida; em fundo escuro, a branca (pág. 17).
+  - Faixa com os degradês do mar e do sol (`--marca-faixa`) no alto das telas. Rodapé do site em marinho, com a marca horizontal branca e o link para `www.imbe.rs.gov.br`.
+  - Tipografia: Lexend Exa nos títulos e na assinatura (substituta da Termina), Lexend no texto.
+- Cores de situação em variáveis CSS (`--situacao-ok`, `--situacao-alerta`, `--situacao-erro`) no `styles.scss`, com tons do verde, amarelo e vermelho institucionais, escurecidos no texto para manter contraste AA.
 - Cadastro pelo leitor USB: o campo de ISBN e o de tombo ficam focados e o Enter do leitor envia. Depois de salvar a obra, a ficha abre com o formulário de exemplar pronto; cada tombo bipado é adicionado e o campo volta a ficar focado para a próxima cópia.
 
 ---
@@ -577,10 +584,11 @@ O servidor precisa de saída HTTPS para `brasilapi.com.br` (ISBN e feriados), `w
 - [ ] Onde o sistema vai rodar, se há saída para a internet e a publicação de `biblioteca.imbe.rs.gov.br` (DNS e certificado) com a TI.
 - [ ] Tamanho do acervo atual e se há planilha para importar (a importação aceita CSV com ISBN, tombo e localização).
 - [ ] Certificado HTTPS (TI da Prefeitura ou Let's Encrypt) e destino da cópia externa dos backups.
-- [ ] Servir as fontes (Roboto e Material Symbols) do próprio servidor em vez do Google, se o DPO pedir.
+- [ ] Servir as fontes (Lexend, Lexend Exa e Material Symbols) do próprio servidor em vez do Google, se o DPO pedir.
 - [ ] Padrão de numeração do tombo e etiquetas (o sistema já aceita letras, números, ponto e hífen).
 - [ ] Compra de leitor de código de barras USB.
-- [ ] Cores oficiais e logo da Prefeitura em alta resolução.
+- [ ] Licença web da fonte Termina, a do manual de marca. Até lá, Lexend Exa nos títulos e Lexend no texto.
+- [ ] Arquivos vetoriais da marca (SVG ou AI) com a Comunicação da Prefeitura. Hoje as logos são PNG recortados do PDF do manual.
 - [ ] Validação do tratamento de dados dos leitores com o DPO da Prefeitura.
 - [ ] CAPTCHA na reserva pública ou só limite de tentativas?
 - [ ] Feriados municipais de Imbé, endereço e horário de funcionamento da biblioteca (aparecem no site).
@@ -616,6 +624,7 @@ O servidor precisa de saída HTTPS para `brasilapi.com.br` (ISBN e feriados), `w
 | 2026-11-17 | Painel e relatórios por SQL direto; CSV com BOM, `;` e proteção contra fórmula; sem CPF nos relatórios; exportação auditada; gestão abre na tela Início |
 | 2026-11-17 | Importação em lote por CSV (ISBN;tombo;localização), processada em segundo plano linha a linha, sem conferência humana; ISBN não encontrado fica para o cadastro manual; só administrador |
 | 2026-11-17 | Implantação em Docker Compose (MySQL, API, Nginx com HTTPS); certificado fora do git; backup diário por script com mysqldump e capas, retenção de 30 dias |
+| 2026-11-17 | Visual pelo Manual de Marca da Prefeitura (2021-2028): azul `#006EB7` como cor principal, logos oficiais, assinatura no padrão das secretarias; Lexend Exa e Lexend no lugar da Termina enquanto não houver licença web |
 
 ## Documentação
 - Toda decisão nova ou mudança de escopo atualiza o README.md

@@ -4,21 +4,18 @@ import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
 import { catchError, of } from 'rxjs';
 
+import { Assinatura } from '../shared/assinatura/assinatura';
 import { PublicoApi } from './publico-api';
 
 /** Site público, pensado primeiro para celular: marca e menu curto no topo; endereço e horário no rodapé. */
 @Component({
   selector: 'app-layout-publico',
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, MatIconModule],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, MatIconModule, Assinatura],
   template: `
     <header class="topo">
       <div class="faixa">
-        <a class="marca" routerLink="/" aria-label="Início do catálogo">
-          <mat-icon class="logo" aria-hidden="true">local_library</mat-icon>
-          <span class="nomes">
-            <span class="nome">Biblioteca Municipal</span>
-            <span class="cidade">Prefeitura de Imbé</span>
-          </span>
+        <a class="marca" routerLink="/" aria-label="Biblioteca Municipal de Imbé: início do catálogo">
+          <app-assinatura />
         </a>
         <nav aria-label="Site da biblioteca">
           <a routerLink="/" routerLinkActive="ativo" [routerLinkActiveOptions]="{ exact: true }">Catálogo</a>
@@ -47,7 +44,13 @@ import { PublicoApi } from './publico-api';
             }
           </div>
         }
-        <a class="equipe" routerLink="/login">Área da equipe</a>
+        <div class="prefeitura">
+          <img src="marca/imbe-horizontal-branca.png" alt="Prefeitura de Imbé: um lugar cheio de vida" height="64" />
+          <span class="links">
+            <a href="https://www.imbe.rs.gov.br" rel="noopener" target="_blank">www.imbe.rs.gov.br</a>
+            <a routerLink="/login">Área da equipe</a>
+          </span>
+        </div>
       </div>
     </footer>
   `,
@@ -63,58 +66,42 @@ import { PublicoApi } from './publico-api';
       padding: 0 16px;
     }
     .topo {
-      background: var(--mat-sys-primary);
-      color: var(--mat-sys-on-primary);
+      background: #fff;
+      border-top: 6px solid transparent;
+      border-image: var(--marca-faixa) 1;
+      box-shadow: inset 0 -1px 0 var(--mat-sys-outline-variant);
     }
     .topo .faixa {
       display: flex;
       flex-wrap: wrap;
       align-items: center;
       justify-content: space-between;
-      gap: 8px 24px;
-      padding-top: 12px;
-      padding-bottom: 12px;
+      gap: 12px 24px;
+      padding-top: 14px;
+      padding-bottom: 14px;
     }
     .marca {
       display: flex;
-      align-items: center;
-      gap: 10px;
-      color: inherit;
       text-decoration: none;
-    }
-    .logo {
-      font-size: 36px;
-      width: 36px;
-      height: 36px;
-    }
-    .nomes {
-      display: flex;
-      flex-direction: column;
-      line-height: 1.2;
-    }
-    .nome {
-      font: var(--mat-sys-title-medium);
-    }
-    .cidade {
-      font: var(--mat-sys-body-small);
-      opacity: 0.85;
+      border-radius: 8px;
     }
     nav {
       display: flex;
       gap: 4px;
     }
     nav a {
-      color: inherit;
+      color: var(--marca-azul);
       text-decoration: none;
-      padding: 8px 12px;
+      padding: 10px 14px;
       border-radius: 8px;
       font: var(--mat-sys-label-large);
+      font-weight: 600;
     }
     nav a:hover {
-      background: color-mix(in srgb, var(--mat-sys-on-primary) 12%, transparent);
+      background: color-mix(in srgb, var(--marca-azul) 8%, transparent);
     }
     nav a.ativo {
-      background: color-mix(in srgb, var(--mat-sys-on-primary) 18%, transparent);
+      background: color-mix(in srgb, var(--marca-azul) 14%, transparent);
     }
     .conteudo {
       flex: 1;
@@ -125,18 +112,18 @@ import { PublicoApi } from './publico-api';
       box-sizing: border-box;
     }
     .rodape {
-      background: var(--mat-sys-surface-container);
-      color: var(--mat-sys-on-surface-variant);
+      background: var(--marca-marinho);
+      color: #dfe6f0;
       font: var(--mat-sys-body-medium);
     }
     .rodape .faixa {
       display: flex;
       flex-wrap: wrap;
       justify-content: space-between;
-      align-items: flex-end;
-      gap: 16px;
-      padding-top: 20px;
-      padding-bottom: 20px;
+      align-items: center;
+      gap: 24px;
+      padding-top: 28px;
+      padding-bottom: 28px;
     }
     .unidade {
       display: flex;
@@ -144,7 +131,32 @@ import { PublicoApi } from './publico-api';
       gap: 4px;
     }
     .unidade strong {
-      color: var(--mat-sys-on-surface);
+      color: #fff;
+      font-family: var(--fonte-marca);
+      font-weight: 500;
+    }
+    .prefeitura {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 12px;
+    }
+    .prefeitura img {
+      display: block;
+      height: 64px;
+      width: auto;
+    }
+    .links {
+      display: flex;
+      gap: 16px;
+    }
+    .links a {
+      color: #fff;
+    }
+    @media (max-width: 600px) {
+      .prefeitura {
+        align-items: flex-start;
+      }
     }
     .unidade span {
       display: flex;
@@ -155,9 +167,6 @@ import { PublicoApi } from './publico-api';
       font-size: 18px;
       width: 18px;
       height: 18px;
-    }
-    .equipe {
-      color: inherit;
     }
   `,
 })

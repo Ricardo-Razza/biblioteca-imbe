@@ -77,8 +77,8 @@ export function tetoDoEixo(maximo: number): number {
   styles: `
     :host {
       display: block;
-      --serie-saidas: #2a78d6;
-      --serie-devolucoes: #eb6834;
+      --serie-saidas: var(--marca-azul);
+      --serie-devolucoes: var(--marca-coral);
     }
     .legenda {
       display: flex;

@@ -9,15 +9,24 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 
 import { mensagemDeErro } from '../../core/api/erro-api';
 import { Sessao } from '../../core/auth/sessao';
+import { Assinatura } from '../../shared/assinatura/assinatura';
 
 /** Login da equipe: usuário de rede (AD) ou local, no mesmo formulário. */
 @Component({
   selector: 'app-login',
-  imports: [ReactiveFormsModule, MatButtonModule, MatFormFieldModule, MatIconModule, MatInputModule, MatProgressSpinnerModule],
+  imports: [
+    ReactiveFormsModule,
+    MatButtonModule,
+    MatFormFieldModule,
+    MatIconModule,
+    MatInputModule,
+    MatProgressSpinnerModule,
+    Assinatura,
+  ],
   template: `
     <main class="fundo">
       <section class="cartao" aria-labelledby="titulo-login">
-        <p class="marca">Biblioteca Municipal de Imbé</p>
+        <div class="marca"><app-assinatura /></div>
         <h1 id="titulo-login">Entrar na gestão</h1>
 
         @if (expirou() && !erro()) {
@@ -73,15 +82,26 @@ import { Sessao } from '../../core/auth/sessao';
       background: var(--mat-sys-surface);
       border: 1px solid var(--mat-sys-outline-variant);
       border-radius: 12px;
-      padding: 32px 28px 24px;
+      padding: 28px 28px 24px;
+      position: relative;
+      overflow: hidden;
+    }
+    .cartao::before {
+      content: '';
+      position: absolute;
+      inset: 0 0 auto;
+      height: 6px;
+      background: var(--marca-faixa);
     }
     .marca {
-      margin: 0;
-      color: var(--mat-sys-primary);
-      font: var(--mat-sys-title-small);
+      display: flex;
+      justify-content: center;
+      padding: 8px 0 24px;
+      margin-bottom: 20px;
+      border-bottom: 1px solid var(--mat-sys-outline-variant);
     }
     h1 {
-      margin: 4px 0 20px;
+      margin: 0 0 20px;
     }
     .entrar {
       height: 48px;
