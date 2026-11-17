@@ -74,6 +74,8 @@ Um único app com duas áreas, cada uma com layout próprio e carregada sob dema
 | `/login` | Equipe | Login AD ou local |
 | `/painel/...` | Equipe | Gestão. Sem token, vai para `/login` |
 
+Na gestão, o acervo fica em `/painel/acervo` (lista e busca), `/painel/acervo/novo` (cadastro por ISBN), `/painel/acervo/{id}` (ficha com capa e exemplares) e `/painel/acervo/{id}/editar`. Os itens do menu ainda não feitos mostram em que fase chegam. Até o login (fase 3), `/` abre a gestão.
+
 O Nginx devolve o `index.html` para qualquer rota que não seja arquivo nem `/api`, para os links funcionarem ao recarregar a página.
 
 ---
@@ -425,6 +427,8 @@ O servidor precisa de saída HTTPS para `brasilapi.com.br`, `www.googleapis.com`
 - **Site público:** pensado primeiro para celular. Logo da Prefeitura e uma busca grande no topo; grade de capas com "3 disponíveis" ou "Todos emprestados"; ficha do livro com um único botão Reservar; endereço e horário da biblioteca no rodapé.
 - Capa em miniatura nas listas. Texto base de 15 a 16 px. Formulários em uma coluna.
 - Mensagens e confirmações dentro da tela, nunca `alert()` ou `confirm()`.
+- Cor principal provisória: azul-petróleo `#1f5c7a` (tema gerado em `frontend/src/styles/_theme-colors.scss`), até chegarem as cores oficiais. Cores de situação em variáveis CSS (`--situacao-ok`, `--situacao-alerta`, `--situacao-erro`) no `styles.scss`.
+- Cadastro pelo leitor USB: o campo de ISBN e o de tombo ficam focados e o Enter do leitor envia. Depois de salvar a obra, a ficha abre com o formulário de exemplar pronto; cada tombo bipado é adicionado e o campo volta a ficar focado para a próxima cópia.
 
 ---
 
@@ -471,6 +475,7 @@ O servidor precisa de saída HTTPS para `brasilapi.com.br`, `www.googleapis.com`
 | 2026-11-17 | Autores e assuntos são reaproveitados sem diferenciar maiúsculas nem acentos ("JOSE SARAMAGO" = "José Saramago"); o primeiro nome cadastrado é o que aparece |
 | 2026-11-17 | `GET /obras?q=` busca por ISBN (se o termo for um ISBN válido) ou por trecho do título ou do autor |
 | 2026-11-17 | Capas sempre regravadas em JPEG (até 800 px e miniatura de 200 px), sem metadados; prévia da capa da fonte servida pelo backend |
+| 2026-11-17 | Tela de cadastro: busca pelo ISBN, conferência em formulário de uma coluna, foto da capa opcional; o ISBN aparece sem hífens (a hifenização correta depende da tabela de faixas do ISBN) |
 | 2026-11-17 | Exemplar: tombo alfanumérico com ponto e hífen, em maiúsculas; mudança manual de situação só para extravio, baixa ou volta de extraviado; baixa é definitiva; total da obra sem os baixados |
 
 ## Documentação

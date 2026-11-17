@@ -1,0 +1,229 @@
+<a mat-button routerLink="/painel/acervo" class="voltar"><mat-icon>arrow_back</mat-icon> Acervo</a>
+
+@if (erroCarga()) {
+  <p class="aviso erro" role="alert"><mat-icon>error</mat-icon> {{ erroCarga() }}</p>
+} @else if (obra(); as o) {
+  <section class="ficha">
+    <div class="capa">
+      <app-capa-livro [obraId]="o.id" [temCapa]="o.temCapa" [versao]="versaoCapa()" [titulo]="o.titulo" />
+      <input #arquivo type="file" accept="image/*" hidden (change)="enviarCapa(arquivo)" />
+      <button mat-stroked-button type="button" (click)="arquivo.click()" [disabled]="enviandoCapa()">
+        @if (enviandoCapa()) {
+          <mat-spinner diameter="18" />
+        } @else {
+          <mat-icon>photo_camera</mat-icon>
+        }
+        {{ o.temCapa ? 'Trocar capa' : 'Enviar capa' }}
+      </button>
+    </div>
+
+    <div class="dados">
+      <h1>{{ o.titulo }}</h1>
+      @if (o.subtitulo) {
+        <p class="subtitulo">{{ o.subtitulo }}</p>
+      }
+      @if (o.autores.length) {
+        <p class="autores">{{ o.autores.join(', ') }}</p>
+      }
+      @if (detalhes()) {
+        <p class="texto-secundario">{{ detalhes() }}</p>
+      }
+      <p class="texto-secundario">ISBN {{ isbn() }}</p>
+      @if (o.assuntos.length) {
+        <p class="assuntos">
+          @for (a of o.assuntos; track a) {
+            <span class="assunto">{{ a }}</span>
+          }
+        </p>
+      }
+      <p class="contagem">
+        @if (o.totalExemplares === 0) {
+          Nenhum exemplar no acervo.
+        } @else {
+          <strong>{{ o.exemplaresDisponiveis }}</strong> {{ o.exemplaresDisponiveis === 1 ? 'disponível' : 'disponíveis' }}
+          de {{ o.totalExemplares }} {{ o.totalExemplares === 1 ? 'exemplar' : 'exemplares' }}
+        }
+      </p>
+      <div class="acoes">
+        <a mat-stroked-button [routerLink]="['/painel/acervo', o.id, 'editar']"><mat-icon>edit</mat-icon> Editar dados</a>
+      </div>
+
+      @if (capa() === 'falhou') {
+        <p class="aviso alerta" role="status">
+          <mat-icon>warning</mat-icon>
+          <span>A obra foi salva, mas a foto da capa não foi enviada. Tente de novo em "Enviar capa".</span>
+        </p>
+      } @else if (!o.temCapa) {
+        <p class="aviso" role="status">
+          <mat-icon>image_not_supported</mat-icon>
+          <span>Sem capa. Fotografe a capa e envie em "Enviar capa".</span>
+        </p>
+      }
+      @if (erroCapa()) {
+        <p class="aviso erro" role="alert"><mat-icon>error</mat-icon> {{ erroCapa() }}</p>
+      }
+      @if (o.sinopse) {
+        <p class="sinopse">{{ o.sinopse }}</p>
+      }
+    </div>
+  </section>
+
+  <section class="exemplares">
+    <div class="titulo-secao">
+      <h2>Exemplares</h2>
+      @if (!formAberto()) {
+        <button mat-flat-button type="button" (click)="abrirFormulario()"><mat-icon>add</mat-icon> Adicionar exemplar</button>
+      }
+    </div>
+
+    @if (formAberto()) {
+      <form class="coluna novo" [formGroup]="formExemplar" (ngSubmit)="adicionarExemplar()">
+        <h3>Novo exemplar</h3>
+        @if (adicionado()) {
+          <p class="aviso ok" role="status">
+            <mat-icon>check_circle</mat-icon>
+            <span>Exemplar {{ adicionado() }} adicionado. Bipe o próximo tombo ou feche.</span>
+          </p>
+        }
+        <mat-form-field appearance="outline">
+          <mat-label>Tombo</mat-label>
+          <input #campoTombo matInput formControlName="tombo" autocomplete="off" />
+          <mat-hint>Número da etiqueta. Letras, números, ponto ou hífen.</mat-hint>
+          <mat-error>{{ erroTombo() }}</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Localização</mat-label>
+          <input matInput formControlName="localizacao" />
+          <mat-hint>Estante ou seção, ex.: Estante 3, prateleira B.</mat-hint>
+          <mat-error>{{ erro('localizacao') }}</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Estado</mat-label>
+          <mat-select formControlName="estado">
+            <mat-option value="BOM">Bom</mat-option>
+            <mat-option value="DANIFICADO">Danificado</mat-option>
+          </mat-select>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Origem</mat-label>
+          <mat-select formControlName="origem">
+            <mat-option [value]="null">Não informada</mat-option>
+            <mat-option value="COMPRA">Compra</mat-option>
+            <mat-option value="DOACAO">Doação</mat-option>
+          </mat-select>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Data de aquisição</mat-label>
+          <input matInput type="date" formControlName="dataAquisicao" [max]="hoje" />
+          <mat-error>{{ erro('dataAquisicao') }}</mat-error>
+        </mat-form-field>
+        @if (erroExemplar()) {
+          <p class="aviso erro" role="alert"><mat-icon>error</mat-icon> {{ erroExemplar() }}</p>
+        }
+        <div class="acoes">
+          <button mat-flat-button type="submit" [disabled]="salvandoExemplar()">
+            @if (salvandoExemplar()) {
+              <mat-spinner diameter="18" />
+            }
+            Adicionar
+          </button>
+          <button mat-button type="button" (click)="fecharFormulario()">Fechar</button>
+        </div>
+      </form>
+    }
+
+    @if (confirmando()) {
+      <div class="aviso alerta confirmacao" role="alertdialog" aria-live="assertive">
+        <mat-icon>help</mat-icon>
+        <div>
+          <p>{{ pergunta() }}</p>
+          <div class="acoes">
+            <button mat-flat-button type="button" (click)="confirmarSituacao()" [disabled]="salvandoAlteracao()">
+              {{ textoConfirmar() }}
+            </button>
+            <button mat-button type="button" (click)="cancelarAlteracao()">Cancelar</button>
+          </div>
+        </div>
+      </div>
+    }
+
+    @if (editando(); as e) {
+      <form class="coluna edicao" [formGroup]="formAlteracao" (ngSubmit)="salvarEdicao()">
+        <h3>Exemplar {{ e.tombo }}</h3>
+        <mat-form-field appearance="outline">
+          <mat-label>Localização</mat-label>
+          <input matInput formControlName="localizacao" />
+          <mat-error>Use no máximo 100 caracteres.</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Estado</mat-label>
+          <mat-select formControlName="estado">
+            <mat-option value="BOM">Bom</mat-option>
+            <mat-option value="DANIFICADO">Danificado</mat-option>
+          </mat-select>
+        </mat-form-field>
+        <div class="acoes">
+          <button mat-flat-button type="submit" [disabled]="salvandoAlteracao()">Salvar</button>
+          <button mat-button type="button" (click)="cancelarAlteracao()">Cancelar</button>
+        </div>
+      </form>
+    }
+
+    @if (erroAlteracao()) {
+      <p class="aviso erro" role="alert"><mat-icon>error</mat-icon> {{ erroAlteracao() }}</p>
+    }
+
+    @if (exemplares().length) {
+      <div class="tabela">
+        <table>
+          <thead>
+            <tr>
+              <th>Tombo</th>
+              <th>Situação</th>
+              <th>Localização</th>
+              <th>Estado</th>
+              <th>Aquisição</th>
+              <th><span class="cdk-visually-hidden">Ações</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (e of exemplares(); track e.id) {
+              <tr [class.baixado]="e.situacao === 'BAIXADO'">
+                <td class="tombo">{{ e.tombo }}</td>
+                <td><app-selo-situacao [situacao]="e.situacao" /></td>
+                <td>{{ e.localizacao ?? '—' }}</td>
+                <td>{{ e.estado === 'BOM' ? 'Bom' : 'Danificado' }}</td>
+                <td>
+                  {{ e.dataAquisicao ? (e.dataAquisicao | date: 'dd/MM/yyyy') : '—' }}
+                  @if (e.origem) {
+                    <span class="texto-secundario">· {{ e.origem === 'COMPRA' ? 'compra' : 'doação' }}</span>
+                  }
+                </td>
+                <td class="acao">
+                  @if (e.situacao !== 'BAIXADO') {
+                    <button mat-icon-button type="button" [matMenuTriggerFor]="menu" [attr.aria-label]="'Ações do exemplar ' + e.tombo">
+                      <mat-icon>more_vert</mat-icon>
+                    </button>
+                    <mat-menu #menu="matMenu">
+                      <button mat-menu-item type="button" (click)="editar(e)"><mat-icon>edit</mat-icon> Localização e estado</button>
+                      @for (s of acoesDe(e); track s) {
+                        <button mat-menu-item type="button" (click)="pedirSituacao(e, s)">{{ textoAcao(s) }}</button>
+                      }
+                      @if (!acoesDe(e).length) {
+                        <span mat-menu-item disabled>{{ e.situacao === 'EMPRESTADO' ? 'Emprestado: registre a devolução' : 'Reservado: cancele a reserva' }}</span>
+                      }
+                    </mat-menu>
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    } @else if (!formAberto()) {
+      <p class="texto-secundario">Nenhum exemplar cadastrado.</p>
+    }
+  </section>
+} @else {
+  <mat-spinner diameter="32" />
+}

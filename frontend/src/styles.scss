@@ -1,39 +1,117 @@
-// Include theming for Angular Material with `mat.theme()`.
-// This Sass mixin will define CSS variables that are used for styling Angular Material
-// components according to the Material 3 design spec.
-// Learn more about theming and how to use it for your application's
-// custom components at https://material.angular.dev/guide/theming
 @use '@angular/material' as mat;
+@use './styles/theme-colors' as cores;
 
+// Cor principal provisória (azul-petróleo) até chegarem as cores oficiais da Prefeitura.
+// Para trocar: ng generate @angular/material:theme-color --primary-color=<hex> --directory=src/styles/
 html {
   height: 100%;
   @include mat.theme(
     (
       color: (
-        primary: mat.$azure-palette,
-        tertiary: mat.$blue-palette,
+        primary: cores.$primary-palette,
+        tertiary: cores.$tertiary-palette,
       ),
       typography: Roboto,
       density: 0,
     )
   );
+
+  // Situação: sempre com texto junto, nunca só a cor.
+  --situacao-ok: #1e6b34;
+  --situacao-ok-fundo: #e3f1e6;
+  --situacao-alerta: #7a4f00;
+  --situacao-alerta-fundo: #fbefd5;
+  --situacao-erro: #a01d1d;
+  --situacao-erro-fundo: #fbe4e2;
+  --situacao-neutra: #4a4f55;
+  --situacao-neutra-fundo: #eceef0;
 }
 
 body {
-  // Default the application to a light color theme. This can be changed to
-  // `dark` to enable the dark color theme, or to `light dark` to defer to the
-  // user's system settings.
   color-scheme: light;
-
-  // Set a default background, font and text colors for the application using
-  // Angular Material's system-level CSS variables. Learn more about these
-  // variables at https://material.angular.dev/guide/system-variables
   background-color: var(--mat-sys-surface);
   color: var(--mat-sys-on-surface);
-  font: var(--mat-sys-body-medium);
-
-  // Reset the user agent margin.
+  font: var(--mat-sys-body-large);
   margin: 0;
   height: 100%;
 }
-/* You can add global styles to this file, and also import other style files */
+
+h1,
+h2,
+h3 {
+  margin: 0;
+}
+
+h1 {
+  font: var(--mat-sys-headline-small);
+}
+
+h2 {
+  font: var(--mat-sys-title-large);
+}
+
+a {
+  color: var(--mat-sys-primary);
+}
+
+// Aviso dentro da tela (no lugar de alert()).
+.aviso {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  padding: 12px 16px;
+  border-radius: 8px;
+  background: var(--situacao-neutra-fundo);
+  color: var(--situacao-neutra);
+
+  mat-icon {
+    flex: none;
+  }
+
+  > span {
+    flex: 1;
+  }
+
+  > button {
+    flex: none;
+    margin: -8px -8px -8px 0;
+  }
+
+  &.erro {
+    background: var(--situacao-erro-fundo);
+    color: var(--situacao-erro);
+  }
+
+  &.alerta {
+    background: var(--situacao-alerta-fundo);
+    color: var(--situacao-alerta);
+  }
+
+  &.ok {
+    background: var(--situacao-ok-fundo);
+    color: var(--situacao-ok);
+  }
+}
+
+// Formulários em uma coluna.
+.coluna {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 640px;
+
+  mat-form-field {
+    width: 100%;
+  }
+}
+
+.acoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.texto-secundario {
+  color: var(--mat-sys-on-surface-variant);
+}
