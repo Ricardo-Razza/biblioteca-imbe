@@ -124,6 +124,12 @@ public class Obra {
         autores.sort(Comparator.comparingInt(ObraAutor::getOrdem));
     }
 
+    /** Nomes dos arquivos dentro de {@code CAPAS_DIR}. */
+    void definirCapa(String arquivo, String miniatura) {
+        this.capaArquivo = arquivo;
+        this.capaMiniatura = miniatura;
+    }
+
     void definirAssuntos(Set<Assunto> novos) {
         assuntos.clear();
         assuntos.addAll(novos);

@@ -16,6 +16,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
+import br.gov.imbe.biblioteca.acervo.CapaService;
 import br.gov.imbe.biblioteca.acervo.ObraService;
 import br.gov.imbe.biblioteca.comum.config.SecurityConfig;
 
@@ -31,6 +32,9 @@ class IsbnControllerTest {
 
     @MockitoBean
     ObraService obras;
+
+    @MockitoBean
+    CapaService capas;
 
     @Test
     void obraJaCadastradaNaoConsultaAsFontes() throws Exception {

@@ -24,9 +24,11 @@ import jakarta.validation.Valid;
 public class ObraController {
 
     private final ObraService servico;
+    private final CapaService capas;
 
-    public ObraController(ObraService servico) {
+    public ObraController(ObraService servico, CapaService capas) {
         this.servico = servico;
+        this.capas = capas;
     }
 
     /** {@code ?q=} busca por ISBN, trecho do título ou do autor. Paginação: {@code ?page=0&size=20}. */
@@ -41,9 +43,14 @@ public class ObraController {
         return servico.buscar(id);
     }
 
+    /**
+     * Com {@code fonteDados} de uma fonte externa, a capa indicada por ela é baixada e gravada logo depois do
+     * cadastro (fora da transação). Se falhar, a obra fica sem capa ({@code temCapa = false}) e a foto pode ser
+     * enviada em {@code POST /obras/{id}/capa}.
+     */
     @PostMapping
     public ResponseEntity<ObraResposta> cadastrar(@Valid @RequestBody ObraRequisicao req) {
-        ObraResposta obra = servico.cadastrar(req);
+        ObraResposta obra = capas.tentarCapaDaFonte(servico.cadastrar(req));
         return ResponseEntity.created(URI.create("/api/v1/obras/" + obra.id())).body(obra);
     }
 

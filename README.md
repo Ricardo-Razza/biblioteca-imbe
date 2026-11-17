@@ -183,6 +183,9 @@ Detalhes de implementação:
 - Fora isso, `GET /api/v1/isbn/{isbn}` responde 200 com `encontrado`, os `dados` mesclados, as `fontes` que contribuíram e as `fontesIndisponiveis`. ISBN inválido dá 400 com o motivo. A URL externa da capa não sai na resposta, só `capaDisponivel`.
 - Na prática o Google Books exige `GOOGLE_BOOKS_API_KEY`: sem chave, a cota anônima compartilhada costuma estar esgotada (HTTP 429) e o Google fica de fora.
 - A capa é **baixada e guardada localmente**, com uma miniatura de cerca de 200 px. Nunca se usa link externo na tela.
+- Capas em `CAPAS_DIR`, como `obra-{id}-{versão}.jpg` (maior lado até 800 px) e `obra-{id}-{versão}-mini.jpg` (200 px de largura). Toda imagem é regravada em JPEG, o que descarta metadados como o GPS da foto do celular, e a orientação EXIF é aplicada antes.
+- `GET /isbn/{isbn}/capa` serve a prévia para o formulário de conferência, já baixada e processada pelo backend. O `POST /obras` com `fonteDados` de uma fonte grava essa mesma capa logo depois do cadastro. Se falhar, a obra fica sem capa e o funcionário envia uma foto em `POST /obras/{id}/capa`.
+- O download da capa externa só aceita http/https e `image/*` até 5 MB, e recusa endereços da rede interna, inclusive por redirecionamento.
 
 ---
 
@@ -345,6 +348,7 @@ Os valores ficam na tabela `parametro` e o administrador pode editá-los. **Aind
 | `GET /isbn/{isbn}` | Dados mesclados das APIs externas (não salva) | Atendente |
 | `GET/POST /obras`, `PUT /obras/{id}` | Acervo | Atendente |
 | `POST /obras/{id}/capa` · `GET /obras/{id}/capa?tamanho=mini` | Capa | Atendente · público |
+| `GET /isbn/{isbn}/capa?tamanho=mini` | Prévia da capa da fonte, antes de salvar | Atendente |
 | `POST /obras/{id}/exemplares` · `GET /exemplares/tombo/{tombo}` | Exemplares | Atendente |
 | `PATCH /exemplares/{id}` | Baixa e extravio | Admin |
 | `GET/POST /leitores`, `PUT /leitores/{id}`, `GET /leitores/{id}/situacao` | Leitores | Atendente |
@@ -463,6 +467,7 @@ O servidor precisa de saída HTTPS para `brasilapi.com.br`, `www.googleapis.com`
 | 2026-11-17 | Busca por ISBN: fonte fora do ar não vai para o cache; resposta sempre 200 com `encontrado`; URL externa da capa não chega ao front |
 | 2026-11-17 | Autores e assuntos são reaproveitados sem diferenciar maiúsculas nem acentos ("JOSE SARAMAGO" = "José Saramago"); o primeiro nome cadastrado é o que aparece |
 | 2026-11-17 | `GET /obras?q=` busca por ISBN (se o termo for um ISBN válido) ou por trecho do título ou do autor |
+| 2026-11-17 | Capas sempre regravadas em JPEG (até 800 px e miniatura de 200 px), sem metadados; prévia da capa da fonte servida pelo backend |
 
 ## Documentação
 - Toda decisão nova ou mudança de escopo atualiza o README.md

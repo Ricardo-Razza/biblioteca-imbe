@@ -24,6 +24,11 @@ spring:
     web:
       pageable:
         max-page-size: 100
+  servlet:
+    multipart:
+      # Foto de celular da capa; o backend reduz para no máximo 800 px
+      max-file-size: 10MB
+      max-request-size: 11MB
   flyway:
     locations: classpath:db/migration
   threads:
@@ -44,6 +49,13 @@ biblioteca:
     open-library:
       url: https://openlibrary.org
       capas-url: https://covers.openlibrary.org
+
+  capas:
+    diretorio: ${CAPAS_DIR:/dados/capas}
+    lado-maximo: 800
+    largura-miniatura: 200
+    tamanho-maximo-download: 5MB
+    timeout: 4s
 
 server:
   error:

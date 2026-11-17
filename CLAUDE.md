@@ -30,7 +30,7 @@ cd frontend && ng test --watch=false
 - Colunas `CHAR`, `TEXT` e `SMALLINT`: use `columnDefinition = "CHAR(13)"`, `columnDefinition = "TEXT"` e `Short` na entidade, senão o `validate` reclama do tipo.
 - `LIKE` em JPQL: escape com `!` (`like :padrao escape '!'`). Barra invertida é escape nos literais do MySQL e quebra o SQL.
 - Listas paginadas saem como `comum.Pagina` (não o `Page` do Spring Data).
-- Testes de integração: anotar com `@TesteIntegracao` (+ `@Transactional`). Todas compartilham o mesmo contexto e o mesmo container MySQL; não crie variações de configuração sem necessidade, senão sobe outro container.
+- Testes de integração: anotar com `@TesteIntegracao` (+ `@Transactional`). Ali as fontes de ISBN apontam para uma porta fechada (teste nunca acessa a internet) e as capas vão para `target/capas-teste`. Todas compartilham o mesmo contexto e o mesmo container MySQL; não crie variações de configuração sem necessidade, senão sobe outro container.
 - Configuração por variável de ambiente (`DB_URL`, `JWT_SECRET`, ...). Nenhum segredo no repositório.
 - Só o backend fala com APIs externas. Testes de API externa usam WireMock.
 - ISBN: sempre via `Isbn.de(...)` (valida e converte para ISBN-13). Cada fonte é um `IsbnProvider`: devolve vazio quando não conhece o ISBN e lança `FonteIsbnIndisponivelException` quando falha. "Não encontrado" pode ir para o cache; falha, não.
