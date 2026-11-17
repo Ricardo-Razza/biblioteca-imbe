@@ -592,7 +592,7 @@ O servidor precisa de saída HTTPS para `brasilapi.com.br` (ISBN e feriados), `w
 - [ ] Arquivos vetoriais da marca (SVG ou AI) com a Comunicação da Prefeitura. Hoje as logos são PNG recortados do PDF do manual.
 - [ ] Validação do tratamento de dados dos leitores com o DPO da Prefeitura.
 - [ ] CAPTCHA na reserva pública ou só limite de tentativas?
-- [ ] Feriados municipais de Imbé; endereço, horário, telefone e e-mail da biblioteca (aparecem no rodapé do site).
+- [ ] Feriados municipais de Imbé e telefone da biblioteca (endereço, horário e e-mail já estão no `.env.example`).
 
 ## Registro de decisões
 

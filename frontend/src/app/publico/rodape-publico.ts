@@ -24,7 +24,15 @@ import { DadosBiblioteca } from '../core/api/modelos';
           @if (temContato()) {
             <ul class="contato">
               @if (biblioteca()?.endereco; as endereco) {
-                <li><mat-icon aria-hidden="true">location_on</mat-icon><span>{{ endereco }}</span></li>
+                <li>
+                  <mat-icon aria-hidden="true">location_on</mat-icon>
+                  <span>
+                    {{ endereco }}
+                    <a class="mapa" [href]="linkMapa(endereco)" rel="noopener" target="_blank">
+                      Ver no mapa <mat-icon class="externo" aria-label="abre em nova aba">open_in_new</mat-icon>
+                    </a>
+                  </span>
+                </li>
               }
               @if (biblioteca()?.horario; as horario) {
                 <li><mat-icon aria-hidden="true">schedule</mat-icon><span>{{ horario }}</span></li>
@@ -147,6 +155,11 @@ import { DadosBiblioteca } from '../core/api/modelos';
       align-items: flex-start;
       line-height: 1.45;
     }
+    .contato li > span {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+    }
     .contato mat-icon {
       flex: none;
       font-size: 20px;
@@ -197,6 +210,16 @@ import { DadosBiblioteca } from '../core/api/modelos';
       width: 16px;
       height: 16px;
     }
+    .mapa {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      margin-top: 4px;
+      font-weight: 500;
+    }
+    .contato .mapa .externo {
+      color: inherit;
+    }
     .base {
       max-width: 1120px;
       margin: 0 auto;
@@ -234,6 +257,11 @@ export class RodapePublico {
   protected diasUteis(n: number | undefined): string {
     if (!n) return 'alguns dias úteis';
     return n === 1 ? '1 dia útil' : `${n} dias úteis`;
+  }
+
+  /** Busca o endereço no Google Maps, sempre em Imbé (endereço da biblioteca, nunca dado de leitor). */
+  protected linkMapa(endereco: string): string {
+    return 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(`${endereco}, Imbé - RS`);
   }
 
   protected soDigitos(telefone: string): string {

@@ -52,6 +52,10 @@ describe('RodapePublico', () => {
     const el = fixture.nativeElement as HTMLElement;
     expect(el.querySelector('a[href="tel:5130000000"]')).not.toBeNull();
     expect(el.querySelector('a[href="mailto:biblioteca@exemplo.gov.br"]')).not.toBeNull();
+    const mapa = el.querySelector('a.mapa') as HTMLAnchorElement;
+    expect(mapa.href).toBe(
+      'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent('Rua Exemplo, 100, Imbé - RS'),
+    );
   });
 
   it('usa singular com 1 dia útil e 1 livro', async () => {
