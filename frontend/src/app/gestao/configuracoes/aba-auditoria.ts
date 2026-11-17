@@ -21,6 +21,8 @@ const ACOES: { valor: string; texto: string }[] = [
   { valor: 'PARAMETRO_ALTERADO', texto: 'Prazos e limites' },
   { valor: 'FERIADO_INCLUIDO', texto: 'Feriados incluídos' },
   { valor: 'FERIADO_REMOVIDO', texto: 'Feriados removidos' },
+  { valor: 'FERIADOS_IMPORTADOS', texto: 'Feriados nacionais importados' },
+  { valor: 'RESERVA_CANCELADA', texto: 'Reservas canceladas na gestão' },
   { valor: 'EXEMPLAR_ALTERADO', texto: 'Baixas e extravios' },
   { valor: 'LEITOR_DESBLOQUEADO', texto: 'Desbloqueios de leitor' },
 ];

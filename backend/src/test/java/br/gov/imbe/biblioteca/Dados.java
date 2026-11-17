@@ -62,6 +62,13 @@ public final class Dados {
                 """.formatted(nome, cpf()));
     }
 
+    /** Leitor com CPF e nascimento conhecidos, para se identificar no site público. */
+    public static long leitor(MockMvc mvc, String nome, String cpf, LocalDate nascimento) throws Exception {
+        return id(mvc, "/api/v1/leitores", """
+                {"nome": "%s", "cpf": "%s", "dataNascimento": "%s"}
+                """.formatted(nome, cpf, nascimento));
+    }
+
     public static long leitorMenor(MockMvc mvc, String nome) throws Exception {
         return id(mvc, "/api/v1/leitores", """
                 {"nome": "%s", "cpf": "%s", "dataNascimento": "%s", "responsavel": "Responsável de Teste"}

@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -15,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 import br.gov.imbe.biblioteca.acervo.Exemplar;
 import br.gov.imbe.biblioteca.acervo.ExemplarRepository;
 import br.gov.imbe.biblioteca.acervo.ExemplarService;
+import br.gov.imbe.biblioteca.acervo.SituacaoExemplar;
 import br.gov.imbe.biblioteca.comum.Pagina;
 import br.gov.imbe.biblioteca.comum.calendario.Calendario;
 import br.gov.imbe.biblioteca.comum.erro.RecursoNaoEncontradoException;
@@ -36,11 +38,12 @@ public class EmprestimoService {
     private final LeitorService leitores;
     private final ParametroService parametros;
     private final Calendario calendario;
-    private final Optional<ReservasAtivas> reservas;
+    /** Provider: o módulo de reserva também usa este service (retirada vira empréstimo). */
+    private final ObjectProvider<ReservasAtivas> reservas;
     private final Clock relogio;
 
     public EmprestimoService(EmprestimoRepository emprestimos, ExemplarRepository exemplares, LeitorService leitores,
-            ParametroService parametros, Calendario calendario, Optional<ReservasAtivas> reservas, Clock relogio) {
+            ParametroService parametros, Calendario calendario, ObjectProvider<ReservasAtivas> reservas, Clock relogio) {
         this.emprestimos = emprestimos;
         this.exemplares = exemplares;
         this.leitores = leitores;
@@ -55,19 +58,54 @@ public class EmprestimoService {
         return situacao(leitores.entidade(leitorId), hoje());
     }
 
+    /** Situação do leitor hoje (também usada pela reserva pública). */
+    @Transactional(readOnly = true)
+    public SituacaoLeitor situacao(Leitor leitor) {
+        return situacao(leitor, hoje());
+    }
+
+    /**
+     * Saída no balcão. Exemplar reservado para o próprio leitor vira a retirada da reserva (o livro já contava no
+     * limite); reservado para outro leitor não sai.
+     */
     @Transactional
     public EmprestimoResposta emprestar(EmprestimoRequisicao req, Long funcionarioId) {
         LocalDate hoje = hoje();
         Leitor leitor = leitores.entidade(req.leitorId());
+        String tombo = ExemplarService.normalizarTombo(req.tombo());
+        Exemplar exemplar = exemplares.travarPorTombo(tombo)
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Nenhum exemplar com o tombo " + tombo + "."));
+        if (exemplar.getSituacao() == SituacaoExemplar.RESERVADO) {
+            ReservasAtivas r = reservas.getIfAvailable();
+            Optional<Emprestimo> retirada = r == null ? Optional.empty()
+                    : r.retirarNoBalcao(exemplar, leitor, funcionarioId);
+            if (retirada.isPresent()) {
+                return EmprestimoResposta.de(retirada.get(), hoje, maximoRenovacoes());
+            }
+            throw new RegraNegocioException("O exemplar " + exemplar.getTombo()
+                    + " está reservado para outro leitor e não pode ser emprestado.");
+        }
         SituacaoLeitor situacao = situacao(leitor, hoje);
         if (!situacao.podeEmprestar()) {
             throw new RegraNegocioException(situacao.motivos().getFirst());
         }
-        String tombo = ExemplarService.normalizarTombo(req.tombo());
-        Exemplar exemplar = exemplares.travarPorTombo(tombo)
-                .orElseThrow(() -> new RecursoNaoEncontradoException("Nenhum exemplar com o tombo " + tombo + "."));
         exemplar.emprestar();
         return EmprestimoResposta.de(abrir(exemplar, leitor, hoje, funcionarioId), hoje, maximoRenovacoes());
+    }
+
+    /**
+     * Retirada de uma reserva: o exemplar (já travado) sai para o leitor da reserva. O limite não impede, porque a
+     * reserva já contava nele; desativado, bloqueado, atraso e menor sem responsável impedem.
+     */
+    @Transactional
+    public Emprestimo abrirDeReserva(Exemplar exemplar, Leitor leitor, Long funcionarioId) {
+        LocalDate hoje = hoje();
+        List<String> impedimentos = motivos(leitor, hoje, emprestimos.contarAtrasados(leitor.getId(), hoje), null);
+        if (!impedimentos.isEmpty()) {
+            throw new RegraNegocioException(impedimentos.getFirst());
+        }
+        exemplar.retirarReserva();
+        return abrir(exemplar, leitor, hoje, funcionarioId);
     }
 
     /**
@@ -167,8 +205,20 @@ public class EmprestimoService {
     SituacaoLeitor situacao(Leitor leitor, LocalDate hoje) {
         long abertos = emprestimos.contarEmAberto(leitor.getId());
         long atrasados = emprestimos.contarAtrasados(leitor.getId(), hoje);
-        long reservados = reservas.map(r -> (long) r.contar(leitor.getId())).orElse(0L);
+        ReservasAtivas r = reservas.getIfAvailable();
+        long reservados = r == null ? 0 : r.contar(leitor.getId());
         int limite = parametros.inteiro(ChaveParametro.LIMITE_LIVROS_POR_LEITOR);
+        String limiteAtingido = abertos + reservados < limite ? null
+                : "Já está com " + (abertos + reservados) + " de " + limite + " livros permitidos"
+                        + (reservados > 0 ? " (contando as reservas)." : ".");
+        List<String> motivos = motivos(leitor, hoje, atrasados, limiteAtingido);
+        return new SituacaoLeitor(leitor.getId(), leitor.getNome(), leitor.isAtivo(),
+                leitor.bloqueadoEm(hoje) ? leitor.getBloqueadoAte() : null, abertos, atrasados, reservados,
+                abertos + reservados, limite, motivos.isEmpty(), List.copyOf(motivos));
+    }
+
+    /** Impedimentos na ordem em que aparecem no balcão. {@code limiteAtingido} nulo: o limite não impede. */
+    private static List<String> motivos(Leitor leitor, LocalDate hoje, long atrasados, String limiteAtingido) {
         List<String> motivos = new ArrayList<>();
         if (!leitor.isAtivo()) {
             motivos.add("Leitor desativado.");
@@ -179,16 +229,13 @@ public class EmprestimoService {
         if (atrasados > 0) {
             motivos.add(atrasados == 1 ? "Tem 1 livro em atraso." : "Tem " + atrasados + " livros em atraso.");
         }
-        if (abertos + reservados >= limite) {
-            motivos.add("Já está com " + (abertos + reservados) + " de " + limite + " livros permitidos"
-                    + (reservados > 0 ? " (contando as reservas)." : "."));
+        if (limiteAtingido != null) {
+            motivos.add(limiteAtingido);
         }
         if (leitor.menorDeIdadeEm(hoje) && leitor.getResponsavel() == null) {
             motivos.add("Leitor menor de idade sem responsável. Complete o cadastro.");
         }
-        return new SituacaoLeitor(leitor.getId(), leitor.getNome(), leitor.isAtivo(),
-                leitor.bloqueadoEm(hoje) ? leitor.getBloqueadoAte() : null, abertos, atrasados, reservados,
-                abertos + reservados, limite, motivos.isEmpty(), List.copyOf(motivos));
+        return motivos;
     }
 
     private Emprestimo entidade(Long id) {

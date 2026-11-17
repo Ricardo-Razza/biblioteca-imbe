@@ -74,7 +74,9 @@ Um único app com duas áreas, cada uma com layout próprio e carregada sob dema
 | `/login` | Equipe | Login AD ou local |
 | `/painel/...` | Equipe | Gestão. Sem token, vai para `/login` |
 
-Na gestão, o acervo fica em `/painel/acervo` (lista e busca), `/painel/acervo/novo` (cadastro por ISBN), `/painel/acervo/{id}` (ficha com capa e exemplares) e `/painel/acervo/{id}/editar`. Leitores em `/painel/leitores` (busca por nome ou CPF), `/painel/leitores/novo`, `/painel/leitores/{id}` (ficha com situação, livros em uso e histórico) e `/painel/leitores/{id}/editar`. O balcão tem `/painel/emprestar` (escolhe o leitor, `?leitor=` vindo da ficha, e bipa os tombos em sequência) e `/painel/devolver` (bipa o tombo, Enter confere e Enter confirma; `?tombo=` vindo das listas), sempre à mão no topo da gestão. `/painel/emprestimos` lista em abas Ativos, Atrasados e Histórico, com filtro e renovação. `/painel/configuracoes` (só administrador) tem as abas Funcionários, Prazos e limites, Feriados e Auditoria; `/painel/senha` troca a própria senha (obrigatória com senha provisória: até trocar, a gestão só abre essa tela). Ações de administrador (mudar exemplar, desbloquear leitor) não aparecem para o atendente. Os itens do menu ainda não feitos mostram em que fase chegam. Até o site público (fase 4), `/` abre a gestão.
+Na gestão, o acervo fica em `/painel/acervo` (lista e busca), `/painel/acervo/novo` (cadastro por ISBN), `/painel/acervo/{id}` (ficha com capa e exemplares) e `/painel/acervo/{id}/editar`. Leitores em `/painel/leitores` (busca por nome ou CPF), `/painel/leitores/novo`, `/painel/leitores/{id}` (ficha com situação, livros em uso e histórico) e `/painel/leitores/{id}/editar`. O balcão tem `/painel/emprestar` (escolhe o leitor, `?leitor=` vindo da ficha, e bipa os tombos em sequência) e `/painel/devolver` (bipa o tombo, Enter confere e Enter confirma; `?tombo=` vindo das listas), sempre à mão no topo da gestão. `/painel/emprestimos` lista em abas Ativos, Atrasados e Histórico, com filtro e renovação. `/painel/configuracoes` (só administrador) tem as abas Funcionários, Prazos e limites, Feriados e Auditoria; `/painel/senha` troca a própria senha (obrigatória com senha provisória: até trocar, a gestão só abre essa tela). Ações de administrador (mudar exemplar, desbloquear leitor) não aparecem para o atendente. `/painel/reservas` tem as abas Para separar (por prazo, com tombo e localização; Entregar e Cancelar) e Histórico. Os itens do menu ainda não feitos mostram em que fase chegam.
+
+No site público, a busca e os filtros ficam na URL (`/?q=&assunto=&disponiveis=1&pagina=`). CPF e data de nascimento ficam só na memória da tela, nunca na URL nem no armazenamento do navegador.
 
 O Nginx devolve o `index.html` para qualquer rota que não seja arquivo nem `/api`, para os links funcionarem ao recarregar a página.
 
@@ -171,8 +173,21 @@ Proteções do site público:
 - Só expõe dados da obra e a quantidade disponível. Nunca leitor, empréstimo ou exemplar individual.
 - CPF e data de nascimento vão no corpo do POST, nunca na URL, e não entram em log.
 - Resposta genérica quando os dados não conferem ("CPF ou data de nascimento não conferem").
-- Limite de tentativas por IP e por CPF (Bucket4j). CAPTCHA a decidir.
+- Limite de tentativas por IP e por CPF. CAPTCHA a decidir.
 - A confirmação mostra só o primeiro nome do leitor.
+
+Como foi implementado (fase 4):
+
+- **Catálogo:** só aparece obra com algum exemplar disponível, reservado ou emprestado (sem exemplar, ou só com extraviados e baixados, fica de fora). A busca procura no título, subtítulo, autores e assuntos, sem diferenciar maiúsculas nem acentos. "Todos emprestados" quando não há exemplar disponível.
+- **Reserva:** mesmas regras do balcão (desativado, bloqueado, atraso, limite contando as reservas, menor sem responsável), com mensagens para o próprio leitor. Uma reserva aguardando por leitor e obra. O prazo conta `PRAZO_RETIRADA_RESERVA_DIAS_UTEIS` a partir de hoje (reserva na segunda: retira até quarta). O banco garante uma reserva aguardando por exemplar e por leitor e obra (colunas geradas + índice único).
+- **Protocolo:** 8 caracteres sem os que se confundem (0/O, 1/I/L), mostrado como `ABCD-2345`; aceito com ou sem hífen e em minúsculas.
+- **Retirada:** Entregar, na tela Reservas, ou bipar o tombo reservado no Emprestar para o próprio leitor: vira empréstimo com o mesmo exemplar. O limite não impede a retirada (a reserva já contava); bloqueio, atraso e desativação impedem. Exemplar reservado para outro leitor não sai no balcão. Com o prazo vencido e a reserva ainda não expirada, ainda dá para entregar.
+- **Expiração:** job de hora em hora (e ao subir a API) marca `EXPIRADA` as reservas com o prazo já passado e devolve o exemplar a `DISPONIVEL`.
+- **Cancelamento:** pelo leitor em "Minhas reservas" (protocolo de outro leitor responde como inexistente) ou pela equipe (fica na auditoria).
+- **Travas:** sempre exemplar antes de reserva, em todos os fluxos, para não haver impasse entre balcão, reserva e job.
+- **Limites:** por IP, 300 consultas por minuto e 20 identificações (reservar, consultar, cancelar) a cada 10 minutos; por CPF, 10 identificações a cada 10 minutos, de qualquer IP. Passou: 429 "Muitas tentativas". Contadores em memória (Caffeine), suficientes para uma instância da API; o IP vem do Nginx (`server.forward-headers-strategy: native`).
+- **Feriados nacionais:** importados da BrasilAPI (`/api/feriados/v1/{ano}`) para o ano atual e o próximo, ao subir a API e todo dia às 3h10, só quando o ano ainda não tem nenhum. O administrador também pode buscar na aba Feriados. Data já cadastrada como municipal não é sobrescrita.
+- **Rodapé e confirmação:** nome, endereço, horário e telefone vêm de `BIBLIOTECA_ENDERECO`, `BIBLIOTECA_HORARIO` e `BIBLIOTECA_TELEFONE` (vazios não aparecem); prazo e limite vêm dos parâmetros.
 
 ---
 
@@ -386,9 +401,9 @@ Como as regras foram implementadas (fase 2):
 | `GET /parametros` · `PUT /parametros/{chave}` | Prazos e limites | Atendente · Admin |
 | `GET /painel` | Indicadores e gráfico de 7 dias | Atendente |
 | `GET /relatorios/{tipo}.csv` | Exportações | Atendente |
-| `GET /reservas?status=` · `POST /reservas/{id}/retirada` · `POST /reservas/{id}/cancelamento` | Reservas na gestão | Atendente |
+| `GET /reservas?status=&leitorId=&q=` · `GET /reservas/{id}` · `POST /reservas/{id}/retirada` · `POST /reservas/{id}/cancelamento` | Reservas na gestão (`status` aceita vários; padrão aguardando) | Atendente |
 | `GET/POST /funcionarios`, `PUT /funcionarios/{id}`, `POST /funcionarios/{id}/senha-provisoria` | Funcionários | Admin |
-| `GET /feriados?ano=` · `POST /feriados`, `DELETE /feriados/{data}` | Feriados | Atendente · Admin |
+| `GET /feriados?ano=` · `POST /feriados`, `DELETE /feriados/{data}`, `POST /feriados/importacao?ano=` | Feriados (importação dos nacionais pela BrasilAPI) | Atendente · Admin |
 | `GET /auditoria?acao=` | Auditoria | Admin |
 
 ### Rotas públicas (`/api/v1/publico`, sem login, com limite por IP)
@@ -397,7 +412,8 @@ Como as regras foram implementadas (fase 2):
 | --- | --- |
 | `GET /publico/obras?q=&assunto=&disponiveis=true` | Catálogo paginado (só dados da obra e quantidade disponível) |
 | `GET /publico/obras/{id}` | Ficha do livro |
-| `GET /publico/assuntos` | Lista para os filtros |
+| `GET /publico/assuntos` | Lista para os filtros, com a quantidade de obras |
+| `GET /publico/biblioteca` | Nome, endereço, horário, telefone, prazo de retirada e limite de livros |
 | `POST /publico/reservas` | `{ obraId, cpf, dataNascimento }` → protocolo e prazo |
 | `POST /publico/reservas/consulta` | `{ cpf, dataNascimento }` → reservas do leitor |
 | `POST /publico/reservas/{protocolo}/cancelamento` | `{ cpf, dataNascimento }` |
@@ -418,6 +434,7 @@ Os erros seguem o `ProblemDetail` (RFC 9457) com mensagem em português. A docum
 | `ADMIN_INICIAL_SENHA` | Senha provisória do primeiro administrador (`admin`), usada só com o banco sem funcionários |
 | `GOOGLE_BOOKS_API_KEY` | Chave do Google Books |
 | `CAPAS_DIR` | Pasta das capas (padrão `/dados/capas`) |
+| `BIBLIOTECA_ENDERECO`, `BIBLIOTECA_HORARIO`, `BIBLIOTECA_TELEFONE` | Aparecem no rodapé do site e na confirmação da reserva |
 
 Nenhum segredo vai para o repositório. Em desenvolvimento, as variáveis ficam no `.env` da raiz, que o Compose e o backend leem; variáveis de ambiente reais têm prioridade sobre ele.
 
@@ -439,7 +456,7 @@ O `ng serve` repassa `/api` para `http://localhost:8080` (`frontend/proxy.conf.j
 - `develop`: onde o desenvolvimento acontece, com um commit por etapa.
 - `main`: só versões prontas, promovidas a partir da `develop` quando decidido.
 
-O servidor precisa de saída HTTPS para `brasilapi.com.br`, `www.googleapis.com`, `openlibrary.org`, `covers.openlibrary.org` e para a API de login AD.
+O servidor precisa de saída HTTPS para `brasilapi.com.br` (ISBN e feriados), `www.googleapis.com`, `openlibrary.org`, `covers.openlibrary.org` e para a API de login AD.
 
 ---
 
@@ -509,6 +526,8 @@ O servidor precisa de saída HTTPS para `brasilapi.com.br`, `www.googleapis.com`
 | 2026-11-17 | Balcão pensado para o leitor de código de barras: o campo do tombo fica sempre focado; na devolução, o primeiro Enter busca e o segundo confirma ("voltou em ordem" já marcado) |
 | 2026-11-17 | Login: JWT só com o id do funcionário, perfil e situação lidos do banco a cada requisição; senha provisória só permite trocar a senha; 5 erros travam o login por 15 min; contrato provisório da API do AD documentado no `ValidadorAd` |
 | 2026-11-17 | Primeiro administrador criado pela variável `ADMIN_INICIAL_SENHA` quando não há funcionários; token do front no `sessionStorage` |
+| 2026-11-17 | Site público: catálogo só com obras em circulação; protocolo de 8 caracteres; reserva bipada no balcão vira retirada; limite de livros não impede a retirada; expiração de hora em hora |
+| 2026-11-17 | Limite de tentativas do site em memória (Caffeine), por IP e por CPF, no lugar do Bucket4j; feriados nacionais da BrasilAPI importados sozinhos, sem sobrescrever os municipais |
 
 ## Documentação
 - Toda decisão nova ou mudança de escopo atualiza o README.md

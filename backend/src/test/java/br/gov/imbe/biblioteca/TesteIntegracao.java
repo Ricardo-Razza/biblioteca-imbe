@@ -14,8 +14,8 @@ import org.springframework.context.annotation.Import;
  * Todas as classes com esta anotação compartilham o mesmo contexto do Spring e o mesmo container.
  * Combine com {@code @Transactional} para desfazer o que cada teste grava.
  * <p>
- * As fontes de ISBN apontam para uma porta fechada: teste nunca acessa a internet (as fontes ficam
- * "indisponíveis"). Capas vão para {@code target/capas-teste}.
+ * As fontes de ISBN e a BrasilAPI de feriados apontam para uma porta fechada: teste nunca acessa a internet
+ * (as fontes ficam "indisponíveis"). Capas vão para {@code target/capas-teste}.
  */
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
@@ -24,6 +24,7 @@ import org.springframework.context.annotation.Import;
         "biblioteca.isbn.google-books.url=http://127.0.0.1:1",
         "biblioteca.isbn.open-library.url=http://127.0.0.1:1",
         "biblioteca.isbn.open-library.capas-url=http://127.0.0.1:1",
+        "biblioteca.feriados.url=http://127.0.0.1:1",
         "biblioteca.capas.diretorio=target/capas-teste",
         "biblioteca.auth.jwt.segredo=segredo-so-para-os-testes-0123456789abcdef"
 })

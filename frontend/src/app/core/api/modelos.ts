@@ -173,3 +173,78 @@ export interface Parametro {
   minimo: number;
   maximo: number;
 }
+
+export type StatusReserva = 'AGUARDANDO_RETIRADA' | 'RETIRADA' | 'CANCELADA' | 'EXPIRADA';
+
+/** Reserva na gestão. */
+export interface Reserva {
+  id: number;
+  protocolo: string;
+  status: StatusReserva;
+  obra: { id: number; titulo: string; autores: string[]; temCapa: boolean };
+  exemplar: { id: number; tombo: string; localizacao: string | null };
+  leitor: { id: number; nome: string; telefone: string | null };
+  criadaEm: string;
+  prazoRetirada: string;
+  /** Aguardando com o prazo já passado (ainda dá para entregar até o job expirar). */
+  prazoVencido: boolean;
+  finalizadaEm: string | null;
+  canceladaPor: 'LEITOR' | 'BIBLIOTECA' | null;
+  emprestimoId: number | null;
+  devolucaoPrevista: string | null;
+}
+
+// Site público: só dados da obra e quantos exemplares estão disponíveis.
+
+export interface ObraPublica {
+  id: number;
+  titulo: string;
+  subtitulo: string | null;
+  autores: string[];
+  ano: number | null;
+  temCapa: boolean;
+  disponiveis: number;
+}
+
+export interface ObraPublicaDetalhe extends ObraPublica {
+  isbn13: string;
+  editora: string | null;
+  paginas: number | null;
+  idioma: string | null;
+  sinopse: string | null;
+  assuntos: { id: number; nome: string }[];
+}
+
+export interface AssuntoPublico {
+  id: number;
+  nome: string;
+  obras: number;
+}
+
+export interface ReservaPublica {
+  protocolo: string;
+  status: StatusReserva;
+  obraId: number;
+  titulo: string;
+  autores: string[];
+  temCapa: boolean;
+  primeiroNome: string;
+  criadaEm: string;
+  prazoRetirada: string;
+  finalizadaEm: string | null;
+}
+
+export interface MinhasReservas {
+  primeiroNome: string;
+  reservas: ReservaPublica[];
+}
+
+/** Endereço, horário e telefone vêm vazios quando não configurados. */
+export interface DadosBiblioteca {
+  nome: string;
+  endereco: string;
+  horario: string;
+  telefone: string;
+  prazoRetiradaDiasUteis: number;
+  limiteLivros: number;
+}

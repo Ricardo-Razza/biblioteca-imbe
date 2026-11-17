@@ -23,7 +23,7 @@ cd frontend && ng test --watch=false
 
 - Um pacote por módulo (`isbn`, `acervo`, `leitor`, ...), cada um com `controller → service → repository`.
 - DTOs são `record`. Entidades JPA nunca saem na API.
-- Erros: lançar `RequisicaoInvalidaException` (400), `NaoAutenticadoException` (401), `RecursoNaoEncontradoException` (404), `ConflitoException` (409), `RegraNegocioException` (422) ou `IndisponivelException` (503), todas em `comum.erro`. O `TratadorGlobalDeErros` transforma em `ProblemDetail` com mensagem em português.
+- Erros: lançar `RequisicaoInvalidaException` (400), `NaoAutenticadoException` (401), `RecursoNaoEncontradoException` (404), `ConflitoException` (409), `RegraNegocioException` (422), `LimiteExcedidoException` (429) ou `IndisponivelException` (503), todas em `comum.erro`. O `TratadorGlobalDeErros` transforma em `ProblemDetail` com mensagem em português.
 - Flyway em `src/main/resources/db/migration`, `V{n}__descricao.sql`. **Migration já aplicada não se edita**: crie uma nova.
 - Hibernate roda com `ddl-auto: validate`. Toda mudança de esquema passa por migration.
 - Enums no banco são `VARCHAR` com `CHECK`, mapeados com `@Enumerated(EnumType.STRING)` **e** `@JdbcTypeCode(SqlTypes.VARCHAR)`: sem isso o Hibernate espera `ENUM` nativo do MySQL e o `validate` falha.
@@ -38,7 +38,10 @@ cd frontend && ng test --watch=false
 - Os contadores de exemplares da `Obra` são `@Formula`: só se atualizam ao recarregar a entidade. Em teste `@Transactional`, faça `em.flush()` e `em.clear()` antes de conferir.
 - Segurança: regras por rota no `SecurityConfig` (ADMIN inclui ATENDENTE). Quem está logado: `UsuarioAtual.id()`. Ação sensível nova registra em `Auditoria.registrar(...)`.
 - Testes de integração rodam autenticados com `@WithMockUser(roles = "ADMIN")` na classe; para testar login, token e perfil de verdade, use `Funcionarios.local(...)` e `Funcionarios.token(...)`. `@WebMvcTest` com o `SecurityConfig` precisa de `@MockitoBean JwtDecoder` e `@MockitoBean ConversorJwt`.
-- Nada com histórico é apagado (obra, exemplar, leitor): desativar ou dar baixa.
+- Nada com histórico é apagado (obra, exemplar, leitor, reserva): desativar ou dar baixa.
+- Reserva: travar sempre o exemplar antes da reserva (`ReservaRepository` explica). O balcão fala com a reserva só pela interface `ReservasAtivas`.
+- Testes do site público: use `Publico.ipNovo()` em cada teste (o limite por IP vive no contexto compartilhado) e CPFs novos de `Dados.cpf()`.
+- Tarefas agendadas (expiração de reservas, feriados) ficam no `AgendamentoConfig`; nos testes a BrasilAPI de feriados aponta para a porta fechada.
 
 ## Frontend
 

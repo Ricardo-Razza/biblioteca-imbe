@@ -8,7 +8,7 @@ import org.springframework.http.HttpStatus;
  */
 public abstract sealed class BibliotecaException extends RuntimeException
         permits RecursoNaoEncontradoException, RegraNegocioException, ConflitoException, RequisicaoInvalidaException,
-        NaoAutenticadoException, IndisponivelException {
+        NaoAutenticadoException, IndisponivelException, LimiteExcedidoException {
 
     private final HttpStatus status;
     private final String titulo;

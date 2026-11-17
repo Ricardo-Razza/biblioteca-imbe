@@ -10,8 +10,33 @@ const emBreve = (path: string, titulo: string, fase: number) => ({
 });
 
 export const routes: Routes = [
-  // Site público na fase 4. Até lá, a raiz abre a gestão.
-  { path: '', pathMatch: 'full', redirectTo: 'painel' },
+  {
+    path: '',
+    loadComponent: () => import('./publico/layout-publico').then((m) => m.LayoutPublico),
+    children: [
+      {
+        path: '',
+        pathMatch: 'full',
+        title: 'Catálogo · Biblioteca de Imbé',
+        loadComponent: () => import('./publico/catalogo/catalogo').then((m) => m.Catalogo),
+      },
+      {
+        path: 'livro/:id',
+        title: 'Livro · Biblioteca de Imbé',
+        loadComponent: () => import('./publico/livro/livro').then((m) => m.Livro),
+      },
+      {
+        path: 'reservar/:id',
+        title: 'Reservar · Biblioteca de Imbé',
+        loadComponent: () => import('./publico/reservar/reservar').then((m) => m.Reservar),
+      },
+      {
+        path: 'minhas-reservas',
+        title: 'Minhas reservas · Biblioteca de Imbé',
+        loadComponent: () => import('./publico/minhas-reservas/minhas-reservas').then((m) => m.MinhasReservas),
+      },
+    ],
+  },
   {
     path: 'login',
     title: 'Entrar · Biblioteca de Imbé',
@@ -49,7 +74,11 @@ export const routes: Routes = [
         title: 'Devolver · Biblioteca de Imbé',
         loadComponent: () => import('./gestao/balcao/devolver').then((m) => m.Devolver),
       },
-      emBreve('reservas', 'Reservas', 4),
+      {
+        path: 'reservas',
+        title: 'Reservas · Biblioteca de Imbé',
+        loadComponent: () => import('./gestao/reservas/reservas').then((m) => m.Reservas),
+      },
       emBreve('relatorios', 'Relatórios', 5),
       {
         path: 'configuracoes',
@@ -64,5 +93,5 @@ export const routes: Routes = [
       },
     ],
   },
-  { path: '**', redirectTo: 'painel' },
+  { path: '**', redirectTo: '' },
 ];

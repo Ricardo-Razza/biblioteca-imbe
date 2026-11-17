@@ -26,7 +26,14 @@ const DIAS = ['domingo', 'segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sáb
       <button mat-icon-button type="button" (click)="ano.set(ano() - 1)" aria-label="Ano anterior"><mat-icon>chevron_left</mat-icon></button>
       <h2>{{ ano() }}</h2>
       <button mat-icon-button type="button" (click)="ano.set(ano() + 1)" aria-label="Próximo ano"><mat-icon>chevron_right</mat-icon></button>
+      <button mat-stroked-button type="button" class="importar" [disabled]="ocupado()" (click)="importar()">
+        <mat-icon>cloud_download</mat-icon> Buscar nacionais de {{ ano() }}
+      </button>
     </div>
+    <p class="texto-secundario dica">Os nacionais são buscados sozinhos todo ano. O botão serve para conferir ou atualizar.</p>
+    @if (mensagem()) {
+      <p class="aviso ok" role="status"><mat-icon>check_circle</mat-icon> {{ mensagem() }}</p>
+    }
 
     @if (erro()) {
       <p class="aviso erro" role="alert"><mat-icon>error</mat-icon> {{ erro() }}</p>
@@ -89,6 +96,12 @@ const DIAS = ['domingo', 'segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sáb
       gap: 8px;
       margin: 8px 0;
     }
+    .importar {
+      margin-left: 16px;
+    }
+    .dica {
+      margin: 0 0 12px;
+    }
     .ano h2 {
       margin: 0;
       min-width: 56px;
@@ -132,6 +145,7 @@ export class AbaFeriados {
   protected readonly removendo = signal<Feriado | null>(null);
   protected readonly ocupado = signal(false);
   protected readonly erro = signal<string | null>(null);
+  protected readonly mensagem = signal<string | null>(null);
   protected readonly data = dataBr;
   protected readonly msg = mensagemDoCampo;
   protected readonly form = new FormGroup({
@@ -163,6 +177,28 @@ export class AbaFeriados {
         const ano = Number(f.data.slice(0, 4));
         if (ano === this.ano()) this.carregar(ano);
         else this.ano.set(ano);
+      },
+      error: (e) => {
+        this.ocupado.set(false);
+        this.erro.set(mensagemDeErro(e));
+      },
+    });
+  }
+
+  protected importar(): void {
+    const ano = this.ano();
+    this.ocupado.set(true);
+    this.erro.set(null);
+    this.mensagem.set(null);
+    this.api.importarFeriados(ano).subscribe({
+      next: (r) => {
+        this.ocupado.set(false);
+        this.mensagem.set(
+          r.novos || r.atualizados
+            ? `${ano}: ${r.novos} incluídos, ${r.atualizados} atualizados.`
+            : `${ano}: os feriados nacionais já estavam em dia.`,
+        );
+        this.carregar(ano);
       },
       error: (e) => {
         this.ocupado.set(false);

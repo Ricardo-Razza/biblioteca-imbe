@@ -22,7 +22,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
-/** Consulta: Atendente. Inclusão e remoção: Admin. */
+/** Consulta: Atendente. Inclusão, remoção e importação: Admin. */
 @RestController
 @RequestMapping("/api/v1/feriados")
 public class FeriadoController {
@@ -52,6 +52,12 @@ public class FeriadoController {
     @ResponseStatus(HttpStatus.CREATED)
     public FeriadoResposta incluir(@Valid @RequestBody FeriadoRequisicao req) {
         return servico.incluir(req.data(), req.descricao(), TipoFeriado.MUNICIPAL);
+    }
+
+    /** Busca os nacionais do ano na BrasilAPI ({@code ?ano=}, padrão: o atual). Os municipais não mudam. */
+    @PostMapping("/importacao")
+    public FeriadoService.Importacao importar(@RequestParam(required = false) Integer ano) {
+        return servico.importarNacionais(ano != null ? ano : LocalDate.now(relogio).getYear());
     }
 
     @DeleteMapping("/{data}")

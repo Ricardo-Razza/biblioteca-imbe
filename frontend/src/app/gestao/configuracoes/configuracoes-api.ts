@@ -78,6 +78,13 @@ export class ConfiguracoesApi {
     return this.http.post<Feriado>('/api/v1/feriados', { data, descricao });
   }
 
+  /** Feriados nacionais do ano pela BrasilAPI. Os municipais não mudam. */
+  importarFeriados(ano: number): Observable<{ ano: number; novos: number; atualizados: number }> {
+    return this.http.post<{ ano: number; novos: number; atualizados: number }>('/api/v1/feriados/importacao', null, {
+      params: { ano },
+    });
+  }
+
   removerFeriado(data: string): Observable<void> {
     return this.http.delete<void>(`/api/v1/feriados/${data}`);
   }

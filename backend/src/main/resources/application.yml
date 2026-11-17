@@ -68,6 +68,25 @@ biblioteca:
       login: ${ADMIN_INICIAL_LOGIN:admin}
       senha: ${ADMIN_INICIAL_SENHA:}
 
+  feriados:
+    # Feriados nacionais do ano (GET /api/feriados/v1/{ano})
+    url: https://brasilapi.com.br
+    timeout: 4s
+
+  publico:
+    # Aparece no rodapé do site e na confirmação da reserva; vazio não aparece
+    unidade:
+      nome: Biblioteca Municipal de Imbé
+      endereco: ${BIBLIOTECA_ENDERECO:}
+      horario: ${BIBLIOTECA_HORARIO:}
+      telefone: ${BIBLIOTECA_TELEFONE:}
+    # Por IP: navegação por minuto e identificações (CPF + nascimento) por janela; por CPF: identificações por janela
+    limites:
+      consultas-por-minuto: 300
+      identificacoes-por-ip: 20
+      identificacoes-por-cpf: 10
+      janela-identificacao: 10m
+
   capas:
     diretorio: ${CAPAS_DIR:/dados/capas}
     lado-maximo: 800
@@ -76,6 +95,8 @@ biblioteca:
     timeout: 4s
 
 server:
+  # Atrás do Nginx: o IP do cidadão (limite de tentativas) vem do X-Forwarded-For, aceito só de proxy interno
+  forward-headers-strategy: native
   error:
     include-message: never
     include-stacktrace: never
