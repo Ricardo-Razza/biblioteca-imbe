@@ -10,8 +10,24 @@ import org.springframework.boot.context.properties.bind.DefaultValue;
 @ConfigurationProperties("biblioteca.isbn")
 public record IsbnProperties(
         @DefaultValue("4s") Duration timeout,
-        @DefaultValue Fonte brasilapi) {
+        @DefaultValue("24h") Duration cacheTtl,
+        @DefaultValue BrasilApi brasilapi,
+        @DefaultValue GoogleBooks googleBooks,
+        @DefaultValue OpenLibrary openLibrary) {
 
-    public record Fonte(@DefaultValue("https://brasilapi.com.br") URI url) {
+    public record BrasilApi(@DefaultValue("https://brasilapi.com.br") URI url) {
+    }
+
+    /** @param chave {@code GOOGLE_BOOKS_API_KEY}; vazia funciona com cota menor */
+    public record GoogleBooks(@DefaultValue("https://www.googleapis.com") URI url, String chave) {
+
+        public boolean temChave() {
+            return chave != null && !chave.isBlank();
+        }
+    }
+
+    public record OpenLibrary(
+            @DefaultValue("https://openlibrary.org") URI url,
+            @DefaultValue("https://covers.openlibrary.org") URI capasUrl) {
     }
 }

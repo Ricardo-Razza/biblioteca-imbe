@@ -28,8 +28,16 @@ biblioteca:
   isbn:
     # Timeout de conexão e de leitura por fonte
     timeout: 4s
+    # Inclui "não encontrado"; resultado com fonte fora do ar não entra no cache
+    cache-ttl: 24h
     brasilapi:
       url: https://brasilapi.com.br
+    google-books:
+      url: https://www.googleapis.com
+      chave: ${GOOGLE_BOOKS_API_KEY:}
+    open-library:
+      url: https://openlibrary.org
+      capas-url: https://covers.openlibrary.org
 
 server:
   error:

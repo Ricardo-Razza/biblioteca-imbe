@@ -3,8 +3,6 @@ package br.gov.imbe.biblioteca.isbn.fonte;
 import java.util.List;
 import java.util.Optional;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
@@ -29,8 +27,6 @@ import br.gov.imbe.biblioteca.isbn.IsbnProvider;
 @Component
 @Order(1)
 public class BrasilApiProvider implements IsbnProvider {
-
-    private static final Logger log = LoggerFactory.getLogger(BrasilApiProvider.class);
 
     private final RestClient cliente;
 
@@ -61,8 +57,7 @@ public class BrasilApiProvider implements IsbnProvider {
                         return Optional.ofNullable(corpo).map(c -> converter(isbn, c)).filter(d -> d.titulo() != null);
                     });
         } catch (RestClientException e) {
-            log.warn("BrasilAPI falhou para o ISBN {}: {}", isbn, e.getMessage());
-            throw new FonteIsbnIndisponivelException(fonte(), e.getMessage(), e);
+            throw FonteIsbnIndisponivelException.de(fonte(), e);
         }
     }
 

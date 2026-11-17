@@ -10,7 +10,6 @@ import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMoc
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import java.net.URI;
 import java.time.Duration;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -25,7 +24,7 @@ import br.gov.imbe.biblioteca.isbn.DadosLivro;
 import br.gov.imbe.biblioteca.isbn.FonteIsbn;
 import br.gov.imbe.biblioteca.isbn.FonteIsbnIndisponivelException;
 import br.gov.imbe.biblioteca.isbn.Isbn;
-import br.gov.imbe.biblioteca.isbn.IsbnProperties;
+import br.gov.imbe.biblioteca.isbn.PropriedadesDeTeste;
 
 class BrasilApiProviderTest {
 
@@ -34,16 +33,13 @@ class BrasilApiProviderTest {
 
     private static final Isbn AKIRA = Isbn.de("9788545702870");
     private static final String CAMINHO = "/api/isbn/v1/9788545702870";
-    private static final Duration TIMEOUT = Duration.ofSeconds(2);
+    private static final Duration TIMEOUT = PropriedadesDeTeste.TIMEOUT;
 
     BrasilApiProvider provider;
 
     @BeforeEach
     void montar() {
-        // Folga para o primeiro request da JVM fria; o teste de timeout usa um atraso maior que isso
-        var propriedades = new IsbnProperties(TIMEOUT,
-                new IsbnProperties.Fonte(URI.create(api.baseUrl())));
-        provider = new BrasilApiProvider(RestClient.builder(), propriedades);
+        provider = new BrasilApiProvider(RestClient.builder(), PropriedadesDeTeste.apontandoPara(api.baseUrl()));
     }
 
     @Test
