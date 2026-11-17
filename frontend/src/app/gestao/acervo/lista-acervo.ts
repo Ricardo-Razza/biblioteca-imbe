@@ -11,6 +11,7 @@ import { mensagemDeErro } from '../../core/api/erro-api';
 import { PaginadorPtBr } from '../../core/paginador-pt-br';
 import { Obra, Pagina } from '../../core/api/modelos';
 import { CapaLivro } from '../../shared/capa-livro/capa-livro';
+import { Sessao } from '../../core/auth/sessao';
 import { AcervoApi } from './acervo-api';
 
 const TAMANHO = 20;
@@ -32,7 +33,12 @@ const TAMANHO = 20;
   template: `
     <div class="cabecalho">
       <h1>Acervo</h1>
-      <a mat-flat-button routerLink="novo"><mat-icon>add</mat-icon> Cadastrar livro</a>
+      <div class="acoes-cabecalho">
+        @if (sessao.admin()) {
+          <a mat-stroked-button routerLink="importar"><mat-icon>upload_file</mat-icon> Importar planilha</a>
+        }
+        <a mat-flat-button routerLink="novo"><mat-icon>add</mat-icon> Cadastrar livro</a>
+      </div>
     </div>
 
     <mat-form-field appearance="outline" class="busca" subscriptSizing="dynamic">
@@ -89,6 +95,11 @@ const TAMANHO = 20;
     }
   `,
   styles: `
+    .acoes-cabecalho {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
     .cabecalho {
       display: flex;
       justify-content: space-between;
@@ -145,6 +156,7 @@ export class ListaAcervo {
   readonly q = input<string>();
   readonly pagina = input<string>();
 
+  protected readonly sessao = inject(Sessao);
   private readonly api = inject(AcervoApi);
   private readonly router = inject(Router);
 

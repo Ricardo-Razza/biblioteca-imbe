@@ -31,7 +31,9 @@ biblioteca-imbe/
 │   ├── arquitetura.md
 │   ├── biblioteca-imbe.excalidraw
 │   └── referencia/       contrato da API de login AD, código de referência
+├── deploy/             backup.sh, restaurar.sh, certs/ (certificado HTTPS, fora do git)
 ├── docker-compose.yml    MySQL local (lê o .env)
+├── docker-compose.prod.yml  produção: MySQL + API + Nginx com HTTPS
 ├── .env.example          modelo do .env (o .env não vai para o git)
 ├── CLAUDE.md
 └── README.md
@@ -48,6 +50,7 @@ br.gov.imbe.biblioteca
 ├── reserva       reservas, expiração agendada, dias úteis e feriados
 ├── publico       endpoints do site público (catálogo e reserva)
 ├── relatorio     painel e exportações CSV
+├── importacao    carga do acervo por planilha de ISBNs
 ├── seguranca     login AD/local, JWT, funcionário, auditoria, limite de tentativas
 └── comum         erros (ProblemDetail), configuração, parâmetros
 ```
@@ -239,6 +242,24 @@ Detalhes de implementação:
 - `GET /isbn/{isbn}/capa` serve a prévia para o formulário de conferência, já baixada e processada pelo backend. O `POST /obras` com `fonteDados` de uma fonte grava essa mesma capa logo depois do cadastro. Se falhar, a obra fica sem capa e o funcionário envia uma foto em `POST /obras/{id}/capa`.
 - O download da capa externa só aceita http/https e `image/*` até 5 MB, e recusa endereços da rede interna, inclusive por redirecionamento.
 
+### Importação em lote (carga inicial)
+
+Para cadastrar o acervo que já existe sem bipar livro por livro. Em `/painel/acervo/importar` (só administrador) envia-se um CSV ou TXT com uma linha por exemplar:
+
+```text
+ISBN;Tombo;Localização
+9788535914849;000123;Estante 4
+8535902775;000125
+```
+
+- Tombo e localização são opcionais; sem tombo, só a obra é cadastrada. Aceita `;`, `,` ou tabulação, UTF-8 ou o Windows-1252 do Excel, cabeçalho opcional, até 5.000 linhas (1 MB) por arquivo.
+- O que dá para conferir na hora vira erro da linha antes de processar: ISBN inválido, ISBN que o Excel transformou em número (`9,78857E+12`), tombo fora do formato, tombo repetido no arquivo.
+- O processamento roda em segundo plano, uma planilha de cada vez e uma linha por vez, com 500 ms entre consultas às fontes (`biblioteca.importacao.intervalo`) para não esgotar as cotas. A tela mostra o progresso e pode ser fechada. Se a API reiniciar, continua de onde parou.
+- Cada linha termina como: **Cadastrado** (obra nova com os dados e a capa da fonte, mais o exemplar), **Exemplar incluído** (a obra já existia), **Já no acervo** (obra existente, linha sem tombo), **Não encontrado** (nenhuma fonte conhece: cadastrar à mão), **Fonte fora do ar** (dá para tentar de novo com um botão) ou **Erro** (com o motivo).
+- Diferente do cadastro na tela, aqui ninguém confere os dados antes: texto maior que os limites do formulário é cortado e ano ou páginas fora da faixa ficam vazios. Vale revisar por amostragem depois.
+- Cada linha é uma transação: obra e exemplar entram juntos ou nenhum entra. O envio fica na auditoria (`IMPORTACAO_INICIADA`).
+- Tabelas `importacao` e `importacao_item` (migration V5), mantidas como histórico.
+
 ---
 
 ## Modelo de dados
@@ -429,6 +450,7 @@ Como as regras foram implementadas (fase 2):
 | `GET/POST /funcionarios`, `PUT /funcionarios/{id}`, `POST /funcionarios/{id}/senha-provisoria` | Funcionários | Admin |
 | `GET /feriados?ano=` · `POST /feriados`, `DELETE /feriados/{data}`, `POST /feriados/importacao?ano=` | Feriados (importação dos nacionais pela BrasilAPI) | Atendente · Admin |
 | `GET /auditoria?acao=` | Auditoria | Admin |
+| `POST /importacoes` (multipart `arquivo`) · `GET /importacoes` · `GET /importacoes/{id}` · `GET /importacoes/{id}/itens?resultado=` · `POST /importacoes/{id}/nova-tentativa` | Carga do acervo por planilha de ISBNs | Admin |
 
 ### Rotas públicas (`/api/v1/publico`, sem login, com limite por IP)
 
@@ -458,6 +480,7 @@ Os erros seguem o `ProblemDetail` (RFC 9457) com mensagem em português. A docum
 | `ADMIN_INICIAL_SENHA` | Senha provisória do primeiro administrador (`admin`), usada só com o banco sem funcionários |
 | `GOOGLE_BOOKS_API_KEY` | Chave do Google Books |
 | `CAPAS_DIR` | Pasta das capas (padrão `/dados/capas`) |
+| `DOMINIO` | Endereço do site no `docker-compose.prod.yml` (`server_name` do Nginx) |
 | `BIBLIOTECA_ENDERECO`, `BIBLIOTECA_HORARIO`, `BIBLIOTECA_TELEFONE` | Aparecem no rodapé do site e na confirmação da reserva |
 
 Nenhum segredo vai para o repositório. Em desenvolvimento, as variáveis ficam no `.env` da raiz, que o Compose e o backend leem; variáveis de ambiente reais têm prioridade sobre ele.
@@ -474,6 +497,42 @@ cd frontend && ng serve              # Front em http://localhost:4200
 Testes: `cd backend && ./mvnw verify` (precisa do Docker rodando, por causa do Testcontainers) · `cd frontend && ng test --watch=false`
 
 O `ng serve` repassa `/api` para `http://localhost:8080` (`frontend/proxy.conf.json`).
+
+## Implantação
+
+Servidor Linux com Docker e Docker Compose. Tudo sobe com o `docker-compose.prod.yml`:
+
+| Serviço | Imagem | O que faz |
+| --- | --- | --- |
+| `mysql` | `mysql:8.4` | Banco, no volume `mysql-dados`. Sem porta exposta |
+| `backend` | `backend/Dockerfile` (Temurin 25, usuário sem privilégios) | API na porta 8080 da rede interna; capas no volume `capas` |
+| `web` | `frontend/Dockerfile` (Nginx 1.28) | Serve o Angular, encaminha `/api` para o backend, HTTPS nas portas 80 e 443 |
+
+Primeira subida:
+
+```bash
+git clone <repositório> /opt/biblioteca-imbe && cd /opt/biblioteca-imbe
+git checkout main
+cp .env.example .env            # preencher: senhas, JWT_SECRET, ADMIN_INICIAL_SENHA, DOMINIO, dados da biblioteca
+cp <certificado> deploy/certs/fullchain.pem && cp <chave> deploy/certs/privkey.pem
+docker compose -f docker-compose.prod.yml up -d --build
+```
+
+Depois, entrar em `https://{DOMINIO}/login` com `admin` e a senha provisória, trocar a senha, cadastrar os funcionários, conferir os feriados municipais e importar a planilha do acervo.
+
+Atualização: `git pull && docker compose -f docker-compose.prod.yml up -d --build` (as migrations do Flyway rodam sozinhas na subida da API). Rodar `./mvnw verify` antes, numa máquina com Docker: a imagem não roda os testes.
+
+**HTTPS.** O Nginx lê `deploy/certs/fullchain.pem` e `privkey.pem` (fora do git). O certificado vem da TI da Prefeitura ou do Let's Encrypt: a porta 80 já serve `/.well-known/acme-challenge/` a partir de `deploy/certbot`, então `certbot certonly --webroot -w deploy/certbot -d biblioteca.imbe.rs.gov.br` funciona com o site no ar (copiar os arquivos gerados para `deploy/certs` e `docker compose -f docker-compose.prod.yml restart web`). Para homologação, um certificado provisório:
+
+```bash
+openssl req -x509 -newkey rsa:2048 -nodes -days 90 -subj "/CN=localhost"   -keyout deploy/certs/privkey.pem -out deploy/certs/fullchain.pem
+```
+
+O Nginx manda HTTP para HTTPS, liga HSTS, CSP (só as fontes do Google como origem externa), `X-Frame-Options` e `nosniff`, guarda em cache por um ano os arquivos com hash do build e nunca o `index.html`. Ele **substitui** o `X-Forwarded-For` pelo IP de quem conectou, para o limite de tentativas do site não ser enganado. Se a Prefeitura já tiver um proxy na frente, esse proxy é quem precisa passar o IP real (e o Nginx passa a confiar só nele, com `set_real_ip_from`).
+
+**Backup.** `deploy/backup.sh` grava `banco_{data}.sql.gz` (mysqldump com `--single-transaction`, sem parar o sistema) e `capas_{data}.tar.gz` em `./backups` (ou `BACKUP_DIR`) e apaga os mais velhos que `BACKUP_DIAS` (30). Agendar no cron do servidor (`0 2 * * * cd /opt/biblioteca-imbe && deploy/backup.sh`) e copiar a pasta para fora do servidor. `deploy/restaurar.sh <banco> <capas>` volta um backup (pede confirmação digitada, porque apaga o atual). Testar a restauração na homologação antes de precisar dela.
+
+Logs: `docker compose -f docker-compose.prod.yml logs -f backend` (limitados a 5 arquivos de 20 MB por serviço).
 
 ## Branches
 
@@ -516,7 +575,9 @@ O servidor precisa de saída HTTPS para `brasilapi.com.br` (ISBN e feriados), `w
 - [ ] Contrato da API de login AD: endpoint, campos, respostas de erro, certificado e validade do Bearer.
 - [ ] Prazo, limite de livros e penalidade por atraso, a confirmar com a Secretaria de Cultura.
 - [ ] Onde o sistema vai rodar, se há saída para a internet e a publicação de `biblioteca.imbe.rs.gov.br` (DNS e certificado) com a TI.
-- [ ] Tamanho do acervo atual e se há planilha para importar.
+- [ ] Tamanho do acervo atual e se há planilha para importar (a importação aceita CSV com ISBN, tombo e localização).
+- [ ] Certificado HTTPS (TI da Prefeitura ou Let's Encrypt) e destino da cópia externa dos backups.
+- [ ] Servir as fontes (Roboto e Material Symbols) do próprio servidor em vez do Google, se o DPO pedir.
 - [ ] Padrão de numeração do tombo e etiquetas (o sistema já aceita letras, números, ponto e hífen).
 - [ ] Compra de leitor de código de barras USB.
 - [ ] Cores oficiais e logo da Prefeitura em alta resolução.
@@ -553,6 +614,8 @@ O servidor precisa de saída HTTPS para `brasilapi.com.br` (ISBN e feriados), `w
 | 2026-11-17 | Site público: catálogo só com obras em circulação; protocolo de 8 caracteres; reserva bipada no balcão vira retirada; limite de livros não impede a retirada; expiração de hora em hora |
 | 2026-11-17 | Limite de tentativas do site em memória (Caffeine), por IP e por CPF, no lugar do Bucket4j; feriados nacionais da BrasilAPI importados sozinhos, sem sobrescrever os municipais |
 | 2026-11-17 | Painel e relatórios por SQL direto; CSV com BOM, `;` e proteção contra fórmula; sem CPF nos relatórios; exportação auditada; gestão abre na tela Início |
+| 2026-11-17 | Importação em lote por CSV (ISBN;tombo;localização), processada em segundo plano linha a linha, sem conferência humana; ISBN não encontrado fica para o cadastro manual; só administrador |
+| 2026-11-17 | Implantação em Docker Compose (MySQL, API, Nginx com HTTPS); certificado fora do git; backup diário por script com mysqldump e capas, retenção de 30 dias |
 
 ## Documentação
 - Toda decisão nova ou mudança de escopo atualiza o README.md

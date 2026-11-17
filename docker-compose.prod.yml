@@ -1,0 +1,76 @@
+# Produção (e homologação): MySQL + API + Nginx com HTTPS. Lê o .env da raiz (ver .env.example).
+#   docker compose -f docker-compose.prod.yml up -d --build
+# Só o Nginx fica exposto (80 e 443); banco e API ficam na rede interna do Compose.
+name: biblioteca
+
+services:
+  mysql:
+    image: mysql:8.4
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: biblioteca
+      MYSQL_USER: ${DB_USER:?defina DB_USER no .env}
+      MYSQL_PASSWORD: ${DB_PASSWORD:?defina DB_PASSWORD no .env}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?defina MYSQL_ROOT_PASSWORD no .env}
+      TZ: America/Sao_Paulo
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_0900_ai_ci
+    volumes:
+      - mysql-dados:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build: ./backend
+    image: biblioteca-backend
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      DB_URL: jdbc:mysql://mysql:3306/biblioteca
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET:?defina JWT_SECRET no .env}
+      GOOGLE_BOOKS_API_KEY: ${GOOGLE_BOOKS_API_KEY:-}
+      AD_AUTH_URL: ${AD_AUTH_URL:-}
+      AD_AUTH_TOKEN: ${AD_AUTH_TOKEN:-}
+      ADMIN_INICIAL_SENHA: ${ADMIN_INICIAL_SENHA:-}
+      BIBLIOTECA_ENDERECO: ${BIBLIOTECA_ENDERECO:-}
+      BIBLIOTECA_HORARIO: ${BIBLIOTECA_HORARIO:-}
+      BIBLIOTECA_TELEFONE: ${BIBLIOTECA_TELEFONE:-}
+    volumes:
+      - capas:/dados/capas
+    logging:
+      driver: json-file
+      options:
+        max-size: 20m
+        max-file: "5"
+
+  web:
+    build: ./frontend
+    image: biblioteca-web
+    restart: unless-stopped
+    depends_on:
+      - backend
+    environment:
+      DOMINIO: ${DOMINIO:?defina DOMINIO no .env}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./deploy/certs:/etc/nginx/certs:ro
+      - ./deploy/certbot:/var/www/certbot:ro
+    logging:
+      driver: json-file
+      options:
+        max-size: 20m
+        max-file: "5"
+
+volumes:
+  mysql-dados:
+  capas:

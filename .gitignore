@@ -9,3 +9,8 @@
 *.iml
 .DS_Store
 Thumbs.db
+
+# Implantação: certificados, desafio do certbot e backups ficam só no servidor
+/deploy/certs/*.pem
+/deploy/certbot/
+/backups/

@@ -12,6 +12,7 @@ cd backend && ./mvnw verify          # testes (Testcontainers: precisa do Docker
 cd frontend && ng serve              # http://localhost:4200, /api vai para o 8080
 cd frontend && ng build
 cd frontend && ng test --watch=false
+docker compose -f docker-compose.prod.yml up -d --build   # produção (precisa de .env com DOMINIO e de deploy/certs)
 ```
 
 ## Git
@@ -42,6 +43,8 @@ cd frontend && ng test --watch=false
 - Reserva: travar sempre o exemplar antes da reserva (`ReservaRepository` explica). O balcão fala com a reserva só pela interface `ReservasAtivas`.
 - Testes do site público: use `Publico.ipNovo()` em cada teste (o limite por IP vive no contexto compartilhado) e CPFs novos de `Dados.cpf()`.
 - Painel e relatórios (`relatorio`) leem por SQL direto (`JdbcClient`): em teste `@Transactional`, `em.flush()` antes de consultar. CSV sempre pela classe `Csv` (BOM, `;`, proteção contra fórmula); CPF não sai em relatório.
+- Importação em lote (`importacao`): o `ProcessadorDeImportacao` roda numa thread própria depois do commit. Nos testes o commit não acontece: chame `processador.processarTudo(id)` direto e faça `em.flush()`/`em.clear()` antes de conferir.
+- Produção: `docker-compose.prod.yml` + `deploy/`. Scripts, Dockerfiles e confs do Nginx ficam com LF (`.gitattributes`).
 - Tarefas agendadas (expiração de reservas, feriados) ficam no `AgendamentoConfig`; nos testes a BrasilAPI de feriados aponta para a porta fechada.
 
 ## Frontend

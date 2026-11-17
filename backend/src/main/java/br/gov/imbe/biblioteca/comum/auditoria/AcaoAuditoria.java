@@ -16,7 +16,8 @@ public enum AcaoAuditoria {
     LEITOR_DESBLOQUEADO("Desbloqueou leitor"),
     EXEMPLAR_ALTERADO("Alterou exemplar"),
     RESERVA_CANCELADA("Cancelou reserva"),
-    RELATORIO_EXPORTADO("Exportou relatório");
+    RELATORIO_EXPORTADO("Exportou relatório"),
+    IMPORTACAO_INICIADA("Importou planilha de ISBNs");
 
     private final String descricao;
 

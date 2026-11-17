@@ -87,6 +87,10 @@ biblioteca:
       identificacoes-por-cpf: 10
       janela-identificacao: 10m
 
+  importacao:
+    # Espera entre uma consulta às fontes e a próxima, para não esgotar a cota das APIs
+    intervalo: 500ms
+
   capas:
     diretorio: ${CAPAS_DIR:/dados/capas}
     lado-maximo: 800

@@ -26,6 +26,7 @@ import org.springframework.context.annotation.Import;
         "biblioteca.isbn.open-library.capas-url=http://127.0.0.1:1",
         "biblioteca.feriados.url=http://127.0.0.1:1",
         "biblioteca.capas.diretorio=target/capas-teste",
+        "biblioteca.importacao.intervalo=0ms",
         "biblioteca.auth.jwt.segredo=segredo-so-para-os-testes-0123456789abcdef"
 })
 @AutoConfigureMockMvc
