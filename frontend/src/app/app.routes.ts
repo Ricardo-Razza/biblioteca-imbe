@@ -20,8 +20,25 @@ export const routes: Routes = [
         path: 'acervo',
         loadChildren: () => import('./gestao/acervo/acervo.routes').then((m) => m.ACERVO_ROUTES),
       },
-      emBreve('leitores', 'Leitores', 2),
-      emBreve('emprestimos', 'Empréstimos', 2),
+      {
+        path: 'leitores',
+        loadChildren: () => import('./gestao/leitores/leitores.routes').then((m) => m.LEITORES_ROUTES),
+      },
+      {
+        path: 'emprestimos',
+        title: 'Empréstimos · Biblioteca de Imbé',
+        loadComponent: () => import('./gestao/emprestimos/lista-emprestimos').then((m) => m.ListaEmprestimos),
+      },
+      {
+        path: 'emprestar',
+        title: 'Emprestar · Biblioteca de Imbé',
+        loadComponent: () => import('./gestao/balcao/emprestar').then((m) => m.Emprestar),
+      },
+      {
+        path: 'devolver',
+        title: 'Devolver · Biblioteca de Imbé',
+        loadComponent: () => import('./gestao/balcao/devolver').then((m) => m.Devolver),
+      },
       emBreve('reservas', 'Reservas', 4),
       emBreve('relatorios', 'Relatórios', 5),
       emBreve('configuracoes', 'Configurações', 3),

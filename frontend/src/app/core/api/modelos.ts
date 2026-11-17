@@ -104,3 +104,72 @@ export const NOME_FONTE: Record<FonteIsbn, string> = {
   OPEN_LIBRARY: 'Open Library',
   MANUAL: 'Cadastro manual',
 };
+
+export interface LeitorRequisicao {
+  nome: string;
+  cpf: string;
+  dataNascimento: string;
+  telefone: string | null;
+  email: string | null;
+  endereco: string | null;
+  responsavel: string | null;
+  ativo?: boolean;
+}
+
+export interface Leitor {
+  id: number;
+  nome: string;
+  cpf: string;
+  dataNascimento: string;
+  telefone: string | null;
+  email: string | null;
+  endereco: string | null;
+  responsavel: string | null;
+  ativo: boolean;
+  menorDeIdade: boolean;
+  /** Só quando bloqueado hoje. */
+  bloqueadoAte: string | null;
+  criadoEm: string;
+}
+
+export interface SituacaoLeitor {
+  leitorId: number;
+  nome: string;
+  ativo: boolean;
+  bloqueadoAte: string | null;
+  emprestimosEmAberto: number;
+  atrasados: number;
+  reservasAguardando: number;
+  livrosEmUso: number;
+  limite: number;
+  podeEmprestar: boolean;
+  motivos: string[];
+}
+
+export type StatusEmprestimo = 'ATIVO' | 'ATRASADO' | 'DEVOLVIDO';
+export type OcorrenciaDevolucao = 'DANIFICADO' | 'EXTRAVIADO';
+
+export interface Emprestimo {
+  id: number;
+  exemplar: { id: number; tombo: string; obraId: number; titulo: string; autores: string[]; obraTemCapa: boolean };
+  leitor: { id: number; nome: string };
+  dataSaida: string;
+  dataPrevista: string;
+  dataDevolucao: string | null;
+  renovacoes: number;
+  renovacoesRestantes: number;
+  diasAtraso: number;
+  status: StatusEmprestimo;
+  ocorrenciaDevolucao: OcorrenciaDevolucao | null;
+  observacao: string | null;
+  /** Só na resposta da devolução com atraso. */
+  bloqueadoAte: string | null;
+}
+
+export interface Parametro {
+  chave: string;
+  valor: number;
+  descricao: string;
+  minimo: number;
+  maximo: number;
+}

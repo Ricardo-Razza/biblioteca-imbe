@@ -74,7 +74,7 @@ Um único app com duas áreas, cada uma com layout próprio e carregada sob dema
 | `/login` | Equipe | Login AD ou local |
 | `/painel/...` | Equipe | Gestão. Sem token, vai para `/login` |
 
-Na gestão, o acervo fica em `/painel/acervo` (lista e busca), `/painel/acervo/novo` (cadastro por ISBN), `/painel/acervo/{id}` (ficha com capa e exemplares) e `/painel/acervo/{id}/editar`. Os itens do menu ainda não feitos mostram em que fase chegam. Até o login (fase 3), `/` abre a gestão.
+Na gestão, o acervo fica em `/painel/acervo` (lista e busca), `/painel/acervo/novo` (cadastro por ISBN), `/painel/acervo/{id}` (ficha com capa e exemplares) e `/painel/acervo/{id}/editar`. Leitores em `/painel/leitores` (busca por nome ou CPF), `/painel/leitores/novo`, `/painel/leitores/{id}` (ficha com situação, livros em uso e histórico) e `/painel/leitores/{id}/editar`. O balcão tem `/painel/emprestar` (escolhe o leitor, `?leitor=` vindo da ficha, e bipa os tombos em sequência) e `/painel/devolver` (bipa o tombo, Enter confere e Enter confirma; `?tombo=` vindo das listas), sempre à mão no topo da gestão. `/painel/emprestimos` lista em abas Ativos, Atrasados e Histórico, com filtro e renovação. Os itens do menu ainda não feitos mostram em que fase chegam. Até o login (fase 3), `/` abre a gestão.
 
 O Nginx devolve o `index.html` para qualquer rota que não seja arquivo nem `/api`, para os links funcionarem ao recarregar a página.
 
@@ -491,6 +491,7 @@ O servidor precisa de saída HTTPS para `brasilapi.com.br`, `www.googleapis.com`
 | 2026-11-17 | Prazos em dias úteis (seg a sex, sem feriados); bloqueio de N dias contando o dia da devolução; renovação conta do dia da renovação; CPF obrigatório também para crianças |
 | 2026-11-17 | Tela de cadastro: busca pelo ISBN, conferência em formulário de uma coluna, foto da capa opcional; o ISBN aparece sem hífens (a hifenização correta depende da tabela de faixas do ISBN) |
 | 2026-11-17 | Exemplar: tombo alfanumérico com ponto e hífen, em maiúsculas; mudança manual de situação só para extravio, baixa ou volta de extraviado; baixa é definitiva; total da obra sem os baixados |
+| 2026-11-17 | Balcão pensado para o leitor de código de barras: o campo do tombo fica sempre focado; na devolução, o primeiro Enter busca e o segundo confirma ("voltou em ordem" já marcado) |
 
 ## Documentação
 - Toda decisão nova ou mudança de escopo atualiza o README.md
