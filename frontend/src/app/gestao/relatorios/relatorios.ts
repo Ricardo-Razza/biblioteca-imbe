@@ -127,6 +127,7 @@ export function nomeDoArquivo(disposicao: string | null, padrao: string): string
     .periodo {
       display: flex;
       flex-direction: column;
+      gap: 16px;
       max-width: 360px;
       margin-bottom: 16px;
     }
@@ -134,7 +135,7 @@ export function nomeDoArquivo(disposicao: string | null, padrao: string): string
       margin: 0;
     }
     .periodo p {
-      margin: 2px 0 12px;
+      margin: -12px 0 4px;
     }
     .atalhos {
       display: flex;

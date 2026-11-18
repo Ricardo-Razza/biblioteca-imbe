@@ -593,7 +593,7 @@ O servidor precisa de saída HTTPS para `brasilapi.com.br` (ISBN e feriados), `w
 - Menu da gestão com 7 itens: Início, Acervo, Leitores, Empréstimos (abas Ativos, Atrasados e Histórico), Reservas, Relatórios e Configurações.
 - A tela Início também mostra as reservas para separar.
 - **Site público:** pensado primeiro para celular. Logo da Prefeitura e uma busca grande no topo; grade de capas com "3 disponíveis" ou "Todos emprestados"; ficha do livro com um único botão Reservar; rodapé com contato da biblioteca, como reservar e acesso rápido.
-- Capa em miniatura nas listas. Texto base de 15 a 16 px. Formulários em uma coluna.
+- Capa em miniatura nas listas. Texto base de 15 a 16 px. Formulários em uma coluna (`.coluna`), com 20 px entre os campos; a dica e o erro de cada campo ocupam a altura que precisarem (`subscriptSizing: 'dynamic'` como padrão no `app.config.ts`), para texto de duas linhas não invadir o campo de baixo. Rótulo longo (como a descrição dos parâmetros) fica acima do campo, não dentro.
 - Mensagens e confirmações dentro da tela, nunca `alert()` ou `confirm()`.
 - **Identidade visual: Manual de Marca da Prefeitura de Imbé (2021-2028).**
   - Cores: azul da marca `#006EB7` como principal, azul-claro `#47BAEC`, marinho `#1F305F`, cinza `#677A90` e o sol de `#FBBC43` a `#EC5F65`. O tema do Material é gerado em `frontend/src/styles/_theme-colors.scss` (comando no `styles.scss`) e as cores da marca ficam em variáveis `--marca-*`.
@@ -673,6 +673,7 @@ O servidor precisa de saída HTTPS para `brasilapi.com.br` (ISBN e feriados), `w
 | 2026-11-17 | Implantação pelo Portainer com imagens do ghcr.io publicadas pelo GitHub Actions (testes antes; `latest` = main; webhook opcional); Nginx com `HTTPS=sim` (certificado próprio) ou `HTTPS=nao` (atrás de proxy, IP real só de `PROXY_CONFIAVEL`) |
 | 2026-11-17 | Cabeçalho do site público com foto das estantes da biblioteca ao fundo, sob véu branco para a marca continuar legível (`public/imagens/cabecalho-livros.jpg`, 1920 px, sem metadados) |
 | 2026-11-17 | Responsivo em qualquer aparelho (280 px a 1920 px sem rolagem lateral): `box-sizing: border-box` global, colunas da grade do catálogo que encolhem, barra da gestão que quebra linha no celular |
+| 2026-11-18 | Build de produção sem CSS crítico em linha (`inlineCritical: false`): o script que o Angular injeta para carregar o `styles.css` é bloqueado pela CSP (`script-src 'self'`), e sem ele o CSS global (formulários em coluna, avisos, espaçamentos) não carregava. Campos com 20 px de folga e dica de altura dinâmica |
 
 ## Documentação
 - Toda decisão nova ou mudança de escopo atualiza o README.md

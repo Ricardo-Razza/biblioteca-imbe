@@ -53,6 +53,8 @@ docker compose -f docker-compose.prod.yml up -d --build   # produção (precisa 
 - Pastas `publico`, `gestao`, `core`, `shared` (ver README).
 - Chamadas sempre para `/api/v1/...` (caminho relativo).
 - Diretrizes visuais no README: sem emojis, Material Symbols, sem `alert()`/`confirm()`.
+- **Não ligar `inlineCritical`** no `angular.json`: o script em linha que ele gera é bloqueado pela CSP do Nginx e o CSS global some só em produção (no `ng serve` funciona). Conferir visual de produção pela imagem do Nginx, não só pelo `ng serve`.
+- Formulário: `<form class="coluna">`. Campos lado a lado só em grid com `minmax(min(140px, 100%), 1fr)` e `gap: 20px`. Rótulo que não cabe em ~25 caracteres vai acima do campo, não em `mat-label` (seria cortado no celular).
 - **Sempre responsivo**, de 280 px a telas grandes, sem rolagem lateral da página. Em grid, colunas com `minmax(0, 1fr)` ou `minmax(min(150px, 100%), 1fr)` (só `1fr` não encolhe abaixo do texto mais longo); filho de flex/grid com texto cortado leva `min-width: 0`; linha de lista (capa, texto, selo, botões) é `flex-wrap: wrap` com o texto em `flex: 1 1 200px`, ou container query, nunca só `@media` (na gestão o menu come parte da largura); tabela larga dentro de um contêiner com `overflow-x: auto`. Conferir toda tela nova em 320, 375, 768 e 1280 px.
 - Visual segue o Manual de Marca da Prefeitura: cores por `var(--marca-*)` ou pelos tokens do Material (nada de hex solto em componente), marca da Prefeitura sempre pelo `app-assinatura` ou pelos PNG de `public/marca/`, respeitando a largura mínima do manual.
 

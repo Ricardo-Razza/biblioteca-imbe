@@ -161,7 +161,7 @@ import { LeitoresApi } from './leitores-api';
     }
     .dados {
       display: grid;
-      grid-template-columns: max-content 1fr;
+      grid-template-columns: max-content minmax(0, 1fr);
       gap: 4px 16px;
       margin: 16px 0 24px;
     }
@@ -170,6 +170,7 @@ import { LeitoresApi } from './leitores-api';
     }
     dd {
       margin: 0;
+      overflow-wrap: anywhere;
     }
     h2 {
       margin: 24px 0 8px;
