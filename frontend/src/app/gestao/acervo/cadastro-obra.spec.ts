@@ -71,8 +71,9 @@ describe('CadastroObra', () => {
       fontes: ['BRASILAPI', 'OPEN_LIBRARY'],
       fontesIndisponiveis: ['GOOGLE_BOOKS'],
     });
-    expect(texto()).toContain('Dados de BrasilAPI e Open Library');
-    expect(texto()).toContain('Sem resposta de Google Books');
+    // A equipe não precisa saber de onde vieram os dados: nenhum nome de fonte aparece.
+    expect(texto()).toContain('Livro encontrado');
+    expect(texto()).not.toMatch(/BrasilAPI|Open Library|Google Books|Sem resposta/);
     const titulo = fixture.nativeElement.querySelector('input[formcontrolname="titulo"]') as HTMLInputElement;
     expect(titulo.value).toBe('Ensaio sobre a cegueira');
     const capa = fixture.nativeElement.querySelector('app-capa-livro img') as HTMLImageElement;
@@ -104,8 +105,22 @@ describe('CadastroObra', () => {
       fontes: [],
       fontesIndisponiveis: [],
     });
-    expect(texto()).toContain('Nenhuma fonte conhece este ISBN');
+    expect(texto()).toContain('Não encontramos os dados deste livro');
     expect(fixture.nativeElement.querySelector('app-capa-livro img')).toBeNull();
     expect(texto()).toContain('Enviar foto');
+  });
+
+  it('não encontrado com busca fora do ar: oferece tentar de novo, sem nomear a fonte', async () => {
+    await bipar('9788535902778', {
+      isbn13: '9788535902778',
+      obraId: null,
+      encontrado: false,
+      dados: null,
+      fontes: [],
+      fontesIndisponiveis: ['GOOGLE_BOOKS'],
+    });
+    expect(texto()).toContain('Não foi possível buscar os dados deste livro agora');
+    expect(texto()).toContain('Tentar de novo');
+    expect(texto()).not.toContain('Google Books');
   });
 });

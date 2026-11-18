@@ -5,7 +5,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { catchError, map, of, switchMap } from 'rxjs';
 
 import { CampoInvalido, camposComErro, mensagemDeErro } from '../../core/api/erro-api';
-import { IsbnResposta, NOME_FONTE, ObraRequisicao } from '../../core/api/modelos';
+import { IsbnResposta, ObraRequisicao } from '../../core/api/modelos';
 import { CampoIsbn } from '../../shared/campo-isbn/campo-isbn';
 import { CapaLivro } from '../../shared/capa-livro/capa-livro';
 import { AcervoApi } from './acervo-api';
@@ -52,21 +52,20 @@ const TAMANHO_MAXIMO_CAPA = 10 * 1024 * 1024;
         </div>
 
         @if (r.encontrado) {
-          <p class="aviso" role="status">
-            <mat-icon>info</mat-icon>
-            <span>Dados de {{ nomesFontes() }}. Confira antes de salvar.</span>
+          <p class="aviso ok" role="status">
+            <mat-icon>check_circle</mat-icon>
+            <span>Livro encontrado. Confira os dados antes de salvar.</span>
+          </p>
+        } @else if (r.fontesIndisponiveis.length) {
+          <p class="aviso alerta" role="status">
+            <mat-icon>cloud_off</mat-icon>
+            <span>Não foi possível buscar os dados deste livro agora. Tente de novo em alguns minutos ou preencha à mão.</span>
+            <button mat-button type="button" (click)="buscar(r.isbn13)">Tentar de novo</button>
           </p>
         } @else {
           <p class="aviso alerta" role="status">
             <mat-icon>edit_note</mat-icon>
-            <span>Nenhuma fonte conhece este ISBN. Preencha os dados e envie uma foto da capa.</span>
-          </p>
-        }
-        @if (r.fontesIndisponiveis.length) {
-          <p class="aviso alerta" role="status">
-            <mat-icon>cloud_off</mat-icon>
-            <span>Sem resposta de {{ nomesIndisponiveis() }}. Se faltar algum dado, tente de novo em alguns minutos.</span>
-            <button mat-button type="button" (click)="buscar(r.isbn13)">Tentar de novo</button>
+            <span>Não encontramos os dados deste livro. Preencha à mão e envie uma foto da capa.</span>
           </p>
         }
         @if (erro()) {
@@ -80,10 +79,10 @@ const TAMANHO_MAXIMO_CAPA = 10 * 1024 * 1024;
             <button mat-stroked-button type="button" (click)="arquivo.click()">
               <mat-icon>photo_camera</mat-icon> {{ previaCapa() ? 'Trocar foto' : 'Enviar foto' }}
             </button>
-            @if (arquivoCapa()) {
-              <button mat-button type="button" (click)="removerFoto()">Usar a capa da fonte</button>
-            } @else if (r.dados?.capaDisponivel) {
-              <span class="texto-secundario legenda">Capa de {{ nomeFonte(r.dados!.fonte) }}</span>
+            @if (arquivoCapa() && r.dados?.capaDisponivel) {
+              <button mat-button type="button" (click)="removerFoto()">Usar a capa encontrada</button>
+            } @else if (arquivoCapa()) {
+              <button mat-button type="button" (click)="removerFoto()">Remover foto</button>
             }
           </div>
           <app-formulario-obra
@@ -158,10 +157,6 @@ export class CadastroObra {
   private readonly urlArquivo = signal<string | null>(null);
 
   protected readonly isbnFormatado = computed(() => this.resposta()?.isbn13 ?? '');
-  protected readonly nomesFontes = computed(() => juntar((this.resposta()?.fontes ?? []).map((f) => NOME_FONTE[f])));
-  protected readonly nomesIndisponiveis = computed(() =>
-    juntar((this.resposta()?.fontesIndisponiveis ?? []).map((f) => NOME_FONTE[f])),
-  );
 
   protected readonly inicial = computed<DadosFormularioObra | null>(() => {
     const r = this.resposta();
@@ -195,8 +190,6 @@ export class CadastroObra {
   constructor() {
     inject(DestroyRef).onDestroy(() => this.liberarArquivo());
   }
-
-  protected nomeFonte = (f: keyof typeof NOME_FONTE) => NOME_FONTE[f];
 
   protected buscar(isbn13: string): void {
     this.buscando.set(true);
@@ -294,11 +287,4 @@ export class CadastroObra {
       this.urlArquivo.set(null);
     }
   }
-}
-
-function juntar(nomes: string[]): string {
-  if (nomes.length <= 1) {
-    return nomes.join('');
-  }
-  return nomes.slice(0, -1).join(', ') + ' e ' + nomes[nomes.length - 1];
 }
