@@ -6,6 +6,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.time.Duration;
+import java.util.List;
 import java.util.Optional;
 
 import org.slf4j.Logger;
@@ -18,6 +19,7 @@ import com.github.benmanes.caffeine.cache.Caffeine;
 
 import br.gov.imbe.biblioteca.acervo.ProcessadorDeImagem.Capa;
 import br.gov.imbe.biblioteca.comum.erro.RecursoNaoEncontradoException;
+import br.gov.imbe.biblioteca.isbn.DadosLivro;
 import br.gov.imbe.biblioteca.isbn.FonteIsbn;
 import br.gov.imbe.biblioteca.isbn.Isbn;
 import br.gov.imbe.biblioteca.isbn.IsbnLookupService;
@@ -80,11 +82,19 @@ public class CapaService {
         }
     }
 
-    /** Capa da fonte para o formulário de conferência, antes de a obra existir. */
+    /**
+     * Capa das fontes para o formulário de conferência, antes de a obra existir: tenta as candidatas em ordem e
+     * fica com a primeira que for uma capa de verdade.
+     */
     public Optional<Capa> previaExterna(Isbn alvo) {
-        return isbn.buscar(alvo).dados()
-                .flatMap(d -> Optional.ofNullable(d.capaUrl()))
-                .flatMap(this::capaExterna);
+        List<String> candidatas = isbn.buscar(alvo).dados().map(DadosLivro::capas).orElse(List.of());
+        for (String url : candidatas) {
+            Optional<Capa> capa = capaExterna(url);
+            if (capa.isPresent()) {
+                return capa;
+            }
+        }
+        return Optional.empty();
     }
 
     private Optional<Capa> capaExterna(String url) {
@@ -95,6 +105,31 @@ public class CapaService {
         Optional<Capa> capa = baixarEProcessar(url);
         capa.ifPresent(c -> externas.put(url, c));
         return capa;
+    }
+
+    /**
+     * Para a busca semanal: tenta achar capa para uma obra que está sem. Qualquer falha só deixa como está.
+     *
+     * @return se a obra ganhou capa
+     */
+    public boolean tentarCapaPeloIsbn(Long obraId, String isbn13) {
+        try {
+            if (exigirObra(obraId).getCapaArquivo() != null) {
+                return false;
+            }
+            Optional<Capa> capa = previaExterna(Isbn.de(isbn13));
+            if (capa.isEmpty()) {
+                return false;
+            }
+            if (exigirObra(obraId).getCapaArquivo() != null) {
+                return false; // alguém enviou foto enquanto a busca rodava
+            }
+            gravar(obraId, capa.get());
+            return true;
+        } catch (RuntimeException e) {
+            log.warn("Obra {}: busca de capa falhou: {}", obraId, e.toString());
+            return false;
+        }
     }
 
     /** @return caminho do arquivo da capa, se a obra tiver capa */
@@ -111,7 +146,7 @@ public class CapaService {
     private Optional<Capa> baixarEProcessar(String url) {
         return baixador.baixar(url).flatMap(bytes -> {
             try {
-                return Optional.of(processador.processar(bytes));
+                return processador.processarExterna(bytes);
             } catch (RuntimeException e) {
                 log.warn("Capa externa ilegível: {}", e.getMessage());
                 return Optional.empty();

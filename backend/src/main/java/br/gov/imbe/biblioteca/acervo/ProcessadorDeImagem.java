@@ -44,6 +44,36 @@ public class ProcessadorDeImagem {
         this.larguraMiniatura = larguraMiniatura;
     }
 
+    /** Lado mínimo para aceitar uma capa vinda de fora: abaixo disso é ícone ou miniatura inútil. */
+    static final int LADO_MINIMO_EXTERNA = 80;
+    /** Cores diferentes numa amostra 32x32; o desenho de "sem imagem" do Google tem só 4 tons de cinza. */
+    static final int CORES_MINIMAS_EXTERNA = 16;
+
+    /**
+     * Capa baixada de uma fonte: vazio se for pequena demais ou um desenho de "imagem indisponível" (pouquíssimas
+     * cores). Uma foto de capa de verdade, mesmo em preto e branco, tem muitos tons por causa da compressão.
+     */
+    public java.util.Optional<Capa> processarExterna(byte[] original) {
+        BufferedImage imagem = ler(original);
+        if (imagem.getWidth() < LADO_MINIMO_EXTERNA || imagem.getHeight() < LADO_MINIMO_EXTERNA
+                || coresNaAmostra(imagem) < CORES_MINIMAS_EXTERNA) {
+            return java.util.Optional.empty();
+        }
+        return java.util.Optional.of(processar(original));
+    }
+
+    static int coresNaAmostra(BufferedImage img) {
+        java.util.Set<Integer> cores = new java.util.HashSet<>();
+        int passos = 32;
+        for (int y = 0; y < passos; y++) {
+            for (int x = 0; x < passos; x++) {
+                cores.add(img.getRGB(x * (img.getWidth() - 1) / (passos - 1), y * (img.getHeight() - 1) / (passos - 1))
+                        & 0xFFFFFF);
+            }
+        }
+        return cores.size();
+    }
+
     public Capa processar(byte[] original) {
         BufferedImage imagem = ler(original);
         imagem = orientar(imagem, orientacaoExif(original));

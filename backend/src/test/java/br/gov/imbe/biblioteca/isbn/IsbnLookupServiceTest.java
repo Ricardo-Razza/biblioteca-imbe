@@ -39,8 +39,8 @@ class IsbnLookupServiceTest {
 
     private static DadosLivro dados(FonteIsbn fonte, String titulo, String editora, Integer paginas,
             List<String> autores, String capa) {
-        return new DadosLivro(ISBN.valor(), titulo, null, autores, editora, null, paginas, null, null, null, capa,
-                fonte);
+        return new DadosLivro(ISBN.valor(), titulo, null, autores, editora, null, paginas, null, null, null,
+                capa == null ? List.of() : List.of(capa), fonte);
     }
 
     private static IsbnLookupService servico(IsbnProvider... fontes) {
@@ -65,7 +65,8 @@ class IsbnLookupServiceTest {
         assertThat(d.paginas()).isEqualTo(364);
         assertThat(d.editora()).isEqualTo("JBC");
         assertThat(d.autores()).containsExactly("Katsuhiro Otomo");
-        assertThat(d.capaUrl()).isEqualTo("https://google/capa");
+        // Capas de todas as fontes: Open Library primeiro (maior), depois Google
+        assertThat(d.capas()).containsExactly("https://openlibrary/capa", "https://google/capa");
         assertThat(d.fonte()).isEqualTo(FonteIsbn.BRASILAPI);
         assertThat(r.fontesComDados()).containsExactly(FonteIsbn.BRASILAPI, FonteIsbn.GOOGLE_BOOKS,
                 FonteIsbn.OPEN_LIBRARY);

@@ -30,7 +30,7 @@ import br.gov.imbe.biblioteca.isbn.IsbnProvider;
 /**
  * Open Library: {@code GET /isbn/{isbn}.json} (redireciona para {@code /books/OL...M.json}).
  * A edição traz só a chave dos autores, então os nomes vêm de {@code /authors/{id}.json}, em paralelo.
- * Capa em {@code covers.openlibrary.org/b/isbn/{isbn}-L.jpg?default=false}, só quando a edição tem capa.
+ * Capa em {@code covers.openlibrary.org/b/isbn/{isbn}-L.jpg?default=false}, oferecida sempre que a edição existe.
  */
 @Component
 @Order(3)
@@ -76,9 +76,9 @@ public class OpenLibraryProvider implements IsbnProvider {
     }
 
     private DadosLivro converter(Isbn isbn, Edicao e) {
-        String capa = e.covers() != null && e.covers().stream().anyMatch(id -> id != null && id > 0)
-                ? capasUrl + "/b/isbn/" + isbn.valor() + "-L.jpg?default=false"
-                : null;
+        // Sempre oferece a capa pelo ISBN: o serviço de capas costuma ter a imagem mesmo quando a edição não lista
+        // nenhuma. Sem capa, ele responde 404 (default=false) e quem baixa passa para a próxima candidata.
+        List<String> capa = List.of(capasUrl + "/b/isbn/" + isbn.valor() + "-L.jpg?default=false");
         String idioma = e.languages() == null ? null
                 : e.languages().stream().map(Chave::key).filter(k -> k != null)
                         .map(k -> k.substring(k.lastIndexOf('/') + 1)).findFirst().map(Textos::idioma).orElse(null);

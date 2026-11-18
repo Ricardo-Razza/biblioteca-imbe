@@ -244,6 +244,9 @@ Detalhes de implementação:
 - Capas em `CAPAS_DIR`, como `obra-{id}-{versão}.jpg` (maior lado até 800 px) e `obra-{id}-{versão}-mini.jpg` (200 px de largura). Toda imagem é regravada em JPEG, o que descarta metadados como o GPS da foto do celular, e a orientação EXIF é aplicada antes.
 - `GET /isbn/{isbn}/capa` serve a prévia para o formulário de conferência, já baixada e processada pelo backend. O `POST /obras` com `fonteDados` de uma fonte grava essa mesma capa logo depois do cadastro. Se falhar, a obra fica sem capa e o funcionário envia uma foto em `POST /obras/{id}/capa`.
 - O download da capa externa só aceita http/https e `image/*` até 5 MB, e recusa endereços da rede interna, inclusive por redirecionamento.
+- **Várias capas candidatas.** Cada fonte pode indicar uma capa que não existe ou que é só o desenho de "imagem não disponível". Por isso a busca junta as capas de todas as fontes, nesta ordem: Open Library (pelo ISBN, maior), BrasilAPI e Google Books (primeiro a versão de 800 px com `&fife=w800`, depois a miniatura). O backend tenta uma por uma e fica com a primeira de verdade. Recusa imagem com lado menor que 80 px ou com menos de 16 cores numa amostra de 32×32, que é o caso dos desenhos de "sem imagem". `capaDisponivel` só é `true` quando uma capa foi baixada de fato.
+- **Busca semanal de capas.** Todo domingo às 4h (`biblioteca.capas.busca-semanal.cron`), a `BuscaDeCapasFaltando` procura capa para as obras que estão sem: capas aparecem nas fontes com o tempo, e obras importadas ou cadastradas à mão também ganham a chance. Ela vai uma obra por vez com 1 s de pausa (`pausa`) e para em 500 obras por execução (`limite`). Não há botão na tela. Foto enviada pela equipe nunca é trocada.
+- Na lista do acervo, o filtro **Sem capa** (`GET /obras?semCapa=true`, junto ou não com `q`) mostra o que falta fotografar. No celular, "Enviar foto" abre direto a câmera traseira (`capture="environment"`).
 
 ### Importação em lote (carga inicial)
 
@@ -440,7 +443,7 @@ Como as regras foram implementadas (fase 2):
 | `POST /auth/login` | Login AD ou local, devolve o JWT | público |
 | `GET /auth/eu` · `POST /auth/senha` | Quem está logado · troca da própria senha (usuário local) | qualquer funcionário, inclusive com senha provisória |
 | `GET /isbn/{isbn}` | Dados mesclados das APIs externas (não salva) | Atendente |
-| `GET/POST /obras`, `PUT /obras/{id}` | Acervo | Atendente |
+| `GET/POST /obras`, `PUT /obras/{id}` | Acervo (`GET` com `?q=` e `?semCapa=true`) | Atendente |
 | `POST /obras/{id}/capa` · `GET /obras/{id}/capa?tamanho=mini` | Capa | Atendente · público |
 | `GET /isbn/{isbn}/capa?tamanho=mini` | Prévia da capa da fonte, antes de salvar | Atendente |
 | `GET/POST /obras/{id}/exemplares` · `GET /exemplares/tombo/{tombo}` | Exemplares | Atendente |
@@ -635,6 +638,7 @@ O servidor precisa de saída HTTPS para `brasilapi.com.br` (ISBN e feriados), `w
 | 2026-11-17 | Reserva pelo site pede telefone (obrigatório) e e-mail (opcional), gravados na reserva (V6) e mostrados à equipe |
 | 2026-11-17 | Cadastro de obra não mostra de qual fonte vieram os dados nem quais fontes falharam: só "Livro encontrado", "Não encontramos" ou "Não foi possível buscar agora" (com tentar de novo). A fonte continua gravada na obra |
 | 2026-11-17 | Reserva não exige cadastro: CPF novo vira pré-cadastro pendente (V7), conferido pela equipe na retirada; sem a conferência o livro não sai |
+| 2026-11-17 | Capas: tenta as capas de todas as fontes em ordem, recusando miniaturas e desenhos de "sem imagem"; busca semanal automática para obras sem capa (sem botão na tela); filtro "Sem capa" no acervo; câmera direto no celular |
 
 ## Documentação
 - Toda decisão nova ou mudança de escopo atualiza o README.md

@@ -73,12 +73,12 @@ class OpenLibraryProviderTest {
         assertThat(dados.idioma()).isEqualTo("en");
         assertThat(dados.sinopse()).isEqualTo("Um clássico.");
         assertThat(dados.assuntos()).containsExactly("Probabilities");
-        assertThat(dados.capaUrl()).isEqualTo(api.baseUrl() + "/b/isbn/9780306406157-L.jpg?default=false");
+        assertThat(dados.capas()).containsExactly(api.baseUrl() + "/b/isbn/9780306406157-L.jpg?default=false");
         assertThat(dados.fonte()).isEqualTo(FonteIsbn.OPEN_LIBRARY);
     }
 
     @Test
-    void descricaoEmTextoSimplesESemCapa() {
+    void descricaoEmTextoSimplesETentaACapaPeloIsbn() {
         edicao("""
                 {"title": "Livro", "description": "Texto simples.", "languages": [{"key": "/languages/por"}],
                  "pagination": "xii, 417 p. :"}
@@ -89,7 +89,8 @@ class OpenLibraryProviderTest {
         assertThat(dados.paginas()).isEqualTo(417);
         assertThat(dados.sinopse()).isEqualTo("Texto simples.");
         assertThat(dados.idioma()).isEqualTo("pt");
-        assertThat(dados.capaUrl()).isNull();
+        // Sem "covers" na edição a capa ainda pode existir pelo ISBN; o download confere
+        assertThat(dados.capas()).containsExactly(api.baseUrl() + "/b/isbn/9780306406157-L.jpg?default=false");
         assertThat(dados.autores()).isEmpty();
     }
 

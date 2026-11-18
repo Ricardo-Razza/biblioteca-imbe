@@ -38,7 +38,12 @@ public class IsbnController {
         Isbn valido = Isbn.de(isbn);
         return obras.idPorIsbn(valido)
                 .map(id -> IsbnResposta.jaCadastrada(valido, id))
-                .orElseGet(() -> IsbnResposta.de(servico.buscar(valido)));
+                .orElseGet(() -> {
+                    ResultadoIsbn r = servico.buscar(valido);
+                    // Baixa já aqui (fica em cache para a prévia e o cadastro): só diz que tem capa se uma serviu.
+                    boolean capa = r.encontrado() && capas.previaExterna(valido).isPresent();
+                    return IsbnResposta.de(r, capa);
+                });
     }
 
     /**

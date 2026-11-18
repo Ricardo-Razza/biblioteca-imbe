@@ -6,7 +6,7 @@
   <section class="ficha">
     <div class="capa">
       <app-capa-livro [obraId]="o.id" [temCapa]="o.temCapa" [versao]="versaoCapa()" [titulo]="o.titulo" />
-      <input #arquivo type="file" accept="image/*" hidden (change)="enviarCapa(arquivo)" />
+      <input #arquivo type="file" accept="image/*" capture="environment" hidden (change)="enviarCapa(arquivo)" />
       <button mat-stroked-button type="button" (click)="arquivo.click()" [disabled]="enviandoCapa()">
         @if (enviandoCapa()) {
           <mat-spinner diameter="18" />

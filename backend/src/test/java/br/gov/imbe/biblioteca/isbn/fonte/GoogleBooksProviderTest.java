@@ -71,7 +71,8 @@ class GoogleBooksProviderTest {
         assertThat(dados.idioma()).isEqualTo("pt");
         assertThat(dados.sinopse()).isEqualTo("Uma epidemia de cegueira branca.");
         assertThat(dados.assuntos()).containsExactly("Fiction");
-        assertThat(dados.capaUrl()).isEqualTo("https://books.google.com/books/content?id=x&zoom=1");
+        assertThat(dados.capas()).containsExactly("https://books.google.com/books/content?id=x&zoom=1&fife=w800",
+                "https://books.google.com/books/content?id=x&zoom=1");
         assertThat(dados.fonte()).isEqualTo(FonteIsbn.GOOGLE_BOOKS);
     }
 

@@ -123,4 +123,15 @@ class ProcessadorDeImagemTest {
         assertThat(Imagens.ehAzul(girada, 30, 5)).isTrue();
         assertThat(Imagens.ehVermelho(girada, 30, 35)).isTrue();
     }
+
+    @Test
+    void capaExternaDeVerdadeEhAceita() {
+        assertThat(processador.processarExterna(Imagens.capa(128, 190))).isPresent();
+    }
+
+    @Test
+    void capaExternaMinusculaOuDesenhoDeSemImagemEhRecusada() {
+        assertThat(processador.processarExterna(Imagens.capa(40, 60))).isEmpty();
+        assertThat(processador.processarExterna(Imagens.semImagem(128, 190))).isEmpty();
+    }
 }

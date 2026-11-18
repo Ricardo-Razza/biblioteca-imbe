@@ -19,7 +19,7 @@ class ObraDaFonteTest {
     void cortaOQuePassaDosLimitesDoCadastro() {
         List<String> autores = IntStream.range(0, 25).mapToObj(i -> "Autor " + i).toList();
         DadosLivro d = new DadosLivro("9788535914849", "T".repeat(600), null, autores, "Editora", 1200, 120000, "pt-BR",
-                null, List.of("Romance"), null, FonteIsbn.BRASILAPI);
+                null, List.of("Romance"), List.of(), FonteIsbn.BRASILAPI);
         ObraRequisicao r = ObraDaFonte.de(d);
         assertThat(r.titulo()).hasSize(500);
         assertThat(r.autores()).hasSize(20);

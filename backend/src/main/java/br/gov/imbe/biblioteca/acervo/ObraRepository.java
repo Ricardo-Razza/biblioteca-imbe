@@ -24,8 +24,22 @@ public interface ObraRepository extends JpaRepository<Obra, Long> {
      */
     @Query("""
             select o from Obra o
-            where o.titulo like :padrao escape '!'
-               or exists (select 1 from ObraAutor oa where oa.obra = o and oa.autor.nome like :padrao escape '!')
+            where (o.titulo like :padrao escape '!'
+               or exists (select 1 from ObraAutor oa where oa.obra = o and oa.autor.nome like :padrao escape '!'))
+              and (:semCapa = false or o.capaArquivo is null)
             """)
-    Page<Obra> buscarPorTituloOuAutor(@Param("padrao") String padrao, Pageable paginacao);
+    Page<Obra> buscarPorTituloOuAutor(@Param("padrao") String padrao, @Param("semCapa") boolean semCapa,
+            Pageable paginacao);
+
+    Page<Obra> findByCapaArquivoIsNull(Pageable paginacao);
+
+    /** Para a busca semanal de capas: id e ISBN das obras sem capa, das mais antigas para as mais novas. */
+    @Query("select o.id as id, o.isbn13 as isbn13 from Obra o where o.capaArquivo is null order by o.id")
+    java.util.List<SemCapa> semCapa(Pageable limite);
+
+    interface SemCapa {
+        Long getId();
+
+        String getIsbn13();
+    }
 }

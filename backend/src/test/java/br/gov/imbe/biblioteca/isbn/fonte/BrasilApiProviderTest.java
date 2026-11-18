@@ -76,7 +76,7 @@ class BrasilApiProviderTest {
         assertThat(dados.idioma()).isNull();
         assertThat(dados.sinopse()).isEqualTo("Tóquio, 2019.");
         assertThat(dados.assuntos()).containsExactly("Mangá", "Ficção científica");
-        assertThat(dados.capaUrl()).isNull();
+        assertThat(dados.capas()).isEmpty();
         assertThat(dados.fonte()).isEqualTo(FonteIsbn.BRASILAPI);
 
         api.verify(getRequestedFor(urlEqualTo(CAMINHO)).withHeader("User-Agent", matching("BibliotecaMunicipalImbe/.*")));

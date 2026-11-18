@@ -34,8 +34,9 @@ public class ObraController {
     /** {@code ?q=} busca por ISBN, trecho do título ou do autor. Paginação: {@code ?page=0&size=20}. */
     @GetMapping
     public Pagina<ObraResposta> listar(@RequestParam(required = false) String q,
+            @RequestParam(defaultValue = "false") boolean semCapa,
             @PageableDefault(size = 20, sort = "titulo", direction = Sort.Direction.ASC) Pageable paginacao) {
-        return servico.listar(q, paginacao);
+        return servico.listar(q, semCapa, paginacao);
     }
 
     @GetMapping("/{id}")

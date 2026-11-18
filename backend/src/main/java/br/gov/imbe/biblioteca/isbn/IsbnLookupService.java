@@ -94,12 +94,28 @@ public class IsbnLookupService {
                 mesclado = Optional.of(mesclado.map(atual -> atual.completadoCom(dados)).orElse(dados));
             }
         }
+        mesclado = mesclado.map(d -> d.comCapas(capasEmOrdem(respostas)));
 
         log.info("ISBN {}: {} em {} ms (com dados: {}; indisponíveis: {})", isbn,
                 mesclado.isPresent() ? "encontrado" : "não encontrado",
                 TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - inicio), comDados, indisponiveis);
         return new ResultadoIsbn(isbn, mesclado, comDados, indisponiveis);
     }
+
+    /**
+     * Capas de todas as fontes, pela qualidade costumeira e não pela prioridade dos dados: Open Library (imagem
+     * grande), BrasilAPI e por último Google Books (miniatura menor). Quem baixa tenta em ordem até uma servir.
+     */
+    static List<String> capasEmOrdem(Map<FonteIsbn, Optional<DadosLivro>> respostas) {
+        return ORDEM_CAPAS.stream()
+                .flatMap(f -> respostas.getOrDefault(f, Optional.empty()).stream())
+                .flatMap(d -> d.capas().stream())
+                .distinct()
+                .toList();
+    }
+
+    private static final List<FonteIsbn> ORDEM_CAPAS =
+            List.of(FonteIsbn.OPEN_LIBRARY, FonteIsbn.BRASILAPI, FonteIsbn.GOOGLE_BOOKS);
 
     private static void indisponivel(Isbn isbn, FonteIsbn fonte, String motivo, List<FonteIsbn> indisponiveis) {
         log.warn("ISBN {}: fonte {} indisponível: {}", isbn, fonte, motivo);

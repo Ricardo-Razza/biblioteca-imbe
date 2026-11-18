@@ -21,6 +21,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import br.gov.imbe.biblioteca.acervo.CapaService;
 import br.gov.imbe.biblioteca.auth.ConversorJwt;
 import br.gov.imbe.biblioteca.acervo.ObraService;
+import br.gov.imbe.biblioteca.acervo.ProcessadorDeImagem;
 import br.gov.imbe.biblioteca.comum.config.SecurityConfig;
 
 @WebMvcTest(IsbnController.class)
@@ -63,7 +64,8 @@ class IsbnControllerTest {
     void devolveOsDadosSemAUrlExternaDaCapa() throws Exception {
         Isbn isbn = Isbn.de("9788545702870");
         DadosLivro dados = new DadosLivro(isbn.valor(), "Akira", null, List.of("Katsuhiro Otomo"), "JBC", 2017,
-                364, "pt", "Tóquio, 2019.", List.of("Mangá"), "https://externo/capa.jpg", FonteIsbn.BRASILAPI);
+                364, "pt", "Tóquio, 2019.", List.of("Mangá"), List.of("https://externo/capa.jpg"), FonteIsbn.BRASILAPI);
+        given(capas.previaExterna(isbn)).willReturn(Optional.of(new ProcessadorDeImagem.Capa(new byte[1], new byte[1])));
         given(servico.buscar(isbn)).willReturn(new ResultadoIsbn(isbn, Optional.of(dados),
                 List.of(FonteIsbn.BRASILAPI, FonteIsbn.GOOGLE_BOOKS), List.of(FonteIsbn.OPEN_LIBRARY)));
 
@@ -75,7 +77,7 @@ class IsbnControllerTest {
                 .andExpect(jsonPath("$.dados.titulo").value("Akira"))
                 .andExpect(jsonPath("$.dados.autores[0]").value("Katsuhiro Otomo"))
                 .andExpect(jsonPath("$.dados.capaDisponivel").value(true))
-                .andExpect(jsonPath("$.dados.capaUrl").doesNotExist())
+                .andExpect(jsonPath("$.dados.capas").doesNotExist())
                 .andExpect(jsonPath("$.dados.fonte").value("BRASILAPI"))
                 .andExpect(jsonPath("$.fontes.length()").value(2))
                 .andExpect(jsonPath("$.fontesIndisponiveis[0]").value("OPEN_LIBRARY"));

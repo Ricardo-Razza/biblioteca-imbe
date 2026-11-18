@@ -217,6 +217,29 @@ class ObraIntegracaoTest {
     }
 
     @Test
+    void filtroSemCapaValeComESemBusca() throws Exception {
+        long comCapa = cadastrarERetornarId(SARAMAGO);
+        cadastrarERetornarId("""
+                {"isbn": "9780306406157", "titulo": "Probability theory", "autores": ["E. T. Jaynes"]}
+                """);
+        jdbc.update("update obra set capa_arquivo = 'x.jpg', capa_miniatura = 'x-mini.jpg' where id = ?", comCapa);
+        em.flush();
+        em.clear();
+
+        mvc.perform(get("/api/v1/obras").param("semCapa", "true"))
+                .andExpect(jsonPath("$.total").value(1))
+                .andExpect(jsonPath("$.itens[0].titulo").value("Probability theory"));
+        mvc.perform(get("/api/v1/obras").param("semCapa", "true").param("q", "cegueira"))
+                .andExpect(jsonPath("$.total").value(0));
+        mvc.perform(get("/api/v1/obras").param("semCapa", "true").param("q", "9788535902778"))
+                .andExpect(jsonPath("$.total").value(0));
+        mvc.perform(get("/api/v1/obras").param("semCapa", "true").param("q", "9780306406157"))
+                .andExpect(jsonPath("$.total").value(1));
+        mvc.perform(get("/api/v1/obras"))
+                .andExpect(jsonPath("$.total").value(2));
+    }
+
+    @Test
     void ordenacaoPorCampoInexistenteDa400() throws Exception {
         mvc.perform(get("/api/v1/obras").param("sort", "senha"))
                 .andExpect(status().isBadRequest())

@@ -75,12 +75,24 @@ public class GoogleBooksProvider implements IsbnProvider {
     }
 
     private DadosLivro converter(Isbn isbn, VolumeInfo v) {
-        String capa = v.imageLinks() == null ? null
-                : Textos.https(v.imageLinks().thumbnail() != null ? v.imageLinks().thumbnail()
-                        : v.imageLinks().smallThumbnail());
         return new DadosLivro(isbn.valor(), v.title(), v.subtitle(), v.authors(), v.publisher(),
                 Textos.ano(v.publishedDate()), v.pageCount(), Textos.idioma(v.language()), v.description(),
-                v.categories(), capa, fonte());
+                v.categories(), capas(v.imageLinks()), fonte());
+    }
+
+    /**
+     * A miniatura do Google tem 128 px de largura. Com {@code fife=w800} o mesmo endereço devolve uma versão
+     * maior (parâmetro não documentado, por isso a miniatura original fica de reserva logo depois).
+     */
+    static List<String> capas(ImageLinks links) {
+        if (links == null) {
+            return List.of();
+        }
+        String base = Textos.https(links.thumbnail() != null ? links.thumbnail() : links.smallThumbnail());
+        if (base == null) {
+            return List.of();
+        }
+        return base.contains("books.google") ? List.of(base + "&fife=w800", base) : List.of(base);
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)

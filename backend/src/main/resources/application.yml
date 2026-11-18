@@ -97,6 +97,11 @@ biblioteca:
     lado-maximo: 800
     largura-miniatura: 200
     tamanho-maximo-download: 5MB
+    # Toda semana procura capa para as obras que estão sem (até "limite" por vez, com "pausa" entre elas)
+    busca-semanal:
+      cron: "0 0 4 * * SUN"
+      limite: 500
+      pausa: 1s
     timeout: 4s
 
 server:

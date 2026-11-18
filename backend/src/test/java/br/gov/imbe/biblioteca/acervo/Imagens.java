@@ -44,6 +44,29 @@ final class Imagens {
         return codificar(duasCores(largura, altura, BufferedImage.TYPE_INT_RGB), "jpg");
     }
 
+    /** Degradê colorido: parece uma capa de verdade (muitas cores), ao contrário do desenho de "sem imagem". */
+    static byte[] capa(int largura, int altura) {
+        BufferedImage img = new BufferedImage(largura, altura, BufferedImage.TYPE_INT_RGB);
+        for (int y = 0; y < altura; y++) {
+            for (int x = 0; x < largura; x++) {
+                img.setRGB(x, y, new Color(x * 255 / largura, y * 255 / altura, 128).getRGB());
+            }
+        }
+        return codificar(img, "jpg");
+    }
+
+    /** Fundo cinza liso com uma faixa: como os desenhos de "imagem não disponível" das fontes. */
+    static byte[] semImagem(int largura, int altura) {
+        BufferedImage img = new BufferedImage(largura, altura, BufferedImage.TYPE_INT_RGB);
+        Graphics2D g = img.createGraphics();
+        g.setColor(new Color(220, 220, 220));
+        g.fillRect(0, 0, largura, altura);
+        g.setColor(new Color(150, 150, 150));
+        g.fillRect(largura / 4, altura / 2, largura / 2, 6);
+        g.dispose();
+        return codificar(img, "png");
+    }
+
     static BufferedImage ler(byte[] bytes) {
         try {
             BufferedImage img = ImageIO.read(new ByteArrayInputStream(bytes));

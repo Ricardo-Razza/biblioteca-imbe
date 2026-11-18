@@ -59,9 +59,10 @@ class CapaServiceTest {
                 propriedades);
     }
 
-    private void fonteIndicaCapa(String caminho) {
+    private void fonteIndicaCapa(String... caminhos) {
+        List<String> capas = java.util.Arrays.stream(caminhos).map(c -> api.baseUrl() + c).toList();
         DadosLivro dados = new DadosLivro(ISBN.valor(), "Ensaio sobre a cegueira", null, List.of(), null, null, null,
-                null, null, List.of(), api.baseUrl() + caminho, FonteIsbn.GOOGLE_BOOKS);
+                null, null, List.of(), capas, FonteIsbn.GOOGLE_BOOKS);
         given(isbn.buscar(ISBN)).willReturn(new ResultadoIsbn(ISBN, Optional.of(dados),
                 List.of(FonteIsbn.GOOGLE_BOOKS), List.of()));
     }
@@ -75,7 +76,7 @@ class CapaServiceTest {
     void baixaEGravaACapaIndicadaPelaFonte() throws Exception {
         fonteIndicaCapa("/capa.jpg");
         api.stubFor(get("/capa.jpg").willReturn(aResponse().withHeader("Content-Type", "image/jpeg")
-                .withBody(Imagens.jpeg(400, 600))));
+                .withBody(Imagens.capa(400, 600))));
 
         ObraResposta resposta = servico.tentarCapaDaFonte(respostaSemCapa(FonteIsbn.GOOGLE_BOOKS));
 
@@ -90,7 +91,7 @@ class CapaServiceTest {
     void previaECadastroUsamOMesmoDownload() {
         fonteIndicaCapa("/capa.jpg");
         api.stubFor(get("/capa.jpg").willReturn(aResponse().withHeader("Content-Type", "image/jpeg")
-                .withBody(Imagens.jpeg(400, 600))));
+                .withBody(Imagens.capa(400, 600))));
 
         assertThat(servico.previaExterna(ISBN)).isPresent();
         servico.tentarCapaDaFonte(respostaSemCapa(FonteIsbn.GOOGLE_BOOKS));
@@ -128,5 +129,57 @@ class CapaServiceTest {
             assertThat(arquivos).isEmpty();
         }
         org.mockito.Mockito.verifyNoInteractions(isbn);
+    }
+
+    @Test
+    void pulaCandidataQueFalhaOuEhDesenhoDeSemImagemEUsaAProxima() {
+        fonteIndicaCapa("/nao-existe.jpg", "/sem-imagem.png", "/miniatura.jpg", "/boa.jpg");
+        api.stubFor(get("/nao-existe.jpg").willReturn(aResponse().withStatus(404)));
+        api.stubFor(get("/sem-imagem.png").willReturn(aResponse().withHeader("Content-Type", "image/png")
+                .withBody(Imagens.semImagem(128, 190))));
+        api.stubFor(get("/miniatura.jpg").willReturn(aResponse().withHeader("Content-Type", "image/jpeg")
+                .withBody(Imagens.capa(40, 60))));
+        api.stubFor(get("/boa.jpg").willReturn(aResponse().withHeader("Content-Type", "image/jpeg")
+                .withBody(Imagens.capa(300, 450))));
+
+        ObraResposta resposta = servico.tentarCapaDaFonte(respostaSemCapa(FonteIsbn.GOOGLE_BOOKS));
+
+        assertThat(resposta.temCapa()).isTrue();
+        api.verify(1, getRequestedFor(urlEqualTo("/boa.jpg")));
+    }
+
+    @Test
+    void nenhumaCandidataBoaDeixaSemCapa() {
+        fonteIndicaCapa("/sem-imagem.png");
+        api.stubFor(get("/sem-imagem.png").willReturn(aResponse().withHeader("Content-Type", "image/png")
+                .withBody(Imagens.semImagem(300, 450))));
+
+        assertThat(servico.previaExterna(ISBN)).isEmpty();
+        assertThat(servico.tentarCapaDaFonte(respostaSemCapa(FonteIsbn.GOOGLE_BOOKS)).temCapa()).isFalse();
+    }
+
+    @Test
+    void buscaPeloIsbnGravaCapaSoEmObraSemCapa() {
+        fonteIndicaCapa("/boa.jpg");
+        api.stubFor(get("/boa.jpg").willReturn(aResponse().withHeader("Content-Type", "image/jpeg")
+                .withBody(Imagens.capa(300, 450))));
+
+        assertThat(servico.tentarCapaPeloIsbn(7L, ISBN.valor())).isTrue();
+        String gravada = obra.getCapaArquivo();
+        assertThat(gravada).isNotNull();
+
+        // Já tem capa (por exemplo, foto da equipe): não troca nem consulta as fontes de novo
+        org.mockito.Mockito.clearInvocations(isbn);
+        assertThat(servico.tentarCapaPeloIsbn(7L, ISBN.valor())).isFalse();
+        assertThat(obra.getCapaArquivo()).isEqualTo(gravada);
+        org.mockito.Mockito.verifyNoInteractions(isbn);
+    }
+
+    @Test
+    void buscaPeloIsbnComFonteForaDoArNaoQuebra() {
+        given(isbn.buscar(ISBN)).willThrow(new IllegalStateException("fora do ar"));
+
+        assertThat(servico.tentarCapaPeloIsbn(7L, ISBN.valor())).isFalse();
+        assertThat(obra.getCapaArquivo()).isNull();
     }
 }

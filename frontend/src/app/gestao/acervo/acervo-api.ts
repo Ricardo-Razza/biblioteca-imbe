@@ -27,10 +27,13 @@ export class AcervoApi {
     return `${API}/isbn/${isbn13}/capa`;
   }
 
-  listarObras(termo: string, pagina: number, tamanho: number): Observable<Pagina<Obra>> {
+  listarObras(termo: string, pagina: number, tamanho: number, semCapa = false): Observable<Pagina<Obra>> {
     let params = new HttpParams().set('page', pagina).set('size', tamanho);
     if (termo.trim()) {
       params = params.set('q', termo.trim());
+    }
+    if (semCapa) {
+      params = params.set('semCapa', true);
     }
     return this.http.get<Pagina<Obra>>(`${API}/obras`, { params });
   }

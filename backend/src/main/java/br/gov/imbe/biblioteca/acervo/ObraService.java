@@ -69,19 +69,22 @@ public class ObraService {
      * do título ou do autor.
      */
     @Transactional(readOnly = true)
-    public Pagina<ObraResposta> listar(String termo, Pageable paginacao) {
+    public Pagina<ObraResposta> listar(String termo, boolean semCapa, Pageable paginacao) {
         String t = texto(termo);
         if (t == null) {
-            return Pagina.de(obras.findAll(paginacao), ObraResposta::de);
+            return Pagina.de(semCapa ? obras.findByCapaArquivoIsNull(paginacao) : obras.findAll(paginacao),
+                    ObraResposta::de);
         }
         Optional<Isbn> isbn = comoIsbn(t);
         if (isbn.isPresent()) {
-            List<Obra> achadas = obras.findByIsbn13(isbn.get().valor()).map(List::of).orElse(List.of());
+            List<Obra> achadas = obras.findByIsbn13(isbn.get().valor())
+                    .filter(o -> !semCapa || o.getCapaArquivo() == null)
+                    .map(List::of).orElse(List.of());
             return new Pagina<>(achadas.stream().map(ObraResposta::de).toList(), 0, paginacao.getPageSize(),
                     achadas.size(), achadas.isEmpty() ? 0 : 1);
         }
         String padrao = "%" + t.replace("!", "!!").replace("%", "!%").replace("_", "!_") + "%";
-        return Pagina.de(obras.buscarPorTituloOuAutor(padrao, paginacao), ObraResposta::de);
+        return Pagina.de(obras.buscarPorTituloOuAutor(padrao, semCapa, paginacao), ObraResposta::de);
     }
 
     private void aplicar(Obra obra, Isbn isbn, ObraRequisicao req) {

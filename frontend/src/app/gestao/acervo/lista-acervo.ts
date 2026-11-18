@@ -1,4 +1,4 @@
-import { Component, DestroyRef, effect, inject, input, signal } from '@angular/core';
+import { Component, DestroyRef, computed, effect, inject, input, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -16,7 +16,7 @@ import { AcervoApi } from './acervo-api';
 
 const TAMANHO = 20;
 
-/** Acervo: busca por ISBN, título ou autor. Termo e página ficam na URL para o "voltar" do navegador. */
+/** Acervo: busca por ISBN, título ou autor e filtro "Sem capa". Termo, filtro e página ficam na URL para o "voltar". */
 @Component({
   selector: 'app-lista-acervo',
   imports: [
@@ -48,6 +48,19 @@ const TAMANHO = 20;
       <mat-hint>ISBN, trecho do título ou nome do autor.</mat-hint>
     </mat-form-field>
 
+    <div class="filtros">
+      <button
+        mat-stroked-button
+        type="button"
+        class="filtro"
+        [class.ativo]="filtroSemCapa()"
+        [attr.aria-pressed]="filtroSemCapa()"
+        (click)="alternarSemCapa()"
+      >
+        <mat-icon>{{ filtroSemCapa() ? 'check' : 'image_not_supported' }}</mat-icon> Sem capa
+      </button>
+    </div>
+
     @if (carregando()) {
       <mat-progress-bar mode="indeterminate" />
     }
@@ -59,7 +72,9 @@ const TAMANHO = 20;
       @if (r.total === 0) {
         <p class="texto-secundario vazio">
           @if (q()) {
-            Nada encontrado para "{{ q() }}".
+            Nada encontrado para "{{ q() }}"{{ filtroSemCapa() ? ' entre as obras sem capa' : '' }}.
+          } @else if (filtroSemCapa()) {
+            Todas as obras têm capa.
           } @else {
             O acervo ainda está vazio. Comece em "Cadastrar livro".
           }
@@ -115,6 +130,16 @@ const TAMANHO = 20;
     .vazio {
       margin-top: 16px;
     }
+    .filtros {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+    .filtro.ativo {
+      background: var(--mat-sys-secondary-container);
+      color: var(--mat-sys-on-secondary-container);
+    }
     .lista {
       list-style: none;
       margin: 0;
@@ -155,6 +180,7 @@ export class ListaAcervo {
   /** Query params (?q=&pagina=), ligados pelo router. */
   readonly q = input<string>();
   readonly pagina = input<string>();
+  readonly semCapa = input<string>();
 
   protected readonly sessao = inject(Sessao);
   private readonly api = inject(AcervoApi);
@@ -164,15 +190,17 @@ export class ListaAcervo {
   protected readonly resultado = signal<Pagina<Obra> | null>(null);
   protected readonly carregando = signal(false);
   protected readonly erro = signal<string | null>(null);
+  protected readonly filtroSemCapa = computed(() => this.semCapa() === '1');
   private espera: ReturnType<typeof setTimeout> | undefined;
 
   constructor() {
     effect((aoLimpar) => {
       const termo = this.q() ?? '';
       const pagina = Math.max(0, Number(this.pagina() ?? 0) || 0);
+      const semCapa = this.filtroSemCapa();
       this.carregando.set(true);
       this.erro.set(null);
-      const s = this.api.listarObras(termo, pagina, TAMANHO).subscribe({
+      const s = this.api.listarObras(termo, pagina, TAMANHO, semCapa).subscribe({
         next: (r) => {
           this.carregando.set(false);
           this.resultado.set(r);
@@ -196,6 +224,10 @@ export class ListaAcervo {
     this.navegar(this.q() ?? '', e.pageIndex);
   }
 
+  protected alternarSemCapa(): void {
+    this.navegar(this.q() ?? '', 0, !this.filtroSemCapa());
+  }
+
   protected isbn(o: Obra): string {
     return o.isbn13;
   }
@@ -206,9 +238,9 @@ export class ListaAcervo {
     return o.exemplaresDisponiveis === 1 ? '1 disponível' : `${o.exemplaresDisponiveis} disponíveis`;
   }
 
-  private navegar(q: string, pagina: number): void {
+  private navegar(q: string, pagina: number, semCapa = this.filtroSemCapa()): void {
     this.router.navigate([], {
-      queryParams: { q: q.trim() ? q : null, pagina: pagina || null },
+      queryParams: { q: q.trim() ? q : null, pagina: pagina || null, semCapa: semCapa ? 1 : null },
       replaceUrl: true,
     });
   }

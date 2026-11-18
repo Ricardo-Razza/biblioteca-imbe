@@ -63,7 +63,8 @@ public class BrasilApiProvider implements IsbnProvider {
 
     private DadosLivro converter(Isbn isbn, Resposta r) {
         return new DadosLivro(isbn.valor(), r.title(), r.subtitle(), r.authors(), r.publisher(), r.year(),
-                r.pageCount(), null, r.synopsis(), r.subjects(), r.coverUrl(), fonte());
+                r.pageCount(), null, r.synopsis(), r.subjects(),
+                r.coverUrl() == null ? List.of() : List.of(r.coverUrl()), fonte());
     }
 
     /** Só os campos usados. A BrasilAPI não informa o idioma. */

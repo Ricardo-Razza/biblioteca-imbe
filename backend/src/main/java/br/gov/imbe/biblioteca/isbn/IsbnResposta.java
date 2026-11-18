@@ -38,10 +38,11 @@ public record IsbnResposta(
         return new IsbnResposta(isbn.valor(), obraId, false, null, List.of(), List.of());
     }
 
-    static IsbnResposta de(ResultadoIsbn r) {
+    /** @param capaDisponivel se alguma das capas indicadas foi baixada e é uma capa de verdade */
+    static IsbnResposta de(ResultadoIsbn r, boolean capaDisponivel) {
         Dados dados = r.dados()
                 .map(d -> new Dados(d.titulo(), d.subtitulo(), d.autores(), d.editora(), d.ano(), d.paginas(),
-                        d.idioma(), d.sinopse(), d.assuntos(), d.capaUrl() != null, d.fonte()))
+                        d.idioma(), d.sinopse(), d.assuntos(), capaDisponivel, d.fonte()))
                 .orElse(null);
         return new IsbnResposta(r.isbn().valor(), null, r.encontrado(), dados, r.fontesComDados(),
                 r.fontesIndisponiveis());

@@ -27,7 +27,7 @@ const TAMANHO_MAXIMO_CAPA = 10 * 1024 * 1024;
     </div>
 
     @if (!resposta()) {
-      <p class="texto-secundario">O sistema busca título, autores e capa na BrasilAPI, no Google Books e na Open Library.</p>
+      <p class="texto-secundario">Bipe ou digite o ISBN: o sistema busca título, autores e capa sozinho.</p>
       <app-campo-isbn [carregando]="buscando()" (buscar)="buscar($event)" />
       @if (erro()) {
         <p class="aviso erro" role="alert"><mat-icon>error</mat-icon> {{ erro() }}</p>
@@ -75,7 +75,8 @@ const TAMANHO_MAXIMO_CAPA = 10 * 1024 * 1024;
         <div class="conferencia">
           <div class="capa">
             <app-capa-livro [src]="previaCapa()" [titulo]="inicial()?.titulo ?? ''" />
-            <input #arquivo type="file" accept="image/*" hidden (change)="escolherCapa(arquivo)" />
+            <!-- capture: no celular abre a câmera traseira direto; no computador abre a escolha de arquivo -->
+            <input #arquivo type="file" accept="image/*" capture="environment" hidden (change)="escolherCapa(arquivo)" />
             <button mat-stroked-button type="button" (click)="arquivo.click()">
               <mat-icon>photo_camera</mat-icon> {{ previaCapa() ? 'Trocar foto' : 'Enviar foto' }}
             </button>
