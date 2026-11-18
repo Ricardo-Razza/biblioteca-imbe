@@ -44,7 +44,7 @@ docker compose -f docker-compose.prod.yml up -d --build   # produção (precisa 
 - Testes do site público: use `Publico.ipNovo()` em cada teste (o limite por IP vive no contexto compartilhado) e CPFs novos de `Dados.cpf()`.
 - Painel e relatórios (`relatorio`) leem por SQL direto (`JdbcClient`): em teste `@Transactional`, `em.flush()` antes de consultar. CSV sempre pela classe `Csv` (BOM, `;`, proteção contra fórmula); CPF não sai em relatório.
 - Importação em lote (`importacao`): o `ProcessadorDeImportacao` roda numa thread própria depois do commit. Nos testes o commit não acontece: chame `processador.processarTudo(id)` direto e faça `em.flush()`/`em.clear()` antes de conferir.
-- Produção: `docker-compose.prod.yml` + `deploy/`. Scripts, Dockerfiles e confs do Nginx ficam com LF (`.gitattributes`).
+- Produção: `docker-compose.prod.yml` + `deploy/`, ou a stack do Portainer (`docker-compose.portainer.yml`) com as imagens que o `.github/workflows/ci.yml` publica no ghcr.io. Variável nova do backend ou do web entra nos dois compose e no `deploy/portainer.env.example`. Nginx: modelos em `frontend/nginx/modelos` (`HTTPS=sim|nao`), escolhidos pelo `15-modo-https.sh`. Scripts, Dockerfiles e confs do Nginx ficam com LF (`.gitattributes`).
 - Tarefas agendadas (expiração de reservas, feriados) ficam no `AgendamentoConfig`; nos testes a BrasilAPI de feriados aponta para a porta fechada.
 
 ## Frontend

@@ -31,9 +31,11 @@ biblioteca-imbe/
 │   ├── arquitetura.md
 │   ├── biblioteca-imbe.excalidraw
 │   └── referencia/       contrato da API de login AD, código de referência
-├── deploy/             backup.sh, restaurar.sh, certs/ (certificado HTTPS, fora do git)
+├── .github/workflows/ci.yml  testes, imagens no ghcr.io e webhook do Portainer
+├── deploy/             backup.sh, restaurar.sh, portainer.env.example, certs/ (certificado HTTPS, fora do git)
 ├── docker-compose.yml    MySQL local (lê o .env)
-├── docker-compose.prod.yml  produção: MySQL + API + Nginx com HTTPS
+├── docker-compose.prod.yml  produção: MySQL + API + Nginx com HTTPS (compila no servidor)
+├── docker-compose.portainer.yml  stack do Portainer com as imagens do ghcr.io
 ├── .env.example          modelo do .env (o .env não vai para o git)
 ├── CLAUDE.md
 └── README.md
@@ -543,6 +545,37 @@ O Nginx manda HTTP para HTTPS, liga HSTS, CSP (só as fontes do Google como orig
 
 Logs: `docker compose -f docker-compose.prod.yml logs -f backend` (limitados a 5 arquivos de 20 MB por serviço).
 
+### GitHub Actions
+
+O `.github/workflows/ci.yml` roda em todo push e pull request:
+
+1. **Backend:** `./mvnw verify` (inclui os testes de integração com MySQL no Testcontainers; o runner do GitHub já tem Docker).
+2. **Frontend:** `npm ci`, `ng test` e `ng build`.
+3. **Imagens** (só push na `develop` ou na `main`, e só com os testes passando): publica no GitHub Container Registry `ghcr.io/ricardo-razza/biblioteca-imbe/backend` e `.../web`, com as tags do nome da branch (`develop`, `main`) e do commit (sha curto, ex.: `96fb5e4`). A `main` também vira `latest`.
+4. **Portainer** (só na `main`): chama o webhook da stack, se o segredo `PORTAINER_WEBHOOK_URL` existir. Sem ele, o passo só avisa e a atualização é feita no Portainer.
+
+Nenhuma chave vai para o workflow: o login no registro usa o `GITHUB_TOKEN` do próprio Actions.
+
+### Portainer
+
+O `docker-compose.portainer.yml` é o mesmo sistema do `docker-compose.prod.yml`, mas **usa as imagens do ghcr.io** (o servidor não compila nada) e não depende de arquivos do repositório. Toda a configuração vem das variáveis da stack, listadas em `deploy/portainer.env.example`.
+
+1. **Registro** (se o repositório for privado, as imagens também são): em *Registries > Add registry > Custom registry*, URL `ghcr.io`, usuário do GitHub e um token clássico só com `read:packages`.
+2. **Stack:** *Stacks > Add stack*, de preferência por **Repository** (URL do repositório, referência `refs/heads/main`, compose path `docker-compose.portainer.yml`), ou colando o arquivo no *Web editor*.
+3. **Variáveis:** *Load variables from .env file* com uma cópia preenchida do `deploy/portainer.env.example` (fora do git). Obrigatórias: `DB_PASSWORD`, `MYSQL_ROOT_PASSWORD`, `JWT_SECRET`. Na primeira subida, `ADMIN_INICIAL_SENHA`.
+4. **HTTPS**, uma das duas:
+   - `HTTPS=sim` (padrão): o Nginx da stack tem o certificado. Colocar `fullchain.pem` e `privkey.pem` em `CERTS_DIR` no servidor (padrão `/opt/biblioteca-imbe/certs`) antes de subir. Sem os dois arquivos o container `web` para com uma mensagem dizendo o que falta. Portas 80 e 443 (`PORTA_HTTP`, `PORTA_HTTPS`).
+   - `HTTPS=nao`: já existe um proxy na frente (Nginx Proxy Manager, Traefik, o da TI) cuidando do certificado. O `web` só fala HTTP na `PORTA_HTTP` (ex.: `8080`), e o proxy aponta para ela. O Nginx confia no `X-Forwarded-For` só quando vem de `PROXY_CONFIAVEL` (padrão: faixas privadas, onde fica o proxy do Docker), para o limite de tentativas por IP do site usar o IP real do cidadão.
+5. **Atualização automática:** na stack, ligar *GitOps updates* com *Webhook* e *Re-pull image*, copiar a URL e cadastrar como segredo `PORTAINER_WEBHOOK_URL` no GitHub (*Settings > Secrets and variables > Actions*). A cada push na `main` com testes passando, a stack baixa as imagens novas sozinha. Sem webhook: *Pull and redeploy* na stack.
+
+**Versão fixa e volta atrás:** `TAG=latest` acompanha a `main`. Para fixar uma versão, ou voltar para a anterior, troque `TAG` pelo sha curto do commit e faça *Update the stack*. Uma stack de homologação pode usar `TAG=develop`.
+
+Banco e capas ficam nos volumes `mysql-dados` e `capas` da stack: redeploy e troca de imagem não apagam nada. Os scripts de backup funcionam igual, apontando para a stack (o nome do projeto é o nome da stack no Portainer):
+
+```bash
+COMPOSE="docker compose -p biblioteca -f docker-compose.portainer.yml --env-file /opt/biblioteca-imbe/stack.env" deploy/backup.sh
+```
+
 ## Branches
 
 - `develop`: onde o desenvolvimento acontece, com um commit por etapa.
@@ -639,6 +672,7 @@ O servidor precisa de saída HTTPS para `brasilapi.com.br` (ISBN e feriados), `w
 | 2026-11-17 | Cadastro de obra não mostra de qual fonte vieram os dados nem quais fontes falharam: só "Livro encontrado", "Não encontramos" ou "Não foi possível buscar agora" (com tentar de novo). A fonte continua gravada na obra |
 | 2026-11-17 | Reserva não exige cadastro: CPF novo vira pré-cadastro pendente (V7), conferido pela equipe na retirada; sem a conferência o livro não sai |
 | 2026-11-17 | Capas: tenta as capas de todas as fontes em ordem, recusando miniaturas e desenhos de "sem imagem"; busca semanal automática para obras sem capa (sem botão na tela); filtro "Sem capa" no acervo; câmera direto no celular |
+| 2026-11-17 | Implantação pelo Portainer com imagens do ghcr.io publicadas pelo GitHub Actions (testes antes; `latest` = main; webhook opcional); Nginx com `HTTPS=sim` (certificado próprio) ou `HTTPS=nao` (atrás de proxy, IP real só de `PROXY_CONFIAVEL`) |
 | 2026-11-17 | Cabeçalho do site público com foto das estantes da biblioteca ao fundo, sob véu branco para a marca continuar legível (`public/imagens/cabecalho-livros.jpg`, 1920 px, sem metadados) |
 | 2026-11-17 | Responsivo em qualquer aparelho (280 px a 1920 px sem rolagem lateral): `box-sizing: border-box` global, colunas da grade do catálogo que encolhem, barra da gestão que quebra linha no celular |
 

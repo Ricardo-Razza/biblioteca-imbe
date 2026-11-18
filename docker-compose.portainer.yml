@@ -1,0 +1,80 @@
+# Stack do Portainer: usa as imagens que o GitHub Actions publica no ghcr.io (não compila no servidor).
+# Variáveis: preencher na stack (ou "Load variables from .env file" com deploy/portainer.env.example).
+# Só o web fica exposto; banco e API ficam na rede interna da stack. Passo a passo no README ("Portainer").
+name: biblioteca
+
+services:
+  mysql:
+    image: mysql:8.4
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: biblioteca
+      MYSQL_USER: ${DB_USER:-biblioteca}
+      MYSQL_PASSWORD: ${DB_PASSWORD:?defina DB_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?defina MYSQL_ROOT_PASSWORD}
+      TZ: America/Sao_Paulo
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_0900_ai_ci
+    volumes:
+      - mysql-dados:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    image: ${IMAGEM_PREFIXO:-ghcr.io/ricardo-razza/biblioteca-imbe}/backend:${TAG:-latest}
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      DB_URL: jdbc:mysql://mysql:3306/biblioteca
+      DB_USER: ${DB_USER:-biblioteca}
+      DB_PASSWORD: ${DB_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET:?defina JWT_SECRET (pelo menos 32 caracteres)}
+      GOOGLE_BOOKS_API_KEY: ${GOOGLE_BOOKS_API_KEY:-}
+      AD_AUTH_URL: ${AD_AUTH_URL:-}
+      AD_AUTH_TOKEN: ${AD_AUTH_TOKEN:-}
+      ADMIN_INICIAL_SENHA: ${ADMIN_INICIAL_SENHA:-}
+      BIBLIOTECA_ENDERECO: ${BIBLIOTECA_ENDERECO:-}
+      BIBLIOTECA_HORARIO: ${BIBLIOTECA_HORARIO:-}
+      BIBLIOTECA_TELEFONE: ${BIBLIOTECA_TELEFONE:-}
+      BIBLIOTECA_EMAIL: ${BIBLIOTECA_EMAIL:-}
+    volumes:
+      - capas:/dados/capas
+    logging:
+      driver: json-file
+      options:
+        max-size: 20m
+        max-file: "5"
+
+  web:
+    image: ${IMAGEM_PREFIXO:-ghcr.io/ricardo-razza/biblioteca-imbe}/web:${TAG:-latest}
+    restart: unless-stopped
+    depends_on:
+      - backend
+    environment:
+      # sim: o Nginx tem o certificado (CERTS_DIR) e abre 80 e 443.
+      # nao: atrás de um proxy (Nginx Proxy Manager, Traefik) que cuida do HTTPS; só a PORTA_HTTP importa.
+      HTTPS: ${HTTPS:-sim}
+      DOMINIO: ${DOMINIO:-_}
+      PROXY_CONFIAVEL: ${PROXY_CONFIAVEL:-10.0.0.0/8 172.16.0.0/12 192.168.0.0/16}
+    ports:
+      - "${PORTA_HTTP:-80}:80"
+      - "${PORTA_HTTPS:-443}:443"
+    volumes:
+      # Pastas do servidor (caminho absoluto): fullchain.pem + privkey.pem, e o webroot do certbot
+      - ${CERTS_DIR:-/opt/biblioteca-imbe/certs}:/etc/nginx/certs:ro
+      - ${CERTBOT_DIR:-/opt/biblioteca-imbe/certbot}:/var/www/certbot:ro
+    logging:
+      driver: json-file
+      options:
+        max-size: 20m
+        max-file: "5"
+
+volumes:
+  mysql-dados:
+  capas:

@@ -1,0 +1,125 @@
+# Testes e imagens Docker.
+#   - Todo push e pull request: testes do backend (com Testcontainers) e do frontend, e o build do site.
+#   - Push na develop ou na main, com os testes passando: publica as imagens no GitHub Container Registry
+#       ghcr.io/<dono>/biblioteca-imbe/backend e .../web
+#     com as tags <branch> e <sha curto>; a main também recebe "latest" (é a que o Portainer usa).
+#   - Main publicada: chama o webhook do Portainer para atualizar a stack, se o segredo
+#     PORTAINER_WEBHOOK_URL existir (Settings > Secrets and variables > Actions).
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  backend:
+    name: Backend (testes)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '25'
+          cache: maven
+      - name: Testes (unitários e de integração com MySQL no Testcontainers)
+        run: |
+          chmod +x mvnw
+          ./mvnw -B verify
+      - name: Relatórios dos testes
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: relatorios-backend
+          path: backend/target/surefire-reports/
+          retention-days: 7
+
+  frontend:
+    name: Frontend (testes e build)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci --no-audit --no-fund
+      - run: npx ng test --watch=false
+      - run: npx ng build
+
+  imagens:
+    name: Imagem ${{ matrix.imagem }}
+    needs: [backend, frontend]
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      matrix:
+        include:
+          - imagem: backend
+            contexto: backend
+          - imagem: web
+            contexto: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - name: Nome da imagem (o registro exige minúsculas)
+        id: nome
+        run: echo "imagem=ghcr.io/${GITHUB_REPOSITORY,,}/${{ matrix.imagem }}" >> "$GITHUB_OUTPUT"
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ steps.nome.outputs.imagem }}
+          tags: |
+            type=ref,event=branch
+            type=sha,format=short,prefix=
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
+      - uses: docker/build-push-action@v6
+        with:
+          context: ${{ matrix.contexto }}
+          platforms: linux/amd64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha,scope=${{ matrix.imagem }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.imagem }}
+
+  portainer:
+    name: Atualizar stack no Portainer
+    needs: imagens
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Webhook da stack
+        env:
+          WEBHOOK: ${{ secrets.PORTAINER_WEBHOOK_URL }}
+        run: |
+          if [ -z "$WEBHOOK" ]; then
+            echo "Sem o segredo PORTAINER_WEBHOOK_URL: atualize a stack pelo Portainer (Pull and redeploy)."
+            exit 0
+          fi
+          curl -fsS -X POST --max-time 60 "$WEBHOOK"
+          echo "Portainer avisado: a stack vai baixar as imagens novas."

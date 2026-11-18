@@ -1,0 +1,29 @@
+# HTTPS=nao: atrás de um proxy que cuida do certificado (Nginx Proxy Manager, Traefik, o da TI).
+# Só HTTP na porta 80 do container; o proxy da frente é quem fala HTTPS com o cidadão.
+
+server_tokens off;
+
+upstream api {
+    server backend:8080;
+}
+
+# O proxy da frente informa se a conexão original era HTTPS
+map $http_x_forwarded_proto $proto_original {
+    default $http_x_forwarded_proto;
+    ""      http;
+}
+
+server {
+    listen 80;
+    listen [::]:80;
+    server_name _;
+
+    # IP real do cidadão: só aceita o X-Forwarded-For vindo de proxy da rede interna. As linhas
+    # set_real_ip_from saem de PROXY_CONFIAVEL (padrão: faixas privadas, onde fica o proxy do Docker),
+    # geradas na subida pelo 15-modo-https.sh.
+    include /etc/nginx/snippets/proxy-confiavel.conf;
+    real_ip_header X-Forwarded-For;
+    real_ip_recursive on;
+
+    include /etc/nginx/snippets/site.conf;
+}
