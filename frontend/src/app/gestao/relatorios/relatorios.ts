@@ -152,6 +152,7 @@ export function nomeDoArquivo(disposicao: string | null, padrao: string): string
     }
     .relatorios li {
       display: flex;
+      flex-wrap: wrap;
       align-items: center;
       gap: 16px;
       padding: 14px 4px;
@@ -161,7 +162,7 @@ export function nomeDoArquivo(disposicao: string | null, padrao: string): string
       color: var(--mat-sys-primary);
     }
     .info {
-      flex: 1;
+      flex: 1 1 200px;
       min-width: 0;
       display: flex;
       flex-direction: column;

@@ -140,6 +140,7 @@ const ATUALIZACAO_MS = 3000;
     }
     .lista li {
       display: flex;
+      flex-wrap: wrap;
       align-items: center;
       gap: 16px;
       padding: 10px 4px;
@@ -149,7 +150,7 @@ const ATUALIZACAO_MS = 3000;
       min-width: 72px;
     }
     .info {
-      flex: 1;
+      flex: 1 1 200px;
       min-width: 0;
       display: flex;
       flex-direction: column;

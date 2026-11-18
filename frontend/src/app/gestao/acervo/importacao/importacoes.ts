@@ -113,13 +113,14 @@ import { Importacao, ImportacaoApi, progresso } from './importacao-api';
     }
     .lista li {
       display: flex;
+      flex-wrap: wrap;
       align-items: center;
       gap: 16px;
       padding: 10px 4px;
       border-bottom: 1px solid var(--mat-sys-outline-variant);
     }
     .info {
-      flex: 1;
+      flex: 1 1 200px;
       min-width: 0;
       display: flex;
       flex-direction: column;

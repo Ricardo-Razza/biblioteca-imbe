@@ -157,7 +157,7 @@ import { MovimentoSemana } from './movimento-semana';
     }
     .cartoes {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(min(170px, 100%), 1fr));
       gap: 12px;
       margin: 8px 0 24px;
     }
@@ -195,7 +195,7 @@ import { MovimentoSemana } from './movimento-semana';
     }
     .colunas {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(min(340px, 100%), 1fr));
       gap: 24px 32px;
     }
     section {
@@ -211,13 +211,14 @@ import { MovimentoSemana } from './movimento-semana';
     }
     .lista li {
       display: flex;
+      flex-wrap: wrap;
       align-items: center;
       gap: 12px;
       padding: 8px 0;
       border-bottom: 1px solid var(--mat-sys-outline-variant);
     }
     .info {
-      flex: 1;
+      flex: 1 1 200px;
       min-width: 0;
       display: flex;
       flex-direction: column;

@@ -53,7 +53,7 @@ docker compose -f docker-compose.prod.yml up -d --build   # produção (precisa 
 - Pastas `publico`, `gestao`, `core`, `shared` (ver README).
 - Chamadas sempre para `/api/v1/...` (caminho relativo).
 - Diretrizes visuais no README: sem emojis, Material Symbols, sem `alert()`/`confirm()`.
-- **Sempre responsivo**, de 280 px a telas grandes, sem rolagem lateral da página. Em grid, colunas com `minmax(0, 1fr)` ou `minmax(min(150px, 100%), 1fr)` (só `1fr` não encolhe abaixo do texto mais longo); filho de flex/grid com texto cortado leva `min-width: 0`; tabela larga dentro de um contêiner com `overflow-x: auto`. Conferir toda tela nova em 320, 375, 768 e 1280 px.
+- **Sempre responsivo**, de 280 px a telas grandes, sem rolagem lateral da página. Em grid, colunas com `minmax(0, 1fr)` ou `minmax(min(150px, 100%), 1fr)` (só `1fr` não encolhe abaixo do texto mais longo); filho de flex/grid com texto cortado leva `min-width: 0`; linha de lista (capa, texto, selo, botões) é `flex-wrap: wrap` com o texto em `flex: 1 1 200px`, ou container query, nunca só `@media` (na gestão o menu come parte da largura); tabela larga dentro de um contêiner com `overflow-x: auto`. Conferir toda tela nova em 320, 375, 768 e 1280 px.
 - Visual segue o Manual de Marca da Prefeitura: cores por `var(--marca-*)` ou pelos tokens do Material (nada de hex solto em componente), marca da Prefeitura sempre pelo `app-assinatura` ou pelos PNG de `public/marca/`, respeitando a largura mínima do manual.
 
 ## Documentação

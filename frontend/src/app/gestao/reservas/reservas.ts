@@ -138,6 +138,7 @@ const TAMANHO = 20;
     }
     .lista li {
       display: flex;
+      flex-wrap: wrap;
       align-items: center;
       gap: 16px;
       padding: 10px 12px;
@@ -145,7 +146,7 @@ const TAMANHO = 20;
       --largura-capa: 48px;
     }
     .info {
-      flex: 1;
+      flex: 1 1 200px;
       min-width: 0;
       display: flex;
       flex-direction: column;

@@ -198,6 +198,7 @@ import { ConfiguracoesApi, Funcionario, SenhaProvisoria } from './configuracoes-
     }
     .lista li {
       display: flex;
+      flex-wrap: wrap;
       align-items: center;
       gap: 12px;
       padding: 10px 4px 10px 12px;
@@ -207,7 +208,7 @@ import { ConfiguracoesApi, Funcionario, SenhaProvisoria } from './configuracoes-
       color: var(--mat-sys-on-surface-variant);
     }
     .info {
-      flex: 1;
+      flex: 1 1 200px;
       min-width: 0;
       display: flex;
       flex-direction: column;
