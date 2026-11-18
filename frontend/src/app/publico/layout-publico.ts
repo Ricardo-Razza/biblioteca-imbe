@@ -41,11 +41,22 @@ import { RodapePublico } from './rodape-publico';
       margin: 0 auto;
       padding: 0 16px;
     }
+    /* Foto das estantes da biblioteca ao fundo, quase apagada por um véu branco: a marca continua legível. */
     .topo {
-      background: #fff;
+      position: relative;
+      isolation: isolate;
+      background: #fff url('/imagens/cabecalho-livros.jpg') center 40% / cover no-repeat;
       border-top: 6px solid transparent;
       border-image: var(--marca-faixa) 1;
       box-shadow: inset 0 -1px 0 var(--mat-sys-outline-variant);
+    }
+    .topo::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      z-index: -1;
+      /* Mais branco à esquerda (atrás da marca), um pouco mais de foto à direita */
+      background: linear-gradient(90deg, rgb(255 255 255 / 0.9) 0%, rgb(255 255 255 / 0.82) 55%, rgb(255 255 255 / 0.74) 100%);
     }
     .topo .faixa {
       display: flex;

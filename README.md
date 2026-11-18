@@ -639,6 +639,7 @@ O servidor precisa de saída HTTPS para `brasilapi.com.br` (ISBN e feriados), `w
 | 2026-11-17 | Cadastro de obra não mostra de qual fonte vieram os dados nem quais fontes falharam: só "Livro encontrado", "Não encontramos" ou "Não foi possível buscar agora" (com tentar de novo). A fonte continua gravada na obra |
 | 2026-11-17 | Reserva não exige cadastro: CPF novo vira pré-cadastro pendente (V7), conferido pela equipe na retirada; sem a conferência o livro não sai |
 | 2026-11-17 | Capas: tenta as capas de todas as fontes em ordem, recusando miniaturas e desenhos de "sem imagem"; busca semanal automática para obras sem capa (sem botão na tela); filtro "Sem capa" no acervo; câmera direto no celular |
+| 2026-11-17 | Cabeçalho do site público com foto das estantes da biblioteca ao fundo, sob véu branco para a marca continuar legível (`public/imagens/cabecalho-livros.jpg`, 1920 px, sem metadados) |
 
 ## Documentação
 - Toda decisão nova ou mudança de escopo atualiza o README.md
