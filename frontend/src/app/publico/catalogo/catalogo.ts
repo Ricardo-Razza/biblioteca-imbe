@@ -146,10 +146,15 @@ const TAMANHO = 24;
       padding: 0;
       margin: 0;
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(min(150px, 100%), 1fr));
       gap: 20px 16px;
     }
+    .grade > li {
+      min-width: 0;
+    }
+    /* min-width: 0 deixa o nome longo do autor ser cortado com reticências em vez de alargar a coluna */
     .cartao {
+      min-width: 0;
       display: flex;
       flex-direction: column;
       gap: 6px;
@@ -187,7 +192,7 @@ const TAMANHO = 24;
     }
     @media (max-width: 480px) {
       .grade {
-        grid-template-columns: repeat(2, 1fr);
+        grid-template-columns: repeat(2, minmax(0, 1fr));
         gap: 12px 8px;
       }
       .botao-buscar {

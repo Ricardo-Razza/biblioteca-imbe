@@ -107,6 +107,7 @@ interface ItemMenu {
     }
     .topo {
       display: flex;
+      flex-wrap: wrap;
       gap: 8px;
       align-items: center;
       padding: 12px 24px;
@@ -121,6 +122,12 @@ interface ItemMenu {
     @media (max-width: 760px) {
       .nome-usuario {
         display: none;
+      }
+      .topo {
+        padding: 8px 16px;
+      }
+      .usuario {
+        margin-left: 0;
       }
     }
     .conteudo {

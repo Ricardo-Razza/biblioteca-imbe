@@ -86,6 +86,11 @@ import { Assinatura } from '../../shared/assinatura/assinatura';
       position: relative;
       overflow: hidden;
     }
+    @media (max-width: 400px) {
+      .cartao {
+        padding: 24px 16px 20px;
+      }
+    }
     .cartao::before {
       content: '';
       position: absolute;

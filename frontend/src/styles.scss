@@ -61,6 +61,20 @@ html {
   --situacao-neutra-fundo: #ebeff4;
 }
 
+// Responsivo em qualquer aparelho: padding e borda contam dentro da largura (um "width: 100%" nunca
+// passa da tela) e mídia nunca é mais larga que o espaço que tem.
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+img,
+svg,
+video,
+canvas {
+  max-width: 100%;
+}
+
 body {
   color-scheme: light;
   background-color: var(--mat-sys-surface);
