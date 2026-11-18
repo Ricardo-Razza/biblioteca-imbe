@@ -232,7 +232,9 @@ public class EmprestimoService {
         if (limiteAtingido != null) {
             motivos.add(limiteAtingido);
         }
-        if (leitor.menorDeIdadeEm(hoje) && leitor.getResponsavel() == null) {
+        if (leitor.isCadastroPendente()) {
+            motivos.add("Cadastro feito pelo site, ainda não conferido. Confira o documento com foto e salve o cadastro do leitor.");
+        } else if (leitor.menorDeIdadeEm(hoje) && leitor.getResponsavel() == null) {
             motivos.add("Leitor menor de idade sem responsável. Complete o cadastro.");
         }
         return motivos;

@@ -130,6 +130,8 @@ export interface Leitor {
   menorDeIdade: boolean;
   /** Só quando bloqueado hoje. */
   bloqueadoAte: string | null;
+  /** Pré-cadastro feito pelo site ao reservar; salvar o cadastro na gestão confirma. */
+  cadastroPendente: boolean;
   criadoEm: string;
 }
 
@@ -185,7 +187,7 @@ export interface Reserva {
   obra: { id: number; titulo: string; autores: string[]; temCapa: boolean };
   exemplar: { id: number; tombo: string; localizacao: string | null };
   /** Telefone e e-mail informados na reserva; sem eles, os do cadastro do leitor. */
-  leitor: { id: number; nome: string; telefone: string | null; email: string | null };
+  leitor: { id: number; nome: string; telefone: string | null; email: string | null; cadastroPendente: boolean };
   criadaEm: string;
   prazoRetirada: string;
   /** Aguardando com o prazo já passado (ainda dá para entregar até o job expirar). */

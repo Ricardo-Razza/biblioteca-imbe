@@ -51,17 +51,30 @@ describe('Identificacao', () => {
     expect(enviados).toEqual([{ cpf: '52998224725', dataNascimento: '1990-01-02' }]);
   });
 
-  it('na reserva exige telefone e manda o e-mail só se preenchido', () => {
+  it('sem contato não mostra o nome', () => {
+    montar(false);
+    expect(fixture.debugElement.query(By.css('input[formControlName=nome]'))).toBeNull();
+  });
+
+  it('na reserva exige nome e telefone e manda o e-mail só se preenchido', () => {
     montar(true);
     preencher('input[formControlName=cpf]', CPF);
     preencher('input[type=date]', '1990-01-02');
-    enviar();
-    expect(enviados).toEqual([]);
-
     preencher('input[type=tel]', '51 99999 0000');
     enviar();
+    expect(enviados).toEqual([]);
+    expect(fixture.nativeElement.textContent).toContain('Informe o nome completo.');
+
+    preencher('input[formControlName=nome]', '  Leitora   Fictícia ');
+    enviar();
     expect(enviados).toEqual([
-      { cpf: '52998224725', dataNascimento: '1990-01-02', telefone: '(51) 99999-0000', email: null },
+      {
+        nome: 'Leitora Fictícia',
+        cpf: '52998224725',
+        dataNascimento: '1990-01-02',
+        telefone: '(51) 99999-0000',
+        email: null,
+      },
     ]);
 
     preencher('input[type=email]', ' leitor@exemplo.com ');
@@ -71,6 +84,7 @@ describe('Identificacao', () => {
 
   it('recusa telefone sem DDD', () => {
     montar(true);
+    preencher('input[formControlName=nome]', 'Leitora Fictícia');
     preencher('input[formControlName=cpf]', CPF);
     preencher('input[type=date]', '1990-01-02');
     preencher('input[type=tel]', '9999-0000');

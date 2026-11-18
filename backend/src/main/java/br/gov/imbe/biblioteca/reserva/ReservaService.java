@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -100,11 +101,11 @@ public class ReservaService implements ReservasAtivas {
      * O prazo conta em dias úteis a partir de hoje.
      */
     @Transactional
-    public ReservaPublica reservar(Long obraId, String cpf, LocalDate dataNascimento, String telefone,
+    public ReservaPublica reservar(Long obraId, String nome, String cpf, LocalDate dataNascimento, String telefone,
             String email) {
         String telefoneContato = telefoneComDdd(telefone);
         String emailContato = email == null || email.isBlank() ? null : email.strip().toLowerCase(Locale.ROOT);
-        Leitor leitor = identificar(cpf, dataNascimento);
+        Leitor leitor = identificarOuPreCadastrar(nome, cpf, dataNascimento, telefoneContato, emailContato);
         Obra obra = obras.findById(obraId)
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Livro não encontrado."));
         exigirPodeReservar(leitor);
@@ -256,9 +257,40 @@ public class ReservaService implements ReservasAtivas {
                 .orElseThrow(() -> new RegraNegocioException(NAO_CONFERE));
     }
 
+    /**
+     * CPF já cadastrado: a data de nascimento precisa conferir (senão, a mesma mensagem de sempre). CPF novo e
+     * válido: pré-cadastro com os dados informados, que a equipe confere na retirada. O nome é pedido sempre, para a
+     * resposta não revelar se o CPF já é leitor.
+     */
+    private Leitor identificarOuPreCadastrar(String nome, String cpf, LocalDate dataNascimento, String telefone,
+            String email) {
+        String digitos = cpf == null ? "" : cpf.replaceAll("\\D", "");
+        if (digitos.length() != 11 || dataNascimento == null) {
+            throw new RegraNegocioException(NAO_CONFERE);
+        }
+        Optional<Leitor> existente = leitores.findByCpf(digitos);
+        if (existente.isPresent()) {
+            return existente.filter(l -> l.getDataNascimento().equals(dataNascimento))
+                    .orElseThrow(() -> new RegraNegocioException(NAO_CONFERE));
+        }
+        if (!Leitor.cpfValido(digitos)) {
+            throw new RequisicaoInvalidaException("CPF inválido", "CPF inválido. Confira os números.");
+        }
+        if (dataNascimento.getYear() < 1900 || !dataNascimento.isBefore(hoje())) {
+            throw new RequisicaoInvalidaException("Data de nascimento inválida",
+                    "Data de nascimento inválida. Confira o dia, o mês e o ano.");
+        }
+        String nomeLimpo = nome == null ? "" : nome.strip().replaceAll("\\s+", " ");
+        try {
+            return leitores.saveAndFlush(Leitor.preCadastro(nomeLimpo, digitos, dataNascimento, telefone, email));
+        } catch (DataIntegrityViolationException e) {
+            // Outro pedido com o mesmo CPF criou o pré-cadastro ao mesmo tempo.
+            throw new ConflitoException("Não foi possível concluir agora. Tente de novo.");
+        }
+    }
+
     /** Mesmas regras do balcão, com mensagens para o próprio leitor. */
     private void exigirPodeReservar(Leitor leitor) {
-        LocalDate hoje = hoje();
         SituacaoLeitor s = emprestimos.situacao(leitor);
         if (!leitor.isAtivo()) {
             throw new RegraNegocioException("Seu cadastro está inativo. Procure a biblioteca.");
@@ -275,9 +307,8 @@ public class ReservaService implements ReservasAtivas {
             throw new RegraNegocioException("Você já está com " + s.livrosEmUso() + " de " + s.limite()
                     + " livros permitidos, somando empréstimos e reservas.");
         }
-        if (leitor.menorDeIdadeEm(hoje) && leitor.getResponsavel() == null) {
-            throw new RegraNegocioException("Seu cadastro precisa ser atualizado na biblioteca antes de reservar.");
-        }
+        // Cadastro incompleto (pré-cadastro do site, menor sem responsável) não impede a reserva: a equipe completa
+        // na retirada, e o empréstimo só sai com o cadastro em ordem.
     }
 
     private static void exigirAguardando(Reserva r) {

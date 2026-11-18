@@ -166,7 +166,7 @@ Decisões de 2026-11-17:
 Fluxo:
 
 1. O cidadão encontra o livro e clica em Reservar (o botão só aparece com exemplar disponível).
-2. Informa CPF, data de nascimento, telefone com DDD (obrigatório) e e-mail (opcional). O contato fica gravado na reserva, para a equipe avisar o cidadão; a tela Reservas mostra esse contato e, sem ele (reservas antigas), o do cadastro do leitor.
+2. Informa nome completo, CPF, data de nascimento, telefone com DDD (obrigatório) e e-mail (opcional). O contato fica gravado na reserva, para a equipe avisar o cidadão; a tela Reservas mostra esse contato e, sem ele (reservas antigas), o do cadastro do leitor.
 3. O backend confere o leitor, os limites e a disponibilidade, e **prende um exemplar** (situação `RESERVADO`) na mesma transação, com `SELECT ... FOR UPDATE SKIP LOCKED`. Assim dois cidadãos não reservam a última cópia.
 4. A tela mostra o protocolo, a data limite e o endereço e horário da biblioteca.
 5. A equipe vê a reserva em Reservas e no Início, com tombo e localização, e separa o livro.
@@ -176,13 +176,15 @@ Proteções do site público:
 - Só expõe dados da obra e a quantidade disponível. Nunca leitor, empréstimo ou exemplar individual.
 - CPF e data de nascimento vão no corpo do POST, nunca na URL, e não entram em log.
 - Resposta genérica quando os dados não conferem ("CPF ou data de nascimento não conferem").
+- O nome é pedido sempre, tenha ou não cadastro, para a resposta não revelar se um CPF já é leitor.
 - Limite de tentativas por IP e por CPF. CAPTCHA a decidir.
 - A confirmação mostra só o primeiro nome do leitor.
 
 Como foi implementado (fase 4):
 
 - **Catálogo:** só aparece obra com algum exemplar disponível, reservado ou emprestado (sem exemplar, ou só com extraviados e baixados, fica de fora). A busca procura no título, subtítulo, autores e assuntos, sem diferenciar maiúsculas nem acentos. "Todos emprestados" quando não há exemplar disponível.
-- **Reserva:** mesmas regras do balcão (desativado, bloqueado, atraso, limite contando as reservas, menor sem responsável), com mensagens para o próprio leitor. Uma reserva aguardando por leitor e obra. O prazo conta `PRAZO_RETIRADA_RESERVA_DIAS_UTEIS` a partir de hoje (reserva na segunda: retira até quarta). O banco garante uma reserva aguardando por exemplar e por leitor e obra (colunas geradas + índice único).
+- **Reserva sem cadastro (pré-cadastro):** o cidadão não precisa ser leitor para reservar. Se o CPF ainda não existe (e é válido), o leitor é criado com nome, CPF, nascimento, telefone e e-mail informados e `cadastro_pendente = true` (V7). Se o CPF já existe, a data de nascimento precisa conferir. O pré-cadastro reserva normalmente, mas não leva livro enquanto pendente: na tela Reservas aparece "Cadastro pendente" e o botão vira "Conferir cadastro"; a equipe confere o documento com foto, completa endereço e responsável (se menor) e confirma, o que tira a pendência e grava `LEITOR_CADASTRO_CONFERIDO` na auditoria. Risco aceito: alguém pode reservar com o CPF válido de outra pessoa que ainda não é leitora; o livro só sai com documento e a reserva expira no prazo.
+- **Reserva:** mesmas regras do balcão (desativado, bloqueado, atraso, limite contando as reservas), com mensagens para o próprio leitor. Cadastro incompleto (pendente ou menor sem responsável) não impede reservar, só retirar. Uma reserva aguardando por leitor e obra. O prazo conta `PRAZO_RETIRADA_RESERVA_DIAS_UTEIS` a partir de hoje (reserva na segunda: retira até quarta). O banco garante uma reserva aguardando por exemplar e por leitor e obra (colunas geradas + índice único).
 - **Protocolo:** 8 caracteres sem os que se confundem (0/O, 1/I/L), mostrado como `ABCD-2345`; aceito com ou sem hífen e em minúsculas.
 - **Retirada:** Entregar, na tela Reservas, ou bipar o tombo reservado no Emprestar para o próprio leitor: vira empréstimo com o mesmo exemplar. O limite não impede a retirada (a reserva já contava); bloqueio, atraso e desativação impedem. Exemplar reservado para outro leitor não sai no balcão. Com o prazo vencido e a reserva ainda não expirada, ainda dá para entregar.
 - **Expiração:** job de hora em hora (e ao subir a API) marca `EXPIRADA` as reservas com o prazo já passado e devolve o exemplar a `DISPONIVEL`.
@@ -336,6 +338,7 @@ erDiagram
         varchar responsavel "obrigatório se menor"
         boolean ativo
         date bloqueado_ate
+        boolean cadastro_pendente "pré-cadastro pelo site"
     }
     EMPRESTIMO {
         bigint id PK
@@ -463,7 +466,7 @@ Como as regras foram implementadas (fase 2):
 | `GET /publico/obras/{id}` | Ficha do livro |
 | `GET /publico/assuntos` | Lista para os filtros, com a quantidade de obras |
 | `GET /publico/biblioteca` | Nome, endereço, horário, telefone, e-mail, prazo de retirada, limite de livros e prazo do empréstimo |
-| `POST /publico/reservas` | `{ obraId, cpf, dataNascimento, telefone, email }` → protocolo e prazo. Telefone obrigatório, com DDD, gravado como `(51) 99999-9999`; e-mail opcional |
+| `POST /publico/reservas` | `{ obraId, nome, cpf, dataNascimento, telefone, email }` → protocolo e prazo. CPF novo vira pré-cadastro. Telefone obrigatório, com DDD, gravado como `(51) 99999-9999`; e-mail opcional |
 | `POST /publico/reservas/consulta` | `{ cpf, dataNascimento }` → reservas do leitor |
 | `POST /publico/reservas/{protocolo}/cancelamento` | `{ cpf, dataNascimento }` |
 
@@ -630,6 +633,7 @@ O servidor precisa de saída HTTPS para `brasilapi.com.br` (ISBN e feriados), `w
 | 2026-11-17 | Visual pelo Manual de Marca da Prefeitura (2021-2028): azul `#006EB7` como cor principal, logos oficiais, assinatura no padrão das secretarias; Lexend Exa e Lexend no lugar da Termina enquanto não houver licença web |
 | 2026-11-17 | Tombo opcional no cadastro manual do exemplar (gerado `AUTO-000123`); importação sem tombo continua só com a obra |
 | 2026-11-17 | Reserva pelo site pede telefone (obrigatório) e e-mail (opcional), gravados na reserva (V6) e mostrados à equipe |
+| 2026-11-17 | Reserva não exige cadastro: CPF novo vira pré-cadastro pendente (V7), conferido pela equipe na retirada; sem a conferência o livro não sai |
 
 ## Documentação
 - Toda decisão nova ou mudança de escopo atualiza o README.md

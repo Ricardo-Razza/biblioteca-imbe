@@ -37,8 +37,10 @@ public record ReservaResposta(
 
     /**
      * Telefone e e-mail informados na reserva; sem eles (reserva antiga), os do cadastro do leitor.
+     *
+     * @param cadastroPendente pré-cadastro feito pelo site: conferir o documento antes de entregar
      */
-    public record LeitorResumo(Long id, String nome, String telefone, String email) {
+    public record LeitorResumo(Long id, String nome, String telefone, String email, boolean cadastroPendente) {
     }
 
     static ReservaResposta de(Reserva r, LocalDate hoje) {
@@ -50,7 +52,7 @@ public record ReservaResposta(
                 new ExemplarResumo(x.getId(), x.getTombo(), x.getLocalizacao()),
                 new LeitorResumo(l.getId(), l.getNome(),
                         r.getTelefone() != null ? r.getTelefone() : l.getTelefone(),
-                        r.getEmail() != null ? r.getEmail() : l.getEmail()),
+                        r.getEmail() != null ? r.getEmail() : l.getEmail(), l.isCadastroPendente()),
                 r.getCriadaEm(), r.getPrazoRetirada(), r.aguardando() && r.getPrazoRetirada().isBefore(hoje),
                 r.getFinalizadaEm(), r.getCanceladaPor(),
                 r.getEmprestimo() == null ? null : r.getEmprestimo().getId(),

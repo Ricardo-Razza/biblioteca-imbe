@@ -9,7 +9,8 @@ import { cpfValido, formatarCpf } from '../shared/formatos';
 export interface DadosIdentificacao {
   cpf: string;
   dataNascimento: string;
-  /** Só quando o formulário pede contato (reserva). */
+  /** Só quando o formulário pede contato (reserva). Nome serve para o pré-cadastro de quem ainda não é leitor. */
+  nome?: string;
   telefone?: string;
   email?: string | null;
 }
@@ -52,6 +53,13 @@ function hojeIso(): string {
   imports: [ReactiveFormsModule, MatButtonModule, MatFormFieldModule, MatInputModule],
   template: `
     <form class="coluna" [formGroup]="form" (ngSubmit)="enviar()">
+      @if (pedirContato()) {
+        <mat-form-field appearance="outline">
+          <mat-label>Nome completo</mat-label>
+          <input matInput formControlName="nome" required autocomplete="name" />
+          <mat-error>Informe o nome completo.</mat-error>
+        </mat-form-field>
+      }
       <mat-form-field appearance="outline">
         <mat-label>CPF</mat-label>
         <input matInput formControlName="cpf" inputmode="numeric" autocomplete="off" placeholder="000.000.000-00" (blur)="formatar()" />
@@ -99,6 +107,10 @@ export class Identificacao {
 
   protected readonly hoje = hojeIso();
   protected readonly form = new FormGroup({
+    nome: new FormControl('', {
+      nonNullable: true,
+      validators: [(c) => (this.pedirContato() && !c.value?.trim() ? { required: true } : null), Validators.maxLength(200)],
+    }),
     cpf: new FormControl('', { nonNullable: true, validators: [Validators.required, validarCpf] }),
     dataNascimento: new FormControl('', { nonNullable: true, validators: Validators.required }),
     telefone: new FormControl('', { nonNullable: true, validators: (c) => this.validarTelefone(c) }),
@@ -128,15 +140,17 @@ export class Identificacao {
   }
 
   protected enviar(): void {
-    // O validador do telefone depende do input pedirContato: recalcula antes de conferir.
+    // Os validadores de nome e telefone dependem do input pedirContato: recalcula antes de conferir.
+    this.form.controls.nome.updateValueAndValidity();
     this.form.controls.telefone.updateValueAndValidity();
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       return;
     }
-    const { cpf, dataNascimento, telefone, email } = this.form.getRawValue();
+    const { nome, cpf, dataNascimento, telefone, email } = this.form.getRawValue();
     const dados: DadosIdentificacao = { cpf: cpf.replace(/\D/g, ''), dataNascimento };
     if (this.pedirContato()) {
+      dados.nome = nome.trim().replace(/\s+/g, ' ');
       dados.telefone = formatarTelefone(telefone.trim());
       dados.email = email.trim() || null;
     }

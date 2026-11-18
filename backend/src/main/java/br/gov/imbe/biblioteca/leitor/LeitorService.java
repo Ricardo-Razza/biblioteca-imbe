@@ -52,6 +52,11 @@ public class LeitorService {
             }
             leitor.definirAtivo(req.ativo());
         }
+        if (leitor.isCadastroPendente()) {
+            // Salvar pela gestão é a conferência do pré-cadastro feito no site.
+            leitor.conferirCadastro();
+            auditoria.registrar(AcaoAuditoria.LEITOR_CADASTRO_CONFERIDO, "LEITOR", id, null);
+        }
         return LeitorResposta.de(leitor, hoje());
     }
 

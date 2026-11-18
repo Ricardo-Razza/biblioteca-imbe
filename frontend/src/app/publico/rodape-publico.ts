@@ -59,14 +59,14 @@ import { DadosBiblioteca } from '../core/api/modelos';
           <h2 id="rodape-reservar">Como reservar</h2>
           <ol class="passos">
             <li><span>Encontre o livro no <a routerLink="/">catálogo</a> e toque em Reservar.</span></li>
-            <li><span>Informe seu CPF e sua data de nascimento.</span></li>
-            <li><span>Retire no balcão em até {{ diasUteis(biblioteca()?.prazoRetiradaDiasUteis) }}.</span></li>
+            <li><span>Informe nome, CPF, data de nascimento e telefone.</span></li>
+            <li><span>Retire no balcão em até {{ diasUteis(biblioteca()?.prazoRetiradaDiasUteis) }}, com um documento com foto.</span></li>
           </ol>
           @if (biblioteca(); as b) {
             <p class="suave">
               Cada leitor fica com até {{ b.limiteLivros }} {{ b.limiteLivros === 1 ? 'livro' : 'livros' }} por vez, por
-              {{ diasUteis(b.prazoEmprestimoDias) }}. Para reservar, é preciso ter cadastro: faça o seu no balcão, com o
-              CPF.
+              {{ diasUteis(b.prazoEmprestimoDias) }}. Não precisa ter cadastro para reservar: quem ainda não tem é
+              cadastrado com os dados da reserva, e a biblioteca completa na retirada.
             </p>
           }
         </section>

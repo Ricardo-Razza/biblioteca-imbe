@@ -50,7 +50,8 @@ public final class Publico {
     public static ResultActions reservar(MockMvc mvc, RequestPostProcessor ip, long obraId, String cpf,
             LocalDate nascimento, String telefone, String email) throws Exception {
         return mvc.perform(postJson("/api/v1/publico/reservas", """
-                {"obraId": %d, "cpf": "%s", "dataNascimento": "%s", "telefone": %s, "email": %s}
+                {"obraId": %d, "nome": "Leitora Fictícia da Silva", "cpf": "%s", "dataNascimento": "%s",
+                 "telefone": %s, "email": %s}
                 """.formatted(obraId, cpf, nascimento, json(telefone), json(email)), ip));
     }
 

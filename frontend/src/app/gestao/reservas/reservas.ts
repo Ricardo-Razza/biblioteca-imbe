@@ -76,6 +76,9 @@ const TAMANHO = 20;
                 <span><strong>Tombo {{ x.exemplar.tombo }}</strong>{{ x.exemplar.localizacao ? ' · ' + x.exemplar.localizacao : '' }}</span>
                 <span>
                   <a [routerLink]="['/painel/leitores', x.leitor.id]">{{ x.leitor.nome }}</a>
+                  @if (x.leitor.cadastroPendente) {
+                    <app-selo tom="alerta">Cadastro pendente</app-selo>
+                  }
                   @if (x.leitor.telefone) {
                     <span class="texto-secundario"> · <a [href]="'tel:' + x.leitor.telefone">{{ x.leitor.telefone }}</a></span>
                   }
@@ -97,7 +100,11 @@ const TAMANHO = 20;
               <app-selo [tom]="selo(x).tom">{{ selo(x).texto }}</app-selo>
               @if (x.status === 'AGUARDANDO_RETIRADA' && cancelando() !== x.id) {
                 <div class="acoes-item">
-                  <button mat-flat-button type="button" [disabled]="ocupado()" (click)="entregar(x)">Entregar</button>
+                  @if (x.leitor.cadastroPendente) {
+                    <a mat-flat-button [routerLink]="['/painel/leitores', x.leitor.id, 'editar']">Conferir cadastro</a>
+                  } @else {
+                    <button mat-flat-button type="button" [disabled]="ocupado()" (click)="entregar(x)">Entregar</button>
+                  }
                   <button mat-button type="button" [disabled]="ocupado()" (click)="cancelando.set(x.id)">Cancelar</button>
                 </div>
               }

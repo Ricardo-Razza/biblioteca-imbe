@@ -25,11 +25,14 @@ public final class ReservaPublicaDtos {
     }
 
     /**
+     * @param nome     obrigatório sempre; só é usado quando o CPF ainda não é leitor (pré-cadastro)
      * @param telefone obrigatório: a equipe avisa por ele que o livro está separado. Com DDD, 10 ou 11 dígitos.
      * @param email    opcional
      */
     public record NovaReserva(
             @NotNull(message = "Escolha o livro.") Long obraId,
+            @NotBlank(message = "Informe o nome completo.") @Size(max = 200, message = "Use no máximo 200 caracteres.")
+            String nome,
             @NotBlank(message = "Informe o CPF.") @Size(max = 20, message = "CPF inválido.") String cpf,
             @NotNull(message = "Informe a data de nascimento.") LocalDate dataNascimento,
             @NotBlank(message = "Informe um telefone para contato.")

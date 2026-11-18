@@ -43,7 +43,17 @@ function idade(nascimento: string): number {
   ],
   template: `
     <a mat-button [routerLink]="voltarPara()" class="voltar"><mat-icon>arrow_back</mat-icon> Voltar</a>
-    <h1>{{ edicao() ? 'Editar leitor' : 'Cadastrar leitor' }}</h1>
+    <h1>{{ pendente() ? 'Conferir cadastro' : edicao() ? 'Editar leitor' : 'Cadastrar leitor' }}</h1>
+
+    @if (pendente()) {
+      <p class="aviso alerta" role="status">
+        <mat-icon>how_to_reg</mat-icon>
+        <span>
+          O leitor preencheu estes dados no site, ao reservar. Confira nome, CPF e nascimento com um documento com
+          foto, complete endereço e responsável (se for menor) e confirme.
+        </span>
+      </p>
+    }
 
     @if (erro()) {
       <p class="aviso erro" role="alert"><mat-icon>error</mat-icon> {{ erro() }}</p>
@@ -95,7 +105,7 @@ function idade(nascimento: string): number {
           @if (salvando()) {
             <mat-spinner diameter="18" />
           }
-          Salvar
+          {{ pendente() ? 'Confirmar cadastro' : 'Salvar' }}
         </button>
         <a mat-button [routerLink]="voltarPara()">Cancelar</a>
       </div>
@@ -130,6 +140,8 @@ export class FormularioLeitor {
   protected readonly salvando = signal(false);
   protected readonly erro = signal<string | null>(null);
   protected readonly edicao = computed(() => !!this.id());
+  /** Pré-cadastro do site: salvar confirma que a equipe conferiu o documento. */
+  protected readonly pendente = signal(false);
   protected readonly voltarPara = computed(() => (this.id() ? ['/painel/leitores', this.id()] : ['/painel/leitores']));
   private readonly nascimento = signal('');
   protected readonly menor = computed(() => !!this.nascimento() && idade(this.nascimento()) < 18);
@@ -152,6 +164,7 @@ export class FormularioLeitor {
       if (!id) return;
       this.api.buscar(Number(id)).subscribe({
         next: (l) => {
+          this.pendente.set(l.cadastroPendente);
           this.form.reset({
             nome: l.nome,
             cpf: formatarCpf(l.cpf),

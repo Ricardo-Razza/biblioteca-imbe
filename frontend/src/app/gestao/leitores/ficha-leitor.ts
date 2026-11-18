@@ -43,10 +43,24 @@ import { LeitoresApi } from './leitores-api';
         @if (!l.ativo) {
           <app-selo tom="neutra">Desativado</app-selo>
         }
+        @if (l.cadastroPendente) {
+          <app-selo tom="alerta">Cadastro pendente</app-selo>
+        }
         @if (l.menorDeIdade) {
-          <app-selo tom="neutra">Menor de idade · responsável: {{ l.responsavel }}</app-selo>
+          <app-selo tom="neutra">Menor de idade{{ l.responsavel ? ' · responsável: ' + l.responsavel : '' }}</app-selo>
         }
       </div>
+
+      @if (l.cadastroPendente) {
+        <div class="aviso alerta" role="status">
+          <mat-icon>how_to_reg</mat-icon>
+          <span>
+            Cadastro feito pelo próprio leitor no site, ao reservar. Confira os dados com um documento com foto,
+            complete o que faltar e salve. Antes disso, ele não pode levar livros.
+          </span>
+          <a mat-button [routerLink]="['/painel/leitores', l.id, 'editar']">Conferir cadastro</a>
+        </div>
+      }
 
       @if (situacao(); as s) {
         @if (s.podeEmprestar) {

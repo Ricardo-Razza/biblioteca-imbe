@@ -14,6 +14,7 @@ public enum AcaoAuditoria {
     FERIADO_REMOVIDO("Removeu feriado"),
     FERIADOS_IMPORTADOS("Importou feriados nacionais"),
     LEITOR_DESBLOQUEADO("Desbloqueou leitor"),
+    LEITOR_CADASTRO_CONFERIDO("Conferiu cadastro feito pelo site"),
     EXEMPLAR_ALTERADO("Alterou exemplar"),
     RESERVA_CANCELADA("Cancelou reserva"),
     RELATORIO_EXPORTADO("Exportou relatório"),

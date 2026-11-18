@@ -48,6 +48,10 @@ public class Leitor {
 
     private LocalDate bloqueadoAte;
 
+    /** Criado pelo site ao reservar, com os dados que o cidadão informou; a equipe confere na retirada. */
+    @Column(nullable = false)
+    private boolean cadastroPendente;
+
     @Column(nullable = false, updatable = false)
     private LocalDateTime criadoEm;
 
@@ -57,6 +61,44 @@ public class Leitor {
     Leitor(String cpf) {
         this.cpf = cpf;
         this.criadoEm = LocalDateTime.now();
+    }
+
+    /**
+     * Pré-cadastro pelo site: reserva já, mas só leva livro depois que a equipe conferir o documento e completar o
+     * cadastro (responsável, endereço).
+     */
+    public static Leitor preCadastro(String nome, String cpf, LocalDate dataNascimento, String telefone, String email) {
+        Leitor l = new Leitor(cpf);
+        l.preencher(nome, cpf, dataNascimento, telefone, email, null, null);
+        l.cadastroPendente = true;
+        return l;
+    }
+
+    /** A equipe salvou o cadastro: dados conferidos. */
+    void conferirCadastro() {
+        this.cadastroPendente = false;
+    }
+
+    public boolean isCadastroPendente() {
+        return cadastroPendente;
+    }
+
+    /** Dígitos verificadores do CPF; rejeita sequências repetidas (111.111.111-11). */
+    public static boolean cpfValido(String digitos) {
+        if (digitos == null || !digitos.matches("\\d{11}") || digitos.chars().distinct().count() == 1) {
+            return false;
+        }
+        for (int posicao = 9; posicao <= 10; posicao++) {
+            int soma = 0;
+            for (int i = 0; i < posicao; i++) {
+                soma += (digitos.charAt(i) - '0') * (posicao + 1 - i);
+            }
+            int dv = (soma * 10) % 11 % 10;
+            if (dv != digitos.charAt(posicao) - '0') {
+                return false;
+            }
+        }
+        return true;
     }
 
     void preencher(String nome, String cpf, LocalDate dataNascimento, String telefone, String email, String endereco,

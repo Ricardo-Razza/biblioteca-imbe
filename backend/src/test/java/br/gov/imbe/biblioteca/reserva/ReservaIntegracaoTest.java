@@ -6,6 +6,7 @@ import static br.gov.imbe.biblioteca.Publico.postJson;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -112,11 +113,66 @@ class ReservaIntegracaoTest {
         Publico.reservar(mvc, ip, obra, cpf, NASCIMENTO.plusDays(1))
                 .andExpect(status().isUnprocessableContent())
                 .andExpect(jsonPath("$.detail").value(ReservaService.NAO_CONFERE));
-        Publico.reservar(mvc, ip, obra, Dados.cpf(), NASCIMENTO)
-                .andExpect(jsonPath("$.detail").value(ReservaService.NAO_CONFERE));
         Publico.reservar(mvc, ip, obra, "123", NASCIMENTO)
                 .andExpect(jsonPath("$.detail").value(ReservaService.NAO_CONFERE));
         mvc.perform(get("/api/v1/exemplares/tombo/R-1")).andExpect(jsonPath("$.situacao").value("DISPONIVEL"));
+    }
+
+    @Test
+    void semCadastroReservaComPreCadastroEEquipeConfereNaRetirada() throws Exception {
+        String novoCpf = Dados.cpf();
+        String corpo = Publico.reservar(mvc, ip, obra, novoCpf, LocalDate.of(1995, 7, 20), "(51) 98888-7777",
+                        "nova@exemplo.com")
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.primeiroNome").value("Leitora"))
+                .andReturn().getResponse().getContentAsString();
+        long reserva = idDaReserva(JsonPath.read(corpo, "$.protocolo"));
+
+        String lista = mvc.perform(get("/api/v1/leitores").param("q", novoCpf))
+                .andExpect(jsonPath("$.total").value(1))
+                .andExpect(jsonPath("$.itens[0].nome").value("Leitora Fictícia da Silva"))
+                .andExpect(jsonPath("$.itens[0].telefone").value("(51) 98888-7777"))
+                .andExpect(jsonPath("$.itens[0].email").value("nova@exemplo.com"))
+                .andExpect(jsonPath("$.itens[0].cadastroPendente").value(true))
+                .andReturn().getResponse().getContentAsString();
+        long novo = ((Number) JsonPath.read(lista, "$.itens[0].id")).longValue();
+        mvc.perform(get("/api/v1/reservas").param("q", "vidas secas"))
+                .andExpect(jsonPath("$.itens[0].leitor.cadastroPendente").value(true));
+
+        // Mesmo CPF de novo: já é leitor (pendente), então a data precisa conferir.
+        long outraObra = Dados.obra(mvc, Dados.isbn(805), "São Bernardo");
+        Dados.exemplar(mvc, outraObra, "R-5");
+        Publico.reservar(mvc, ip, outraObra, novoCpf, LocalDate.of(1995, 7, 21))
+                .andExpect(jsonPath("$.detail").value(ReservaService.NAO_CONFERE));
+
+        // Retirada só depois de a equipe conferir o cadastro.
+        mvc.perform(post("/api/v1/reservas/" + reserva + "/retirada"))
+                .andExpect(status().isUnprocessableContent())
+                .andExpect(jsonPath("$.detail").value(Matchers.containsString("ainda não conferido")));
+        mvc.perform(put("/api/v1/leitores/" + novo).contentType(MediaType.APPLICATION_JSON).content("""
+                {"nome": "Leitora Fictícia da Silva", "cpf": "%s", "dataNascimento": "1995-07-20",
+                 "telefone": "(51) 98888-7777", "endereco": "Rua Fictícia, 10"}
+                """.formatted(novoCpf)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.cadastroPendente").value(false));
+        mvc.perform(post("/api/v1/reservas/" + reserva + "/retirada")).andExpect(status().isOk());
+    }
+
+    @Test
+    void preCadastroRecusaCpfInvalidoENaoExigeResponsavelDoMenor() throws Exception {
+        Publico.reservar(mvc, ip, obra, "111.111.111-11", NASCIMENTO)
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.detail").value("CPF inválido. Confira os números."));
+        Publico.reservar(mvc, ip, obra, "529.982.247-24", NASCIMENTO).andExpect(status().isBadRequest());
+        Publico.reservar(mvc, ip, obra, Dados.cpf(), hoje.minusYears(10)).andExpect(status().isCreated());
+    }
+
+    @Test
+    void cpfValido() {
+        assertThat(br.gov.imbe.biblioteca.leitor.Leitor.cpfValido("52998224725")).isTrue();
+        assertThat(br.gov.imbe.biblioteca.leitor.Leitor.cpfValido("52998224724")).isFalse();
+        assertThat(br.gov.imbe.biblioteca.leitor.Leitor.cpfValido("00000000000")).isFalse();
+        assertThat(br.gov.imbe.biblioteca.leitor.Leitor.cpfValido(Dados.cpf())).isTrue();
     }
 
     @Test

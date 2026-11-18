@@ -16,11 +16,12 @@ public record LeitorResposta(
         boolean ativo,
         boolean menorDeIdade,
         LocalDate bloqueadoAte,
+        boolean cadastroPendente,
         LocalDateTime criadoEm) {
 
     public static LeitorResposta de(Leitor l, LocalDate hoje) {
         return new LeitorResposta(l.getId(), l.getNome(), l.getCpf(), l.getDataNascimento(), l.getTelefone(),
                 l.getEmail(), l.getEndereco(), l.getResponsavel(), l.isAtivo(), l.menorDeIdadeEm(hoje),
-                l.bloqueadoEm(hoje) ? l.getBloqueadoAte() : null, l.getCriadoEm());
+                l.bloqueadoEm(hoje) ? l.getBloqueadoAte() : null, l.isCadastroPendente(), l.getCriadoEm());
     }
 }

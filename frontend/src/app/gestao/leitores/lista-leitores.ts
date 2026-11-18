@@ -67,6 +67,9 @@ const TAMANHO = 20;
                   @if (!l.ativo) {
                     <app-selo tom="neutra">Desativado</app-selo>
                   }
+                  @if (l.cadastroPendente) {
+                    <app-selo tom="alerta">Cadastro pendente</app-selo>
+                  }
                   @if (l.bloqueadoAte) {
                     <app-selo tom="erro">Bloqueado até {{ data(l.bloqueadoAte) }}</app-selo>
                   }
