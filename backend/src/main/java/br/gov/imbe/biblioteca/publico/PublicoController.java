@@ -92,7 +92,8 @@ public class PublicoController {
     @PostMapping("/reservas")
     public ResponseEntity<ReservaPublica> reservar(@Valid @RequestBody NovaReserva req) {
         limitar(req.cpf());
-        ReservaPublica r = reservas.reservar(req.obraId(), req.cpf(), req.dataNascimento());
+        ReservaPublica r = reservas.reservar(req.obraId(), req.cpf(), req.dataNascimento(), req.telefone(),
+                req.email());
         return ResponseEntity.created(URI.create("/api/v1/publico/reservas/" + r.protocolo())).body(r);
     }
 

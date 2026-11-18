@@ -50,8 +50,14 @@ export class PublicoApi {
     return this.http.get<AssuntoPublico[]>(`${API}/assuntos`);
   }
 
-  reservar(obraId: number, cpf: string, dataNascimento: string): Observable<ReservaPublica> {
-    return this.http.post<ReservaPublica>(`${API}/reservas`, { obraId, cpf, dataNascimento });
+  reservar(
+    obraId: number,
+    cpf: string,
+    dataNascimento: string,
+    telefone: string,
+    email: string | null,
+  ): Observable<ReservaPublica> {
+    return this.http.post<ReservaPublica>(`${API}/reservas`, { obraId, cpf, dataNascimento, telefone, email });
   }
 
   minhasReservas(cpf: string, dataNascimento: string): Observable<MinhasReservas> {

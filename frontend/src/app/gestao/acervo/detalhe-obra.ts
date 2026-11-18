@@ -101,7 +101,7 @@ export class DetalheObra {
   });
 
   protected readonly formExemplar = this.fb.group({
-    tombo: ['', [Validators.required, Validators.maxLength(30), Validators.pattern(/^\s*[A-Za-z0-9.-]{1,30}\s*$/)]],
+    tombo: ['', [Validators.maxLength(30), Validators.pattern(/^\s*[A-Za-z0-9.-]{0,30}\s*$/)]],
     localizacao: ['', [Validators.maxLength(100)]],
     estado: this.fb.control<'BOM' | 'DANIFICADO'>('BOM'),
     origem: this.fb.control<'COMPRA' | 'DOACAO' | null>(null),
@@ -128,6 +128,20 @@ export class DetalheObra {
       return 'Use até 30 letras, números, ponto ou hífen, sem espaços nem barra.';
     }
     return mensagemDoCampo(c);
+  }
+
+  protected tomboVazio(): boolean {
+    return !this.formExemplar.controls.tombo.value?.trim();
+  }
+
+  /**
+   * O leitor de código de barras manda Enter depois do tombo. Enter com o campo vazio (bipe falho ou tecla
+   * a mais) não cadastra exemplar sem tombo; para isso é preciso clicar no botão.
+   */
+  protected enterNoTombo(evento: Event): void {
+    if (this.tomboVazio()) {
+      evento.preventDefault();
+    }
   }
 
   protected erro(campo: string): string {
@@ -176,7 +190,7 @@ export class DetalheObra {
     this.erroExemplar.set(null);
     this.api
       .cadastrarExemplar(this.id(), {
-        tombo: v.tombo.trim(),
+        tombo: v.tombo?.trim() || null,
         localizacao: textoOuNulo(v.localizacao),
         estado: v.estado,
         origem: v.origem,

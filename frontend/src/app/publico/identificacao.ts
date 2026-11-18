@@ -9,10 +9,32 @@ import { cpfValido, formatarCpf } from '../shared/formatos';
 export interface DadosIdentificacao {
   cpf: string;
   dataNascimento: string;
+  /** Só quando o formulário pede contato (reserva). */
+  telefone?: string;
+  email?: string | null;
 }
 
 function validarCpf(c: AbstractControl): ValidationErrors | null {
   return !c.value || cpfValido(c.value) ? null : { cpf: true };
+}
+
+/** Dígitos do telefone com DDD (10 ou 11), sem o 55 do país. Nulo se não for um telefone válido. */
+export function digitosTelefone(valor: string): string | null {
+  let d = (valor ?? '').replace(/\D/g, '');
+  if ((d.length === 12 || d.length === 13) && d.startsWith('55')) {
+    d = d.slice(2);
+  }
+  return d.length === 10 || d.length === 11 ? d : null;
+}
+
+/** (51) 99999-9999 ou (51) 3333-4444. */
+export function formatarTelefone(valor: string): string {
+  const d = digitosTelefone(valor);
+  if (!d) {
+    return valor;
+  }
+  const meio = d.length - 4;
+  return `(${d.slice(0, 2)}) ${d.slice(2, meio)}-${d.slice(meio)}`;
 }
 
 function hojeIso(): string {
@@ -21,8 +43,9 @@ function hojeIso(): string {
 }
 
 /**
- * CPF e data de nascimento do leitor, em uma coluna. Os dados ficam só na memória da página: nada vai para a URL
- * nem para o armazenamento do navegador.
+ * CPF e data de nascimento do leitor, em uma coluna; com {@link pedirContato}, também telefone (obrigatório) e
+ * e-mail (opcional) para a biblioteca avisar sobre a reserva. Os dados ficam só na memória da página: nada vai
+ * para a URL nem para o armazenamento do navegador.
  */
 @Component({
   selector: 'app-identificacao',
@@ -39,6 +62,19 @@ function hojeIso(): string {
         <input matInput type="date" formControlName="dataNascimento" [max]="hoje" autocomplete="bday" />
         <mat-error>Informe a data de nascimento.</mat-error>
       </mat-form-field>
+      @if (pedirContato()) {
+        <mat-form-field appearance="outline">
+          <mat-label>Telefone</mat-label>
+          <input matInput formControlName="telefone" required type="tel" inputmode="tel" autocomplete="tel" placeholder="(51) 99999-9999" (blur)="formatarFone()" />
+          <mat-hint>Com DDD. A biblioteca usa só para falar sobre a reserva.</mat-hint>
+          <mat-error>{{ form.controls.telefone.hasError('telefone') ? 'Telefone inválido. Use o DDD, ex.: (51) 99999-9999.' : 'Informe um telefone para contato.' }}</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>E-mail (opcional)</mat-label>
+          <input matInput formControlName="email" type="email" autocomplete="email" />
+          <mat-error>E-mail inválido. Confira o endereço.</mat-error>
+        </mat-form-field>
+      }
       <div class="acoes">
         <button mat-flat-button type="submit" [disabled]="ocupado()">{{ textoBotao() }}</button>
       </div>
@@ -57,13 +93,27 @@ function hojeIso(): string {
 export class Identificacao {
   readonly textoBotao = input('Continuar');
   readonly ocupado = input(false);
+  /** Reserva: pede telefone e e-mail. "Minhas reservas" não pede. */
+  readonly pedirContato = input(false);
   readonly enviado = output<DadosIdentificacao>();
 
   protected readonly hoje = hojeIso();
   protected readonly form = new FormGroup({
     cpf: new FormControl('', { nonNullable: true, validators: [Validators.required, validarCpf] }),
     dataNascimento: new FormControl('', { nonNullable: true, validators: Validators.required }),
+    telefone: new FormControl('', { nonNullable: true, validators: (c) => this.validarTelefone(c) }),
+    email: new FormControl('', { nonNullable: true, validators: [Validators.email, Validators.maxLength(150)] }),
   });
+
+  private validarTelefone(c: AbstractControl): ValidationErrors | null {
+    if (!this.pedirContato()) {
+      return null;
+    }
+    if (!c.value?.trim()) {
+      return { required: true };
+    }
+    return digitosTelefone(c.value) ? null : { telefone: true };
+  }
 
   protected formatar(): void {
     const c = this.form.controls.cpf;
@@ -72,12 +122,24 @@ export class Identificacao {
     }
   }
 
+  protected formatarFone(): void {
+    const c = this.form.controls.telefone;
+    c.setValue(formatarTelefone(c.value));
+  }
+
   protected enviar(): void {
+    // O validador do telefone depende do input pedirContato: recalcula antes de conferir.
+    this.form.controls.telefone.updateValueAndValidity();
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       return;
     }
-    const { cpf, dataNascimento } = this.form.getRawValue();
-    this.enviado.emit({ cpf: cpf.replace(/\D/g, ''), dataNascimento });
+    const { cpf, dataNascimento, telefone, email } = this.form.getRawValue();
+    const dados: DadosIdentificacao = { cpf: cpf.replace(/\D/g, ''), dataNascimento };
+    if (this.pedirContato()) {
+      dados.telefone = formatarTelefone(telefone.trim());
+      dados.email = email.trim() || null;
+    }
+    this.enviado.emit(dados);
   }
 }

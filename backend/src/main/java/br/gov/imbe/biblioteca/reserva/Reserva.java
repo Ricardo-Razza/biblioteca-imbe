@@ -74,11 +74,18 @@ public class Reserva {
     /** Quem registrou a retirada ou o cancelamento na gestão. */
     private Long funcionarioId;
 
+    /** Contato informado pelo leitor ao reservar pelo site (não altera o cadastro). */
+    @Column(length = 20)
+    private String telefone;
+
+    @Column(length = 150)
+    private String email;
+
     protected Reserva() {
     }
 
     Reserva(String protocolo, Obra obra, Exemplar exemplar, Leitor leitor, LocalDateTime agora,
-            LocalDate prazoRetirada) {
+            LocalDate prazoRetirada, String telefone, String email) {
         this.protocolo = protocolo;
         this.obra = obra;
         this.exemplar = exemplar;
@@ -86,6 +93,8 @@ public class Reserva {
         this.criadaEm = agora;
         this.prazoRetirada = prazoRetirada;
         this.status = StatusReserva.AGUARDANDO_RETIRADA;
+        this.telefone = telefone;
+        this.email = email;
     }
 
     boolean aguardando() {
@@ -162,5 +171,13 @@ public class Reserva {
 
     public Long getFuncionarioId() {
         return funcionarioId;
+    }
+
+    public String getTelefone() {
+        return telefone;
+    }
+
+    public String getEmail() {
+        return email;
     }
 }

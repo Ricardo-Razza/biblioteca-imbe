@@ -32,7 +32,8 @@ public class Exemplar {
     @JoinColumn(name = "obra_id")
     private Obra obra;
 
-    @Column(nullable = false, length = 30, updatable = false)
+    /** Só muda uma vez, de provisório para {@code AUTO-000123}, quando cadastrado sem tombo. */
+    @Column(nullable = false, length = 30)
     private String tombo;
 
     @Column(length = 100)
@@ -176,6 +177,14 @@ public class Exemplar {
 
     public String getTombo() {
         return tombo;
+    }
+
+    /** Troca o tombo provisório pelo automático, que usa o id já gerado pelo banco. */
+    void numerarAutomaticamente() {
+        if (!tombo.startsWith(ExemplarService.PREFIXO_PROVISORIO)) {
+            throw new IllegalStateException("Exemplar " + tombo + " já tem tombo definitivo.");
+        }
+        this.tombo = ExemplarService.tomboAutomatico(id);
     }
 
     public String getLocalizacao() {

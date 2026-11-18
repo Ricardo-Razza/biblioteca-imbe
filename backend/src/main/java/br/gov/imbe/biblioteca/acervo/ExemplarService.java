@@ -2,6 +2,7 @@ package br.gov.imbe.biblioteca.acervo;
 
 import java.util.List;
 import java.util.Locale;
+import java.util.UUID;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -10,6 +11,7 @@ import br.gov.imbe.biblioteca.comum.auditoria.AcaoAuditoria;
 import br.gov.imbe.biblioteca.comum.auditoria.Auditoria;
 import br.gov.imbe.biblioteca.comum.erro.ConflitoException;
 import br.gov.imbe.biblioteca.comum.erro.RecursoNaoEncontradoException;
+import br.gov.imbe.biblioteca.comum.erro.RequisicaoInvalidaException;
 
 @Service
 public class ExemplarService {
@@ -24,16 +26,39 @@ public class ExemplarService {
         this.auditoria = auditoria;
     }
 
+    /**
+     * Cadastra o exemplar. Sem tombo, o sistema numera: grava com um tombo provisório único e, já com o id,
+     * troca por {@code AUTO-000123}, tudo na mesma transação.
+     */
     @Transactional
     public ExemplarResposta cadastrar(Long obraId, ExemplarRequisicao req) {
         Obra obra = obras.findById(obraId).orElseThrow(() -> obraNaoEncontrada(obraId));
         String tombo = normalizarTombo(req.tombo());
-        if (exemplares.existsByTombo(tombo)) {
+        boolean automatico = tombo == null || tombo.isEmpty();
+        if (automatico) {
+            tombo = PREFIXO_PROVISORIO + UUID.randomUUID().toString().replace("-", "").substring(0, 26);
+        } else if (tombo.startsWith(PREFIXO_AUTOMATICO) || tombo.startsWith(PREFIXO_PROVISORIO)) {
+            throw new RequisicaoInvalidaException("Tombo reservado",
+                    "Tombos que começam com " + PREFIXO_AUTOMATICO + " são gerados pelo sistema. "
+                            + "Deixe o campo em branco para o sistema numerar.");
+        } else if (exemplares.existsByTombo(tombo)) {
             throw new ConflitoException("Já existe um exemplar com o tombo " + tombo + ".");
         }
-        Exemplar exemplar = exemplares.save(new Exemplar(obra, tombo, texto(req.localizacao()), req.estado(),
-                req.dataAquisicao(), req.origem()));
+        Exemplar exemplar = exemplares.saveAndFlush(new Exemplar(obra, tombo, texto(req.localizacao()),
+                req.estado(), req.dataAquisicao(), req.origem()));
+        if (automatico) {
+            exemplar.numerarAutomaticamente();
+            exemplares.flush();
+        }
         return ExemplarResposta.de(exemplar);
+    }
+
+    /** Prefixo dos tombos gerados pelo sistema. */
+    public static final String PREFIXO_AUTOMATICO = "AUTO-";
+    static final String PREFIXO_PROVISORIO = "TMP-";
+
+    static String tomboAutomatico(Long id) {
+        return PREFIXO_AUTOMATICO + String.format(Locale.ROOT, "%06d", id);
     }
 
     /** Todos os exemplares da obra, inclusive os baixados, em ordem de tombo. */

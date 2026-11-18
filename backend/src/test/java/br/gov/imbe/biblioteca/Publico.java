@@ -41,11 +41,21 @@ public final class Publico {
         return post(url).contentType(MediaType.APPLICATION_JSON).content(json).with(ip);
     }
 
+    /** Reserva com um telefone fictício e sem e-mail. */
     public static ResultActions reservar(MockMvc mvc, RequestPostProcessor ip, long obraId, String cpf,
             LocalDate nascimento) throws Exception {
+        return reservar(mvc, ip, obraId, cpf, nascimento, "(51) 90000-0000", null);
+    }
+
+    public static ResultActions reservar(MockMvc mvc, RequestPostProcessor ip, long obraId, String cpf,
+            LocalDate nascimento, String telefone, String email) throws Exception {
         return mvc.perform(postJson("/api/v1/publico/reservas", """
-                {"obraId": %d, "cpf": "%s", "dataNascimento": "%s"}
-                """.formatted(obraId, cpf, nascimento), ip));
+                {"obraId": %d, "cpf": "%s", "dataNascimento": "%s", "telefone": %s, "email": %s}
+                """.formatted(obraId, cpf, nascimento, json(telefone), json(email)), ip));
+    }
+
+    private static String json(String valor) {
+        return valor == null ? "null" : "\"" + valor + "\"";
     }
 
     public static String identificacao(String cpf, LocalDate nascimento) {

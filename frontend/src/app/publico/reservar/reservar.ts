@@ -71,7 +71,8 @@ import { dataComDia, protocoloLegivel } from '../textos';
       }
 
       <p class="regras">
-        Para reservar, você precisa ter cadastro na biblioteca. Informe o seu CPF e a data de nascimento.
+        Para reservar, você precisa ter cadastro na biblioteca. Informe o seu CPF, a data de nascimento e um telefone
+        para a biblioteca falar com você sobre a reserva.
         @if (biblioteca(); as b) {
           O livro fica separado por {{ b.prazoRetiradaDiasUteis === 1 ? '1 dia útil' : b.prazoRetiradaDiasUteis + ' dias úteis' }},
           e cada pessoa pode ter até {{ b.limiteLivros }} livros, somando empréstimos e reservas.
@@ -82,7 +83,7 @@ import { dataComDia, protocoloLegivel } from '../textos';
       @if (erro()) {
         <p class="aviso erro" role="alert"><mat-icon>error</mat-icon> {{ erro() }}</p>
       }
-      <app-identificacao textoBotao="Reservar" [ocupado]="ocupado()" (enviado)="reservar($event)" />
+      <app-identificacao textoBotao="Reservar" [pedirContato]="true" [ocupado]="ocupado()" (enviado)="reservar($event)" />
     }
   `,
   styles: `
@@ -182,7 +183,7 @@ export class Reservar {
   protected reservar(d: DadosIdentificacao): void {
     this.ocupado.set(true);
     this.erro.set(null);
-    this.api.reservar(Number(this.id()), d.cpf, d.dataNascimento).subscribe({
+    this.api.reservar(Number(this.id()), d.cpf, d.dataNascimento, d.telefone ?? '', d.email ?? null).subscribe({
       next: (r) => {
         this.ocupado.set(false);
         this.reserva.set(r);

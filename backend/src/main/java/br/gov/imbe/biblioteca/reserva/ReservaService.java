@@ -26,6 +26,7 @@ import br.gov.imbe.biblioteca.comum.calendario.Calendario;
 import br.gov.imbe.biblioteca.comum.erro.ConflitoException;
 import br.gov.imbe.biblioteca.comum.erro.RecursoNaoEncontradoException;
 import br.gov.imbe.biblioteca.comum.erro.RegraNegocioException;
+import br.gov.imbe.biblioteca.comum.erro.RequisicaoInvalidaException;
 import br.gov.imbe.biblioteca.comum.parametro.ChaveParametro;
 import br.gov.imbe.biblioteca.comum.parametro.ParametroService;
 import br.gov.imbe.biblioteca.emprestimo.Emprestimo;
@@ -99,7 +100,10 @@ public class ReservaService implements ReservasAtivas {
      * O prazo conta em dias úteis a partir de hoje.
      */
     @Transactional
-    public ReservaPublica reservar(Long obraId, String cpf, LocalDate dataNascimento) {
+    public ReservaPublica reservar(Long obraId, String cpf, LocalDate dataNascimento, String telefone,
+            String email) {
+        String telefoneContato = telefoneComDdd(telefone);
+        String emailContato = email == null || email.isBlank() ? null : email.strip().toLowerCase(Locale.ROOT);
         Leitor leitor = identificar(cpf, dataNascimento);
         Obra obra = obras.findById(obraId)
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Livro não encontrado."));
@@ -115,8 +119,25 @@ public class ReservaService implements ReservasAtivas {
         exemplar.reservar();
         LocalDate prazo = calendario.somarDiasUteis(hoje(),
                 parametros.inteiro(ChaveParametro.PRAZO_RETIRADA_RESERVA_DIAS_UTEIS));
-        Reserva r = reservas.save(new Reserva(novoProtocolo(), obra, exemplar, leitor, agora(), prazo));
+        Reserva r = reservas.save(new Reserva(novoProtocolo(), obra, exemplar, leitor, agora(), prazo,
+                telefoneContato, emailContato));
         return ReservaPublica.de(r);
+    }
+
+    /**
+     * Telefone brasileiro com DDD (fixo ou celular), aceitando +55 na frente. Gravado como "(51) 99999-9999".
+     */
+    static String telefoneComDdd(String telefone) {
+        String d = telefone == null ? "" : telefone.replaceAll("\\D", "");
+        if ((d.length() == 12 || d.length() == 13) && d.startsWith("55")) {
+            d = d.substring(2);
+        }
+        if (d.length() != 10 && d.length() != 11) {
+            throw new RequisicaoInvalidaException("Telefone inválido",
+                    "Telefone inválido. Use o DDD, ex.: (51) 99999-9999.");
+        }
+        int corte = d.length() - 4;
+        return "(" + d.substring(0, 2) + ") " + d.substring(2, corte) + "-" + d.substring(corte);
     }
 
     @Transactional(readOnly = true)

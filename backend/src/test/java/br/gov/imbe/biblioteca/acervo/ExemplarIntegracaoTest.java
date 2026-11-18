@@ -104,7 +104,37 @@ class ExemplarIntegracaoTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.campos[0].campo").value("tombo"));
         cadastrar("{\"tombo\": \"12 34\"}").andExpect(status().isBadRequest());
-        cadastrar("{\"tombo\": \"  \"}").andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void semTomboOSistemaNumeraPeloId() throws Exception {
+        String corpo = cadastrar("{\"localizacao\": \"Estante 2\"}")
+                .andExpect(status().isCreated())
+                .andReturn().getResponse().getContentAsString();
+        long id = ((Number) JsonPath.read(corpo, "$.id")).longValue();
+        String esperado = "AUTO-" + String.format("%06d", id);
+        org.assertj.core.api.Assertions.assertThat((String) JsonPath.read(corpo, "$.tombo")).isEqualTo(esperado);
+
+        String branco = cadastrar("{\"tombo\": \"   \"}").andExpect(status().isCreated())
+                .andReturn().getResponse().getContentAsString();
+        org.assertj.core.api.Assertions.assertThat((String) JsonPath.read(branco, "$.tombo"))
+                .startsWith("AUTO-").isNotEqualTo(esperado);
+
+        recarregar();
+        mvc.perform(get("/api/v1/exemplares/tombo/" + esperado.toLowerCase()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(id))
+                .andExpect(jsonPath("$.localizacao").value("Estante 2"));
+        mvc.perform(get("/api/v1/obras/" + obraId)).andExpect(jsonPath("$.totalExemplares").value(2));
+    }
+
+    @Test
+    void prefixoDoSistemaNaoPodeSerDigitado() throws Exception {
+        cadastrar("{\"tombo\": \"auto-000001\"}")
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.detail").value(Matchers.containsString("gerados pelo sistema")));
+        cadastrar("{\"tombo\": \"TMP-1\"}").andExpect(status().isBadRequest());
+        cadastrar("{\"tombo\": \"AUTOR-1\"}").andExpect(status().isCreated());
     }
 
     @Test

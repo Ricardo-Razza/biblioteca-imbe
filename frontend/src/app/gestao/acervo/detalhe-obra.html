@@ -87,8 +87,8 @@
         }
         <mat-form-field appearance="outline">
           <mat-label>Tombo</mat-label>
-          <input #campoTombo matInput formControlName="tombo" autocomplete="off" />
-          <mat-hint>Número da etiqueta. Letras, números, ponto ou hífen.</mat-hint>
+          <input #campoTombo matInput formControlName="tombo" autocomplete="off" (keydown.enter)="enterNoTombo($event)" />
+          <mat-hint>Número da etiqueta (opcional). Em branco, o sistema gera AUTO-000123.</mat-hint>
           <mat-error>{{ erroTombo() }}</mat-error>
         </mat-form-field>
         <mat-form-field appearance="outline">
@@ -125,7 +125,7 @@
             @if (salvandoExemplar()) {
               <mat-spinner diameter="18" />
             }
-            Adicionar
+            {{ tomboVazio() ? 'Adicionar sem tombo' : 'Adicionar' }}
           </button>
           <button mat-button type="button" (click)="fecharFormulario()">Fechar</button>
         </div>

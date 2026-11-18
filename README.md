@@ -166,7 +166,7 @@ Decisões de 2026-11-17:
 Fluxo:
 
 1. O cidadão encontra o livro e clica em Reservar (o botão só aparece com exemplar disponível).
-2. Informa CPF e data de nascimento.
+2. Informa CPF, data de nascimento, telefone com DDD (obrigatório) e e-mail (opcional). O contato fica gravado na reserva, para a equipe avisar o cidadão; a tela Reservas mostra esse contato e, sem ele (reservas antigas), o do cadastro do leitor.
 3. O backend confere o leitor, os limites e a disponibilidade, e **prende um exemplar** (situação `RESERVADO`) na mesma transação, com `SELECT ... FOR UPDATE SKIP LOCKED`. Assim dois cidadãos não reservam a última cópia.
 4. A tela mostra o protocolo, a data limite e o endereço e horário da biblioteca.
 5. A equipe vê a reserva em Reservas e no Início, com tombo e localização, e separa o livro.
@@ -374,6 +374,8 @@ erDiagram
         bigint leitor_id FK
         timestamp criada_em
         date prazo_retirada
+        varchar telefone "informado na reserva"
+        varchar email "opcional"
         enum status "AGUARDANDO_RETIRADA, RETIRADA, CANCELADA, EXPIRADA"
         bigint emprestimo_id FK "quando retirada"
         timestamp finalizada_em
@@ -392,7 +394,7 @@ erDiagram
 - Um empréstimo está **atrasado** quando `data_devolucao` é nula e `data_prevista` é anterior a hoje. Não existe tabela de histórico: o histórico é a própria tabela `emprestimo`.
 - Os **disponíveis** de uma obra são os exemplares com `situacao = DISPONIVEL`.
 - O **total de exemplares** de uma obra não conta os baixados. A API devolve `totalExemplares` e `exemplaresDisponiveis` junto com a obra.
-- **Tombo:** até 30 letras, números, ponto ou hífen, sem barra nem espaço (vai no caminho da URL). Gravado em maiúsculas e único sem diferenciar caixa.
+- **Tombo:** até 30 letras, números, ponto ou hífen, sem barra nem espaço (vai no caminho da URL). Gravado em maiúsculas e único sem diferenciar caixa. **Opcional no cadastro do exemplar:** em branco, o sistema gera `AUTO-` + o id com 6 dígitos (`AUTO-000123`); os prefixos `AUTO-` e `TMP-` são reservados e não podem ser digitados. Na tela, Enter com o campo vazio não cadastra (evita exemplar sem tombo por bipe falho): é preciso clicar em "Adicionar sem tombo". A importação em lote continua igual: linha sem tombo cadastra só a obra, para não duplicar exemplares ao reimportar a planilha.
 - **Situação do exemplar:** `RESERVADO` e `EMPRESTADO` só mudam pelos fluxos de reserva e empréstimo. Manualmente (Admin) só se marca `EXTRAVIADO`, `BAIXADO` ou a volta de um extraviado para `DISPONIVEL`. `BAIXADO` é definitivo: o exemplar não muda mais. Localização e estado podem mudar com o exemplar emprestado.
 - Obra, exemplar e leitor com histórico nunca são apagados, só desativados ou baixados.
 - O esquema é versionado com Flyway (`V{n}__descricao.sql`). Migration já aplicada não se edita.
@@ -461,7 +463,7 @@ Como as regras foram implementadas (fase 2):
 | `GET /publico/obras/{id}` | Ficha do livro |
 | `GET /publico/assuntos` | Lista para os filtros, com a quantidade de obras |
 | `GET /publico/biblioteca` | Nome, endereço, horário, telefone, e-mail, prazo de retirada, limite de livros e prazo do empréstimo |
-| `POST /publico/reservas` | `{ obraId, cpf, dataNascimento }` → protocolo e prazo |
+| `POST /publico/reservas` | `{ obraId, cpf, dataNascimento, telefone, email }` → protocolo e prazo. Telefone obrigatório, com DDD, gravado como `(51) 99999-9999`; e-mail opcional |
 | `POST /publico/reservas/consulta` | `{ cpf, dataNascimento }` → reservas do leitor |
 | `POST /publico/reservas/{protocolo}/cancelamento` | `{ cpf, dataNascimento }` |
 
@@ -626,6 +628,8 @@ O servidor precisa de saída HTTPS para `brasilapi.com.br` (ISBN e feriados), `w
 | 2026-11-17 | Importação em lote por CSV (ISBN;tombo;localização), processada em segundo plano linha a linha, sem conferência humana; ISBN não encontrado fica para o cadastro manual; só administrador |
 | 2026-11-17 | Implantação em Docker Compose (MySQL, API, Nginx com HTTPS); certificado fora do git; backup diário por script com mysqldump e capas, retenção de 30 dias |
 | 2026-11-17 | Visual pelo Manual de Marca da Prefeitura (2021-2028): azul `#006EB7` como cor principal, logos oficiais, assinatura no padrão das secretarias; Lexend Exa e Lexend no lugar da Termina enquanto não houver licença web |
+| 2026-11-17 | Tombo opcional no cadastro manual do exemplar (gerado `AUTO-000123`); importação sem tombo continua só com a obra |
+| 2026-11-17 | Reserva pelo site pede telefone (obrigatório) e e-mail (opcional), gravados na reserva (V6) e mostrados à equipe |
 
 ## Documentação
 - Toda decisão nova ou mudança de escopo atualiza o README.md

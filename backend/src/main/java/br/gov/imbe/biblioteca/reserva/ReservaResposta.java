@@ -35,7 +35,10 @@ public record ReservaResposta(
     public record ExemplarResumo(Long id, String tombo, String localizacao) {
     }
 
-    public record LeitorResumo(Long id, String nome, String telefone) {
+    /**
+     * Telefone e e-mail informados na reserva; sem eles (reserva antiga), os do cadastro do leitor.
+     */
+    public record LeitorResumo(Long id, String nome, String telefone, String email) {
     }
 
     static ReservaResposta de(Reserva r, LocalDate hoje) {
@@ -45,7 +48,9 @@ public record ReservaResposta(
         return new ReservaResposta(r.getId(), r.getProtocolo(), r.getStatus(),
                 new ObraResumo(o.getId(), o.getTitulo(), autores(o), o.getCapaArquivo() != null),
                 new ExemplarResumo(x.getId(), x.getTombo(), x.getLocalizacao()),
-                new LeitorResumo(l.getId(), l.getNome(), l.getTelefone()),
+                new LeitorResumo(l.getId(), l.getNome(),
+                        r.getTelefone() != null ? r.getTelefone() : l.getTelefone(),
+                        r.getEmail() != null ? r.getEmail() : l.getEmail()),
                 r.getCriadaEm(), r.getPrazoRetirada(), r.aguardando() && r.getPrazoRetirada().isBefore(hoje),
                 r.getFinalizadaEm(), r.getCanceladaPor(),
                 r.getEmprestimo() == null ? null : r.getEmprestimo().getId(),

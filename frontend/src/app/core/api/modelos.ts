@@ -72,7 +72,8 @@ export interface Obra {
 }
 
 export interface ExemplarRequisicao {
-  tombo: string;
+  /** Nulo: o sistema gera AUTO-000123. */
+  tombo: string | null;
   localizacao: string | null;
   estado: EstadoExemplar | null;
   dataAquisicao: string | null;
@@ -183,7 +184,8 @@ export interface Reserva {
   status: StatusReserva;
   obra: { id: number; titulo: string; autores: string[]; temCapa: boolean };
   exemplar: { id: number; tombo: string; localizacao: string | null };
-  leitor: { id: number; nome: string; telefone: string | null };
+  /** Telefone e e-mail informados na reserva; sem eles, os do cadastro do leitor. */
+  leitor: { id: number; nome: string; telefone: string | null; email: string | null };
   criadaEm: string;
   prazoRetirada: string;
   /** Aguardando com o prazo já passado (ainda dá para entregar até o job expirar). */

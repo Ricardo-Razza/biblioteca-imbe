@@ -120,6 +120,44 @@ class ReservaIntegracaoTest {
     }
 
     @Test
+    void telefoneEObrigatorioEEmailOpcionalMasValido() throws Exception {
+        Publico.reservar(mvc, ip, obra, cpf, NASCIMENTO, null, null)
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.campos[0].campo").value("telefone"));
+        Publico.reservar(mvc, ip, obra, cpf, NASCIMENTO, "1234", null)
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.campos[0].campo").value("telefone"));
+        // Formato aceito pelo padrão, mas sem DDD válido (só 9 dígitos).
+        Publico.reservar(mvc, ip, obra, cpf, NASCIMENTO, "(51) 9999-999", null)
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.detail").value(Matchers.containsString("Telefone inválido")));
+        Publico.reservar(mvc, ip, obra, cpf, NASCIMENTO, "(51) 99999-9999", "nao-e-email")
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.campos[0].campo").value("email"));
+        mvc.perform(get("/api/v1/exemplares/tombo/R-1")).andExpect(jsonPath("$.situacao").value("DISPONIVEL"));
+    }
+
+    @Test
+    void contatoDaReservaApareceParaAGestao() throws Exception {
+        String corpo = Publico.reservar(mvc, ip, obra, cpf, NASCIMENTO, "+55 51 98765 4321", "Joana@Exemplo.com")
+                .andExpect(status().isCreated())
+                .andReturn().getResponse().getContentAsString();
+        assertThat(corpo).doesNotContain("98765").doesNotContain("exemplo.com");
+        String protocolo = JsonPath.read(corpo, "$.protocolo");
+        mvc.perform(get("/api/v1/reservas").param("q", protocolo))
+                .andExpect(jsonPath("$.itens[0].leitor.telefone").value("(51) 98765-4321"))
+                .andExpect(jsonPath("$.itens[0].leitor.email").value("joana@exemplo.com"));
+    }
+
+    @Test
+    void telefoneComDddNormaliza() {
+        assertThat(ReservaService.telefoneComDdd("51987654321")).isEqualTo("(51) 98765-4321");
+        assertThat(ReservaService.telefoneComDdd("+55 (51) 3333-4444")).isEqualTo("(51) 3333-4444");
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> ReservaService.telefoneComDdd("(51) 9999-999"))
+                .hasMessageContaining("Telefone inválido");
+    }
+
+    @Test
     void aceitaCpfComPontuacao() throws Exception {
         String formatado = cpf.substring(0, 3) + "." + cpf.substring(3, 6) + "." + cpf.substring(6, 9) + "-"
                 + cpf.substring(9);

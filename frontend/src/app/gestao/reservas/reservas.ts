@@ -77,7 +77,10 @@ const TAMANHO = 20;
                 <span>
                   <a [routerLink]="['/painel/leitores', x.leitor.id]">{{ x.leitor.nome }}</a>
                   @if (x.leitor.telefone) {
-                    <span class="texto-secundario"> · {{ x.leitor.telefone }}</span>
+                    <span class="texto-secundario"> · <a [href]="'tel:' + x.leitor.telefone">{{ x.leitor.telefone }}</a></span>
+                  }
+                  @if (x.leitor.email) {
+                    <span class="texto-secundario"> · <a [href]="'mailto:' + x.leitor.email">{{ x.leitor.email }}</a></span>
                   }
                 </span>
                 <span class="texto-secundario">Protocolo {{ legivel(x.protocolo) }} · feita em {{ data(x.criadaEm) }}</span>

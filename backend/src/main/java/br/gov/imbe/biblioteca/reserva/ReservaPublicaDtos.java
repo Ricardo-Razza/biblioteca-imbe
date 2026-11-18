@@ -4,8 +4,10 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
 /**
@@ -22,10 +24,19 @@ public final class ReservaPublicaDtos {
             @NotNull(message = "Informe a data de nascimento.") LocalDate dataNascimento) {
     }
 
+    /**
+     * @param telefone obrigatório: a equipe avisa por ele que o livro está separado. Com DDD, 10 ou 11 dígitos.
+     * @param email    opcional
+     */
     public record NovaReserva(
             @NotNull(message = "Escolha o livro.") Long obraId,
             @NotBlank(message = "Informe o CPF.") @Size(max = 20, message = "CPF inválido.") String cpf,
-            @NotNull(message = "Informe a data de nascimento.") LocalDate dataNascimento) {
+            @NotNull(message = "Informe a data de nascimento.") LocalDate dataNascimento,
+            @NotBlank(message = "Informe um telefone para contato.")
+            @Pattern(regexp = "[\\d\\s()+.-]{10,20}", message = "Telefone inválido. Use o DDD, ex.: (51) 99999-9999.")
+            String telefone,
+            @Email(message = "E-mail inválido.") @Size(max = 150, message = "Use no máximo 150 caracteres.")
+            String email) {
     }
 
     /** Uma reserva vista pelo próprio leitor. */
