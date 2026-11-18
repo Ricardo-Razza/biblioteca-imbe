@@ -1,4 +1,6 @@
 # Stack do Portainer: usa as imagens que o GitHub Actions publica no ghcr.io (não compila no servidor).
+# Feita para ficar atrás de um proxy reverso (Nginx Proxy Manager, Traefik...), que cuida do domínio e do
+# certificado: o web só fala HTTP na PORTA_HTTP. Sem proxy na frente, use o docker-compose.prod.yml.
 # Variáveis: preencher na stack (ou "Load variables from .env file" com deploy/portainer.env.example).
 # Só o web fica exposto; banco e API ficam na rede interna da stack. Passo a passo no README ("Portainer").
 name: biblioteca
@@ -57,18 +59,13 @@ services:
     depends_on:
       - backend
     environment:
-      # sim: o Nginx tem o certificado (CERTS_DIR) e abre 80 e 443.
-      # nao: atrás de um proxy (Nginx Proxy Manager, Traefik) que cuida do HTTPS; só a PORTA_HTTP importa.
-      HTTPS: ${HTTPS:-sim}
-      DOMINIO: ${DOMINIO:-_}
+      # Atrás do proxy reverso: só HTTP aqui; o HTTPS e o domínio ficam no proxy
+      HTTPS: "nao"
+      # De onde o proxy fala com o web (para pegar o IP real do cidadão): faixas privadas por padrão
       PROXY_CONFIAVEL: ${PROXY_CONFIAVEL:-10.0.0.0/8 172.16.0.0/12 192.168.0.0/16}
     ports:
-      - "${PORTA_HTTP:-80}:80"
-      - "${PORTA_HTTPS:-443}:443"
-    volumes:
-      # Pastas do servidor (caminho absoluto): fullchain.pem + privkey.pem, e o webroot do certbot
-      - ${CERTS_DIR:-/opt/biblioteca-imbe/certs}:/etc/nginx/certs:ro
-      - ${CERTBOT_DIR:-/opt/biblioteca-imbe/certbot}:/var/www/certbot:ro
+      # O proxy encaminha https://SEU-DOMINIO para http://IP-DO-SERVIDOR:PORTA_HTTP
+      - "${PORTA_HTTP:-8085}:80"
     logging:
       driver: json-file
       options:
