@@ -1,6 +1,6 @@
 # Produção (e homologação): MySQL + API + Nginx com HTTPS. Lê o .env da raiz (ver .env.example).
 #   docker compose -f docker-compose.prod.yml up -d --build
-# Só o Nginx fica exposto (80 e 443); banco e API ficam na rede interna do Compose.
+# Só o Nginx fica exposto (80 e 443); a API fica na rede interna e o MySQL só em 127.0.0.1 (PORTA_MYSQL).
 name: biblioteca
 
 services:
@@ -18,6 +18,9 @@ services:
       - --collation-server=utf8mb4_0900_ai_ci
     volumes:
       - mysql-dados:/var/lib/mysql
+    ports:
+      # Só para o próprio servidor (phpMyAdmin ou túnel SSH): nunca exposto na internet
+      - "127.0.0.1:${PORTA_MYSQL:-3307}:3306"
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
       interval: 10s
@@ -32,7 +35,8 @@ services:
       mysql:
         condition: service_healthy
     environment:
-      DB_URL: jdbc:mysql://mysql:3306/biblioteca
+      # Vazio: o MySQL desta stack. Banco da Prefeitura: DB_URL_EXTERNO (ver README, "Banco de dados externo")
+      DB_URL: ${DB_URL_EXTERNO:-jdbc:mysql://mysql:3306/biblioteca}
       DB_USER: ${DB_USER}
       DB_PASSWORD: ${DB_PASSWORD}
       JWT_SECRET: ${JWT_SECRET:?defina JWT_SECRET no .env}

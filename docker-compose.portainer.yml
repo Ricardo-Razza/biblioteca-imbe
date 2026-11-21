@@ -2,7 +2,7 @@
 # Feita para ficar atrás de um proxy reverso (Nginx Proxy Manager, Traefik...), que cuida do domínio e do
 # certificado: o web só fala HTTP na PORTA_HTTP. Sem proxy na frente, use o docker-compose.prod.yml.
 # Variáveis: preencher na stack (ou "Load variables from .env file" com deploy/portainer.env.example).
-# Só o web fica exposto; banco e API ficam na rede interna da stack. Passo a passo no README ("Portainer").
+# Só o web fica exposto; a API fica na rede interna da stack e o MySQL só em 127.0.0.1 (PORTA_MYSQL). Passo a passo no README ("Portainer").
 name: biblioteca
 
 services:
@@ -20,6 +20,9 @@ services:
       - --collation-server=utf8mb4_0900_ai_ci
     volumes:
       - mysql-dados:/var/lib/mysql
+    ports:
+      # Só para o próprio servidor (phpMyAdmin ou túnel SSH): nunca exposto na internet
+      - "127.0.0.1:${PORTA_MYSQL:-3307}:3306"
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
       interval: 10s
@@ -33,7 +36,8 @@ services:
       mysql:
         condition: service_healthy
     environment:
-      DB_URL: jdbc:mysql://mysql:3306/biblioteca
+      # Vazio: o MySQL desta stack. Banco da Prefeitura: DB_URL_EXTERNO (ver README, "Banco de dados externo")
+      DB_URL: ${DB_URL_EXTERNO:-jdbc:mysql://mysql:3306/biblioteca}
       DB_USER: ${DB_USER:-biblioteca}
       DB_PASSWORD: ${DB_PASSWORD}
       JWT_SECRET: ${JWT_SECRET:?defina JWT_SECRET (pelo menos 32 caracteres)}

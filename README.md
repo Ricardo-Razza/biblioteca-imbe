@@ -498,6 +498,8 @@ Os erros seguem o `ProblemDetail` (RFC 9457) com mensagem em português. A docum
 | --- | --- |
 | `DB_URL`, `DB_USER`, `DB_PASSWORD` | MySQL |
 | `MYSQL_ROOT_PASSWORD` | Só o container do MySQL no `docker-compose.yml` |
+| `DB_URL_EXTERNO` | Só nos compose de produção: URL de um MySQL de fora (o da Prefeitura). Vazia: o MySQL da stack |
+| `PORTA_MYSQL` | Só nos compose de produção: porta do MySQL da stack em `127.0.0.1` (padrão `3307`) |
 | `JWT_SECRET` | Assinatura do JWT do sistema |
 | `AD_AUTH_URL` | URL da API de login AD |
 | `AD_AUTH_TOKEN` | Bearer da API de login AD |
@@ -557,6 +559,38 @@ O Nginx manda HTTP para HTTPS, liga HSTS, CSP (só as fontes do Google como orig
 **Backup.** `deploy/backup.sh` grava `banco_{data}.sql.gz` (mysqldump com `--single-transaction`, sem parar o sistema) e `capas_{data}.tar.gz` em `./backups` (ou `BACKUP_DIR`) e apaga os mais velhos que `BACKUP_DIAS` (30). Agendar no cron do servidor (`0 2 * * * cd /opt/biblioteca-imbe && deploy/backup.sh`) e copiar a pasta para fora do servidor. `deploy/restaurar.sh <banco> <capas>` volta um backup (pede confirmação digitada, porque apaga o atual). Testar a restauração na homologação antes de precisar dela.
 
 Logs: `docker compose -f docker-compose.prod.yml logs -f backend` (limitados a 5 arquivos de 20 MB por serviço).
+
+### Banco de dados: phpMyAdmin e banco da Prefeitura
+
+**Acesso ao MySQL da stack.** O MySQL só abre a porta para o próprio servidor, em `127.0.0.1:PORTA_MYSQL` (padrão `3307`, para não brigar com um MySQL que já exista na `3306`). Nunca crie host para ele no proxy reverso.
+
+- **phpMyAdmin instalado na VPS:** acrescente um servidor no `config.inc.php` (`host` `127.0.0.1`, `port` `3307`, `auth_type` `cookie`) e escolha-o na tela de login.
+- **phpMyAdmin em container:** não use `127.0.0.1` (seria o próprio container). Ligue-o à rede `biblioteca_default` (*Containers > Connected networks > Join network*) e use o host `mysql`, porta `3306`.
+- **Do seu computador (DBeaver, Workbench):** `ssh -L 3307:127.0.0.1:3307 usuario@servidor` e conecte em `localhost:3307`.
+- Para consultar, use um usuário só de leitura (no console do container, como root):
+  `CREATE USER 'consulta'@'%' IDENTIFIED BY '...'; GRANT SELECT ON biblioteca.* TO 'consulta'@'%';`
+  Alterar dados direto no banco passa por cima das regras do sistema e da auditoria: mudanças, pela gestão.
+
+**Banco da Prefeitura.** A API usa o MySQL da stack enquanto `DB_URL_EXTERNO` estiver vazia. Para usar um servidor da Prefeitura, basta preencher essa variável e trocar `DB_USER` e `DB_PASSWORD` (vale igual no `docker-compose.prod.yml`, pelo `.env`). O que pedir à TI:
+
+| Item | Por quê |
+| --- | --- |
+| MySQL **8.0 ou mais novo** (8.4 de preferência). **MariaDB não serve** | O esquema usa a collation `utf8mb4_0900_ai_ci`, `SELECT ... FOR UPDATE SKIP LOCKED` e colunas geradas |
+| Um banco `biblioteca` em `utf8mb4` / `utf8mb4_0900_ai_ci` | Busca sem diferenciar maiúsculas nem acentos |
+| Um usuário só do sistema, nesse banco, com `SELECT, INSERT, UPDATE, DELETE, CREATE, ALTER, DROP, INDEX, REFERENCES` | O Flyway cria e altera as tabelas a cada versão nova, ao subir a API |
+| Liberação de rede do servidor da stack até o MySQL (porta 3306), de preferência com TLS (`?sslMode=REQUIRED` na URL) | O tráfego leva CPF e dados dos leitores |
+| Backup diário do lado da Prefeitura | O `deploy/backup.sh` só copia o MySQL da stack |
+
+Migração (com os dados atuais):
+
+1. Avise a equipe e pare só a API (*Containers > biblioteca-backend-1 > Stop*), para ninguém gravar durante a cópia.
+2. Copie o banco da stack, no servidor:
+   `docker exec biblioteca-mysql-1 sh -c 'exec mysqldump --single-transaction --no-tablespaces --set-gtid-purged=OFF -u"$MYSQL_USER" -p"$MYSQL_PASSWORD" "$MYSQL_DATABASE"' | gzip > biblioteca.sql.gz`
+3. Importe no banco da Prefeitura: `gunzip < biblioteca.sql.gz | mysql -h SERVIDOR -u USUARIO -p biblioteca`. A tabela `flyway_schema_history` vai junto, e a API sabe em que versão o banco está.
+4. Na stack: `DB_URL_EXTERNO=jdbc:mysql://SERVIDOR:3306/biblioteca?sslMode=REQUIRED`, `DB_USER` e `DB_PASSWORD` do usuário de lá. **Anote os valores antigos** (são os do MySQL da stack). *Update the stack*.
+5. Confira: login, números do Início iguais aos de antes, uma busca no site e uma reserva de teste cancelada em seguida.
+
+Banco novo, sem dados: só o passo 4, com `ADMIN_INICIAL_SENHA`; o Flyway cria tudo. **Para voltar atrás**, apague `DB_URL_EXTERNO` e devolva `DB_USER` e `DB_PASSWORD` antigos: a API volta para o MySQL da stack, com os dados do dia da migração. O container do MySQL continua na stack, sem receber gravações novas, como cópia de segurança. Com o banco externo, o `deploy/backup.sh` continua útil só para as capas (volume `capas`): o banco passa a ser do backup da Prefeitura.
 
 ### GitHub Actions
 
@@ -699,6 +733,7 @@ O servidor precisa de saída HTTPS para `brasilapi.com.br` (ISBN e feriados), `w
 | 2026-11-21 | Empréstimo no balcão aceita tombo, ISBN, título ou autor no mesmo campo, porque nem todo livro tem etiqueta: tombo exato sai direto, o resto mostra os exemplares para escolher |
 | 2026-11-21 | Máscara em todos os campos de formato fixo (CPF, telefone, tombo, busca por nome ou CPF) e faixa de anos nas datas, no site e na gestão: antes aceitavam qualquer quantidade de números e o ano 0221 |
 | 2026-11-21 | Devoluções também aceita título, autor ou nome do leitor além do tombo, pelo mesmo motivo do Empréstimo (livro sem etiqueta) |
+| 2026-11-21 | Banco pronto para trocar pelo da Prefeitura sem mudar o compose: `DB_URL_EXTERNO` (vazia = MySQL da stack), exigindo MySQL 8 (não MariaDB); MySQL da stack com porta só em `127.0.0.1:PORTA_MYSQL` para o phpMyAdmin da VPS |
 
 ## Documentação
 - Toda decisão nova ou mudança de escopo atualiza o README.md
