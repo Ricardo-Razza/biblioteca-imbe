@@ -32,7 +32,7 @@ type Ocorrencia = OcorrenciaDevolucao | 'NENHUMA';
     ItemEmprestimo,
   ],
   template: `
-    <h1>Devolver</h1>
+    <h1>Devoluções</h1>
 
     <form class="tombo" (submit)="buscar($event)">
       <mat-form-field appearance="outline">

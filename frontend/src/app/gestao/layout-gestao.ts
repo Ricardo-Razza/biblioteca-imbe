@@ -14,14 +14,14 @@ interface ItemMenu {
   soAdmin?: boolean;
 }
 
-/** Layout da gestão: menu lateral com os 7 itens e Emprestar/Devolver sempre no topo. */
+/** Layout da gestão: menu lateral com os 7 itens e Empréstimo/Devoluções sempre no topo. */
 @Component({
   selector: 'app-layout-gestao',
   imports: [RouterOutlet, RouterLink, RouterLinkActive, MatButtonModule, MatIconModule, MatMenuModule, Assinatura],
   template: `
     <div class="gestao">
       <nav class="menu" aria-label="Menu da gestão">
-        <a class="marca" routerLink="inicio" aria-label="Biblioteca Municipal de Imbé: início da gestão">
+        <a class="marca" routerLink="inicio" aria-label="Sala Literária Castelinho: início da gestão">
           <app-assinatura />
         </a>
         @for (item of itensVisiveis(); track item.rota) {
@@ -34,8 +34,8 @@ interface ItemMenu {
       <div class="area">
         <header class="topo">
           <span class="espaco"></span>
-          <a mat-flat-button routerLink="/painel/emprestar"><mat-icon>output</mat-icon> Emprestar</a>
-          <a mat-stroked-button routerLink="/painel/devolver"><mat-icon>input</mat-icon> Devolver</a>
+          <a mat-flat-button routerLink="/painel/emprestar"><mat-icon>output</mat-icon> Empréstimo</a>
+          <a mat-stroked-button routerLink="/painel/devolver"><mat-icon>input</mat-icon> Devoluções</a>
           @if (sessao.funcionario(); as f) {
             <button mat-button type="button" class="usuario" [matMenuTriggerFor]="menuUsuario" [attr.aria-label]="'Conta de ' + f.nome">
               <mat-icon>account_circle</mat-icon>

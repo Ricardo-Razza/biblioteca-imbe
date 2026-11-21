@@ -41,29 +41,29 @@ import { MovimentoSemana } from './movimento-semana';
       <div class="cartoes">
         <a class="cartao" routerLink="/painel/emprestimos">
           <span class="numero">{{ p.contadores.emprestados }}</span>
-          <span>{{ p.contadores.emprestados === 1 ? 'livro emprestado' : 'livros emprestados' }}</span>
+          <span>Empréstimos ativos</span>
         </a>
         <div class="cartao" [class.alerta]="p.contadores.venceHoje > 0">
           <span class="numero">{{ p.contadores.venceHoje }}</span>
-          <span>{{ p.contadores.venceHoje === 1 ? 'vence hoje' : 'vencem hoje' }}</span>
+          <span>Vencimentos ativos</span>
         </div>
         <a class="cartao" [class.erro]="p.contadores.atrasados > 0" routerLink="/painel/emprestimos" [queryParams]="{ status: 'ATRASADO' }">
           <span class="numero">{{ p.contadores.atrasados }}</span>
-          <span>{{ p.contadores.atrasados === 1 ? 'atrasado' : 'atrasados' }}</span>
+          <span>Em atraso</span>
         </a>
         <a class="cartao" [class.alerta]="p.contadores.reservasParaSeparar > 0" routerLink="/painel/reservas">
           <span class="numero">{{ p.contadores.reservasParaSeparar }}</span>
-          <span>{{ p.contadores.reservasParaSeparar === 1 ? 'reserva para separar' : 'reservas para separar' }}</span>
+          <span>Exemplares separados</span>
         </a>
         <div class="cartao">
           <span class="numero">{{ p.contadores.leitoresBloqueados }}</span>
-          <span>{{ p.contadores.leitoresBloqueados === 1 ? 'leitor bloqueado' : 'leitores bloqueados' }}</span>
+          <span>Leitores bloqueados</span>
         </div>
       </div>
 
       <div class="colunas">
         <section>
-          <h2>Reservas para separar</h2>
+          <h2>Exemplares separados</h2>
           @if (p.paraSeparar.length === 0) {
             <p class="texto-secundario">Nenhuma reserva esperando.</p>
           } @else {
@@ -90,7 +90,7 @@ import { MovimentoSemana } from './movimento-semana';
         </section>
 
         <section>
-          <h2>Vencem hoje</h2>
+          <h2>Vencimentos ativos</h2>
           @if (p.venceHoje.length === 0) {
             <p class="texto-secundario">Nenhuma devolução prevista para hoje.</p>
           } @else {
@@ -113,7 +113,7 @@ import { MovimentoSemana } from './movimento-semana';
         </section>
 
         <section>
-          <h2>Atrasados</h2>
+          <h2>Em atraso</h2>
           @if (p.atrasados.length === 0) {
             <p class="texto-secundario">Nenhum empréstimo atrasado.</p>
           } @else {
@@ -138,7 +138,7 @@ import { MovimentoSemana } from './movimento-semana';
         </section>
 
         <section>
-          <h2>Movimento da semana</h2>
+          <h2>Quadro de movimentações</h2>
           <app-movimento-semana [dias]="p.movimento" />
         </section>
       </div>

@@ -130,7 +130,7 @@ class PublicoIntegracaoTest {
     void dadosDaBibliotecaParaORodape() throws Exception {
         mvc.perform(get("/api/v1/publico/biblioteca").with(ip))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.nome").value("Biblioteca Municipal de Imbé"))
+                .andExpect(jsonPath("$.nome").value("Sala Literária Castelinho"))
                 // Vem do BIBLIOTECA_EMAIL (ou do .env local); vazio quando não configurado, nunca nulo.
                 .andExpect(jsonPath("$.email").isString())
                 .andExpect(jsonPath("$.prazoRetiradaDiasUteis").isNumber())

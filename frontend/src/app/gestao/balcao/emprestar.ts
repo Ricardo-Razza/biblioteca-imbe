@@ -33,7 +33,7 @@ import { EmprestimosApi } from '../emprestimos/emprestimos-api';
     ItemEmprestimo,
   ],
   template: `
-    <h1>Emprestar</h1>
+    <h1>Empréstimo</h1>
 
     @if (!situacao()) {
       <p class="texto-secundario">Procure o leitor pelo nome ou pelo CPF.</p>

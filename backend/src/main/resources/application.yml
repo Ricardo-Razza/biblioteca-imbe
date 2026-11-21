@@ -76,7 +76,7 @@ biblioteca:
   publico:
     # Aparece no rodapé do site e na confirmação da reserva; vazio não aparece
     unidade:
-      nome: Biblioteca Municipal de Imbé
+      nome: Sala Literária Castelinho
       endereco: ${BIBLIOTECA_ENDERECO:}
       horario: ${BIBLIOTECA_HORARIO:}
       telefone: ${BIBLIOTECA_TELEFONE:}

@@ -157,7 +157,7 @@ export class Livro {
       const s = this.api.obra(Number(this.id())).subscribe({
         next: (o) => {
           this.obra.set(o);
-          this.titulo.setTitle(`${o.titulo} · Biblioteca de Imbé`);
+          this.titulo.setTitle(`${o.titulo} · Sala Literária Castelinho`);
         },
         error: (e) => this.erro.set(mensagemDeErro(e)),
       });

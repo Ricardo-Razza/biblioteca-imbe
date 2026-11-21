@@ -1,6 +1,6 @@
-# Biblioteca Municipal de Imbé
+# Sala Literária Castelinho (Biblioteca Municipal de Imbé)
 
-Sistema da Biblioteca Municipal da Secretaria Municipal de Cultura de Imbé, em `biblioteca.imbe.rs.gov.br`, com duas modalidades:
+Sistema da Sala Literária Castelinho, a biblioteca municipal da Secretaria Municipal de Cultura de Imbé, em `biblioteca.imbe.rs.gov.br`, com duas modalidades:
 
 - **Site público (`/`):** o cidadão consulta o acervo, com capas e quantidade disponível, e reserva um livro para retirar no balcão.
 - **Gestão (`/login` → `/painel`):** a equipe cuida do acervo, leitores, empréstimos, devoluções e reservas. O livro é cadastrado só pelo ISBN: o sistema busca os dados e a capa em APIs externas.
@@ -212,7 +212,7 @@ Como foi implementado (fase 4):
 | --- | --- | --- |
 | Empréstimos | saída no período | saída, devolução prevista, devolvido em, situação, renovações, ocorrência, tombo, título, leitor |
 | Atrasados | hoje | tombo, título, leitor, telefone, e-mail, saída, devolução prevista, dias de atraso |
-| Mais emprestados | saída no período | posição, título, autores, ISBN, empréstimos (100 primeiros) |
+| Mais retirados | saída no período | posição, título, autores, ISBN, empréstimos (100 primeiros) |
 | Reservas | feita no período | protocolo, feita em, título, tombo, leitor, situação, prazo, finalizada em, cancelada por |
 | Acervo | tudo | tombo, ISBN, título, autores, editora, ano, localização, estado, situação, aquisição, origem |
 
@@ -587,20 +587,21 @@ O servidor precisa de saída HTTPS para `brasilapi.com.br` (ISBN e feriados), `w
 
 - Nada de emojis como ícones. Usar um único conjunto de ícones (Material Symbols).
 - Usar uma cor principal da Prefeitura. Verde, âmbar e vermelho ficam só para situação, e sempre com texto junto ("Atrasado 3 dias").
-- Sem animações de cards. Só o que é clicável reage, mudando a cor de fundo.
-- Botões **Emprestar** e **Devolver** sempre visíveis no topo.
+- Cartões e blocos com superfície própria e sombra leve (`--sombra-leve`), para separar os objetos do fundo. No site, o cartão do livro sobe um pouco e a sombra aumenta ao passar o mouse; na gestão, só o que é clicável reage, mudando a cor de fundo.
+- Botões **Empréstimo** e **Devoluções** sempre visíveis no topo. Na tela Início: Empréstimos ativos, Vencimentos ativos, Em atraso, Exemplares separados, Leitores bloqueados e o Quadro de movimentações.
 - A tela Início mostra o que vence hoje e os atrasados.
 - Menu da gestão com 7 itens: Início, Acervo, Leitores, Empréstimos (abas Ativos, Atrasados e Histórico), Reservas, Relatórios e Configurações.
 - A tela Início também mostra as reservas para separar.
-- **Site público:** pensado primeiro para celular. Logo da Prefeitura e uma busca grande no topo; grade de capas com "3 disponíveis" ou "Todos emprestados"; ficha do livro com um único botão Reservar; rodapé com contato da biblioteca, como reservar e acesso rápido.
+- **Site público:** pensado primeiro para celular. Cabeçalho azul da Prefeitura com a foto das estantes, a assinatura branca e a busca "Encontre um livro" (barra arredondada com o botão dentro), em todas as páginas: buscar de qualquer página leva ao catálogo. Abas Catálogo e Minhas reservas logo abaixo do cabeçalho; filtros Assunto e "Disponíveis agora"; grade de capas com "3 disponíveis" ou "Todos emprestados"; ficha do livro com um único botão Reservar; rodapé com contato da biblioteca, como reservar e acesso rápido.
 - Capa em miniatura nas listas. Texto base de 15 a 16 px. Formulários em uma coluna.
 - Mensagens e confirmações dentro da tela, nunca `alert()` ou `confirm()`.
 - **Identidade visual: Manual de Marca da Prefeitura de Imbé (2021-2028).**
   - Cores: azul da marca `#006EB7` como principal, azul-claro `#47BAEC`, marinho `#1F305F`, cinza `#677A90` e o sol de `#FBBC43` a `#EC5F65`. O tema do Material é gerado em `frontend/src/styles/_theme-colors.scss` (comando no `styles.scss`) e as cores da marca ficam em variáveis `--marca-*`.
   - Logos em `frontend/public/marca/`, recortadas do PDF do manual: vertical 1 sem o conceito (colorida e branca), horizontal com "UM LUGAR CHEIO DE VIDA" (colorida e branca) e o símbolo no favicon.
-  - Assinatura da biblioteca (`app-assinatura`) no padrão das secretarias (pág. 18): marca vertical 1, fio vertical e "Biblioteca Municipal" alinhado à esquerda. Ela aparece no menu da gestão, no topo do site e no login.
+  - Assinatura da biblioteca (`app-assinatura`) no padrão das secretarias (pág. 18): marca vertical 1, fio vertical e "SALA LITERÁRIA CASTELINHO" em caixa alta, alinhado à esquerda (branca no cabeçalho azul do site). Ela aparece no menu da gestão, no topo do site e no login.
   - Respeitar o manual: a vertical 1 não fica com menos de 100 px de largura e a horizontal com menos de 170 px (pág. 15). Em fundo claro, a versão colorida; em fundo escuro, a branca (pág. 17).
-  - Faixa com os degradês do mar e do sol (`--marca-faixa`) no alto das telas. Rodapé do site em marinho, com a marca horizontal branca e o link para `www.imbe.rs.gov.br`.
+  - Faixa com os degradês do mar e do sol (`--marca-faixa`) no alto das telas. No site público, a faixa de cinco cores da Prefeitura (`--prefeitura-faixa`: marinho, azul `#0074BC`, verde `#50B848`, amarelo `#FAA61A` e vermelho `#F55047`, o mesmo padrão dos outros sistemas municipais) fica no alto do cabeçalho e no pé do rodapé.
+  - Rodapé do site em marinho, com a faixa da Prefeitura no fim: marca horizontal branca, `imbe.rs.gov.br` e `/prefeituraimbe`.
   - Tipografia: Lexend Exa nos títulos e na assinatura (substituta da Termina), Lexend no texto.
 - Cores de situação em variáveis CSS (`--situacao-ok`, `--situacao-alerta`, `--situacao-erro`) no `styles.scss`, com tons do verde, amarelo e vermelho institucionais, escurecidos no texto para manter contraste AA.
 - Cadastro pelo leitor USB: o campo de ISBN e o de tombo ficam focados e o Enter do leitor envia. Depois de salvar a obra, a ficha abre com o formulário de exemplar pronto; cada tombo bipado é adicionado e o campo volta a ficar focado para a próxima cópia.
@@ -673,6 +674,7 @@ O servidor precisa de saída HTTPS para `brasilapi.com.br` (ISBN e feriados), `w
 | 2026-11-17 | Implantação pelo Portainer com imagens do ghcr.io publicadas pelo GitHub Actions (testes antes; `latest` = main; webhook opcional); Nginx com `HTTPS=sim` (certificado próprio) ou `HTTPS=nao` (atrás de proxy, IP real só de `PROXY_CONFIAVEL`) |
 | 2026-11-17 | Cabeçalho do site público com foto das estantes da biblioteca ao fundo, sob véu branco para a marca continuar legível (`public/imagens/cabecalho-livros.jpg`, 1920 px, sem metadados) |
 | 2026-11-17 | Responsivo em qualquer aparelho (280 px a 1920 px sem rolagem lateral): `box-sizing: border-box` global, colunas da grade do catálogo que encolhem, barra da gestão que quebra linha no celular |
+| 2026-11-21 | Unidade passa a se chamar Sala Literária Castelinho (assinatura, títulos e `biblioteca.publico.unidade.nome`). Site público: cabeçalho azul `#0074BC` com a busca dentro, abas abaixo, cartões com sombra e faixa de cinco cores da Prefeitura no rodapé. Gestão: Empréstimo/Devoluções, novos nomes dos indicadores do Início e textos dos relatórios ("Mais retirados") |
 
 ## Documentação
 - Toda decisão nova ou mudança de escopo atualiza o README.md

@@ -1,12 +1,10 @@
 import { Component, computed, effect, inject, input, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
-import { MatInputModule } from '@angular/material/input';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSelectModule } from '@angular/material/select';
 import { catchError, of } from 'rxjs';
@@ -20,35 +18,29 @@ import { disponibilidade } from '../textos';
 
 const TAMANHO = 24;
 
-/** Catálogo: busca grande no topo, filtros e grade de capas. Tudo na URL (?q=&assunto=&disponiveis=&pagina=). */
+/** Catálogo: título, filtros e grade de capas (a busca fica no cabeçalho do site). Tudo na URL (?q=&assunto=&disponiveis=&pagina=). */
 @Component({
   selector: 'app-catalogo',
   imports: [
-    FormsModule,
     RouterLink,
     MatButtonModule,
     MatCheckboxModule,
     MatFormFieldModule,
     MatIconModule,
-    MatInputModule,
     MatProgressBarModule,
     MatSelectModule,
     CapaLivro,
     Selo,
   ],
   template: `
-    <section class="busca" aria-labelledby="titulo-busca">
-      <h1 id="titulo-busca">Encontre um livro</h1>
-      <form class="linha-busca" role="search" (ngSubmit)="buscar()">
-        <mat-form-field appearance="outline" subscriptSizing="dynamic" class="campo">
-          <mat-icon matPrefix>search</mat-icon>
-          <input matInput name="q" [(ngModel)]="texto" placeholder="Título, autor ou assunto" autocomplete="off" aria-label="Buscar por título, autor ou assunto" />
-          @if (texto) {
-            <button matSuffix mat-icon-button type="button" (click)="limpar()" aria-label="Limpar a busca"><mat-icon>close</mat-icon></button>
-          }
-        </mat-form-field>
-        <button mat-flat-button type="submit" class="botao-buscar">Buscar</button>
-      </form>
+    <section class="topo-catalogo" aria-labelledby="titulo-catalogo">
+      <h1 id="titulo-catalogo">
+        @if (q()) {
+          Resultados para “{{ q() }}”
+        } @else {
+          Catálogo
+        }
+      </h1>
       <div class="filtros">
         <mat-form-field appearance="outline" subscriptSizing="dynamic" class="assunto">
           <mat-label>Assunto</mat-label>
@@ -60,7 +52,7 @@ const TAMANHO = 24;
           </mat-select>
         </mat-form-field>
         <mat-checkbox [checked]="soDisponiveis()" (change)="navegar({ disponiveis: $event.checked ? 1 : null, pagina: null })">
-          Só os disponíveis agora
+          Disponíveis agora
         </mat-checkbox>
       </div>
     </section>
@@ -108,31 +100,30 @@ const TAMANHO = 24;
     }
   `,
   styles: `
-    .busca {
-      margin-bottom: 16px;
+    /* Título e filtros num bloco próprio, destacado do fundo */
+    .topo-catalogo {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px 24px;
+      margin-bottom: 20px;
+      padding: 16px 20px;
+      border-radius: 12px;
+      background: var(--mat-sys-surface);
+      box-shadow: var(--sombra-leve);
     }
     h1 {
-      margin-bottom: 12px;
-    }
-    .linha-busca {
-      display: flex;
-      gap: 8px;
-      align-items: center;
-      max-width: 720px;
-    }
-    .campo {
-      flex: 1;
-      font-size: 18px;
-    }
-    .botao-buscar {
-      height: 56px;
+      min-width: 0;
+      overflow-wrap: anywhere;
     }
     .filtros {
+      min-width: 0;
+      max-width: 100%;
       display: flex;
       flex-wrap: wrap;
       align-items: center;
       gap: 8px 24px;
-      margin-top: 12px;
     }
     .assunto {
       width: 260px;
@@ -158,14 +149,22 @@ const TAMANHO = 24;
       display: flex;
       flex-direction: column;
       gap: 6px;
-      padding: 8px;
-      border-radius: 8px;
+      height: 100%;
+      padding: 10px 10px 12px;
+      border-radius: 12px;
+      background: var(--mat-sys-surface);
+      box-shadow: var(--sombra-leve);
       color: inherit;
       text-decoration: none;
+      transition:
+        box-shadow 0.15s,
+        transform 0.15s;
       --largura-capa: 100%;
     }
-    .cartao:hover {
-      background: var(--mat-sys-surface-container);
+    .cartao:hover,
+    .cartao:focus-visible {
+      box-shadow: var(--sombra-media);
+      transform: translateY(-2px);
     }
     .titulo {
       font-weight: 500;
@@ -193,10 +192,10 @@ const TAMANHO = 24;
     @media (max-width: 480px) {
       .grade {
         grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 12px 8px;
+        gap: 12px 10px;
       }
-      .botao-buscar {
-        display: none;
+      .topo-catalogo {
+        padding: 14px 16px;
       }
     }
   `,
@@ -210,7 +209,6 @@ export class Catalogo {
   private readonly api = inject(PublicoApi);
   private readonly router = inject(Router);
 
-  protected texto = '';
   protected readonly assuntos = toSignal(this.api.assuntos().pipe(catchError(() => of([]))), { initialValue: [] });
   protected readonly assuntoId = computed(() => (this.assunto() ? Number(this.assunto()) : null));
   protected readonly soDisponiveis = computed(() => !!this.disponiveis());
@@ -220,9 +218,6 @@ export class Catalogo {
   protected readonly disponivel = disponibilidade;
 
   constructor() {
-    effect(() => {
-      this.texto = this.q() ?? '';
-    });
     effect((aoLimpar) => {
       const filtro = {
         q: this.q(),
@@ -245,15 +240,6 @@ export class Catalogo {
       });
       aoLimpar(() => s.unsubscribe());
     });
-  }
-
-  protected buscar(): void {
-    this.navegar({ q: this.texto.trim() || null, pagina: null });
-  }
-
-  protected limpar(): void {
-    this.texto = '';
-    this.navegar({ q: null, pagina: null });
   }
 
   protected irPara(pagina: number): void {

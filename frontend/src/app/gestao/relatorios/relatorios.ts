@@ -22,20 +22,20 @@ export const RELATORIOS: Relatorio[] = [
   {
     caminho: 'emprestimos',
     titulo: 'Empréstimos',
-    descricao: 'Todos os empréstimos que saíram no período, com situação, devolução e leitor.',
+    descricao: 'Todos os empréstimos retirados no período, com situação, devolução e leitor.',
     icone: 'output',
     periodo: true,
   },
   {
     caminho: 'atrasados',
     titulo: 'Atrasados',
-    descricao: 'Empréstimos atrasados hoje, com telefone e e-mail para contato.',
+    descricao: 'Empréstimos atrasados, com e-mail e contato.',
     icone: 'schedule',
     periodo: false,
   },
   {
     caminho: 'mais-emprestados',
-    titulo: 'Mais emprestados',
+    titulo: 'Mais retirados',
     descricao: 'Os 100 títulos com mais empréstimos no período.',
     icone: 'trending_up',
     periodo: true,
@@ -43,7 +43,7 @@ export const RELATORIOS: Relatorio[] = [
   {
     caminho: 'reservas',
     titulo: 'Reservas',
-    descricao: 'Reservas feitas pelo site no período e como terminaram.',
+    descricao: 'Reservas realizadas pelo site no período e status de conclusão.',
     icone: 'bookmark',
     periodo: true,
   },
@@ -78,11 +78,11 @@ export function nomeDoArquivo(disposicao: string | null, padrao: string): string
   imports: [FormsModule, MatButtonModule, MatFormFieldModule, MatIconModule, MatInputModule],
   template: `
     <h1>Relatórios</h1>
-    <p class="texto-secundario intro">Os arquivos saem em CSV e abrem no Excel ou no LibreOffice.</p>
+    <p class="texto-secundario intro">Os arquivos são retirados em CSV e exibidos através do Excel ou no LibreOffice.</p>
 
     <section class="periodo" aria-labelledby="titulo-periodo">
       <h2 id="titulo-periodo">Período</h2>
-      <p class="texto-secundario">Vale para Empréstimos, Mais emprestados e Reservas.</p>
+      <p class="texto-secundario">Referente a Empréstimos, Mais retirados e Reservas.</p>
       <mat-form-field appearance="outline">
         <mat-label>De</mat-label>
         <input matInput type="date" [(ngModel)]="de" [max]="ate" required />

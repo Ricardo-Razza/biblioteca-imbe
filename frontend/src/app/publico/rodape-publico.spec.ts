@@ -8,7 +8,7 @@ describe('RodapePublico', () => {
   let fixture: ComponentFixture<RodapePublico>;
 
   const base: DadosBiblioteca = {
-    nome: 'Biblioteca Municipal de Imbé',
+    nome: 'Sala Literária Castelinho',
     endereco: '',
     horario: '',
     telefone: '',

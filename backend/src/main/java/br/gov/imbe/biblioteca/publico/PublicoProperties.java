@@ -15,7 +15,7 @@ import org.springframework.boot.context.properties.bind.DefaultValue;
 public record PublicoProperties(@DefaultValue Unidade unidade, @DefaultValue Limites limites) {
 
     public record Unidade(
-            @DefaultValue("Biblioteca Municipal de Imbé") String nome,
+            @DefaultValue("Sala Literária Castelinho") String nome,
             @DefaultValue("") String endereco,
             @DefaultValue("") String horario,
             @DefaultValue("") String telefone,

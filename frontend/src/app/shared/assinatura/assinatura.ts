@@ -15,7 +15,7 @@ import { Component, computed, input } from '@angular/core';
       [style.height.px]="altura()"
     />
     <span class="fio" aria-hidden="true"></span>
-    <span class="nome" [style.font-size.px]="tamanhoNome()">Biblioteca<br />Municipal</span>
+    <span class="nome" [style.font-size]="tamanhoNome()">Sala Literária<br />Castelinho</span>
   `,
   styles: `
     :host {
@@ -44,7 +44,9 @@ import { Component, computed, input } from '@angular/core';
       font-family: var(--fonte-marca);
       font-weight: 500;
       line-height: 1.25;
-      letter-spacing: 0.01em;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+      white-space: nowrap;
     }
   `,
   host: { '[class.branca]': 'branca()' },
@@ -53,5 +55,6 @@ export class Assinatura {
   /** Altura da marca em px. 85 px dá os 100 px de largura mínimos do manual. */
   readonly altura = input(85);
   readonly branca = input(false);
-  protected readonly tamanhoNome = computed(() => Math.max(13, Math.round(this.altura() * 0.17)));
+  // Em tela muito estreita o nome encolhe junto (a marca não passa dos 100 px mínimos do manual).
+  protected readonly tamanhoNome = computed(() => `min(${Math.max(13, Math.round(this.altura() * 0.17))}px, 4.2vw)`);
 }

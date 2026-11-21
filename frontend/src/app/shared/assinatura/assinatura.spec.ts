@@ -18,8 +18,8 @@ describe('Assinatura', () => {
   it('usa a marca colorida da Prefeitura com o nome da biblioteca', () => {
     expect(marca().getAttribute('src')).toBe('marca/imbe-vertical.png');
     expect(marca().alt).toBe('Prefeitura de Imbé');
-    expect(fixture.nativeElement.textContent).toContain('Biblioteca');
-    expect(fixture.nativeElement.textContent).toContain('Municipal');
+    expect(fixture.nativeElement.textContent).toContain('Sala Literária');
+    expect(fixture.nativeElement.textContent).toContain('Castelinho');
   });
 
   it('usa a versão branca em fundo escuro', async () => {

@@ -14,9 +14,9 @@ import { DadosBiblioteca } from '../core/api/modelos';
   template: `
     <footer class="rodape">
       <div class="grade">
-        <section class="bloco sobre" aria-label="Prefeitura de Imbé">
-          <img src="marca/imbe-horizontal-branca.png" alt="Prefeitura de Imbé: um lugar cheio de vida" height="64" />
-          <p>Consulte o acervo da Biblioteca Municipal, veja o que está disponível agora e reserve para retirar no balcão.</p>
+        <section class="bloco sobre" aria-labelledby="rodape-sobre">
+          <h2 id="rodape-sobre">Sala Literária Castelinho</h2>
+          <p>Consulte o acervo, veja o que está disponível agora e reserve para retirar no balcão.</p>
         </section>
 
         <section class="bloco" aria-labelledby="rodape-visite">
@@ -88,7 +88,26 @@ import { DadosBiblioteca } from '../core/api/modelos';
 
       <div class="base">
         <span>© {{ ano }} Prefeitura Municipal de Imbé</span>
-        <span>{{ biblioteca()?.nome ?? 'Biblioteca Municipal de Imbé' }}</span>
+        <span>{{ biblioteca()?.nome ?? 'Sala Literária Castelinho' }}</span>
+      </div>
+
+      <!-- Faixa da Prefeitura, no padrão dos sistemas municipais -->
+      <div class="prefeitura">
+        <div class="conteudo-prefeitura">
+          <img src="marca/imbe-horizontal-branca.png" alt="Prefeitura de Imbé: um lugar cheio de vida" height="56" />
+          <ul class="canais">
+            <li>
+              <a href="https://www.imbe.rs.gov.br" rel="noopener" target="_blank">
+                <mat-icon aria-hidden="true">language</mat-icon> imbe.rs.gov.br
+                <span class="visualmente-oculto">(abre em nova aba)</span>
+              </a>
+            </li>
+            <li>
+              <span class="rede"><mat-icon aria-hidden="true">share</mat-icon> /prefeituraimbe</span>
+            </li>
+          </ul>
+        </div>
+        <div class="cores" aria-hidden="true"></div>
       </div>
     </footer>
   `,
@@ -97,8 +116,6 @@ import { DadosBiblioteca } from '../core/api/modelos';
       background: var(--marca-marinho);
       color: #d5deea;
       font: var(--mat-sys-body-medium);
-      border-top: 6px solid transparent;
-      border-image: var(--marca-faixa) 1;
     }
     .grade {
       max-width: 1120px;
@@ -124,11 +141,8 @@ import { DadosBiblioteca } from '../core/api/modelos';
       margin: 0;
       line-height: 1.55;
     }
-    .sobre img {
-      display: block;
-      height: 64px;
-      width: auto;
-      margin-bottom: 16px;
+    .sobre h2 {
+      font-size: 15px;
     }
     .suave {
       color: #aebbd0;
@@ -231,6 +245,52 @@ import { DadosBiblioteca } from '../core/api/modelos';
       border-top: 1px solid rgb(255 255 255 / 0.14);
       color: #aebbd0;
       font: var(--mat-sys-body-small);
+    }
+    .prefeitura {
+      background: color-mix(in srgb, var(--marca-marinho) 82%, #000);
+    }
+    .conteudo-prefeitura {
+      max-width: 1120px;
+      margin: 0 auto;
+      padding: 20px 16px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px 32px;
+    }
+    .conteudo-prefeitura img {
+      display: block;
+      height: 56px;
+      width: auto;
+    }
+    .canais {
+      list-style: none;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px 28px;
+      font: var(--mat-sys-title-small);
+      font-family: var(--fonte-marca);
+    }
+    .canais a,
+    .rede {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: #fff;
+      text-decoration: none;
+    }
+    .canais a:hover {
+      text-decoration: underline;
+    }
+    .canais mat-icon {
+      font-size: 20px;
+      width: 20px;
+      height: 20px;
+    }
+    .cores {
+      height: 8px;
+      background: var(--prefeitura-faixa);
     }
     @media (max-width: 900px) {
       .grade {
