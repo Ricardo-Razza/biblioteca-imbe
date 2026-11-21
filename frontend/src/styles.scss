@@ -26,9 +26,30 @@ html {
     )
   );
   // O tom 40 gerado fica um pouco mais escuro: usa o azul exato da marca (contraste 5,3:1 com branco).
+  // Superfícies em tom de papel e filetes quentes (em vez do cinza-azulado padrão do Material): a página é
+  // papel, os blocos são brancos e separados por filetes finos.
   @include mat.theme-overrides(
     (
       primary: #006eb7,
+      surface: #ffffff,
+      surface-container-lowest: #ffffff,
+      surface-container-low: #f6f4ef,
+      surface-container: #efece5,
+      surface-container-high: #e9e5dc,
+      surface-container-highest: #e2ddd2,
+      outline-variant: #e3e0d8,
+      on-surface: #1d2333,
+      on-surface-variant: #535a6b,
+    )
+  );
+  // Botões com canto discreto, no lugar da pílula padrão.
+  @include mat.button-overrides(
+    (
+      filled-container-shape: 6px,
+      outlined-container-shape: 6px,
+      text-container-shape: 6px,
+      protected-container-shape: 6px,
+      tonal-container-shape: 6px,
     )
   );
 
@@ -40,6 +61,11 @@ html {
   --marca-amarelo: #fbbc43;
   --marca-coral: #ec5f65;
   --fonte-marca: 'Lexend Exa', Lexend, sans-serif;
+  // Títulos de página, de bloco e de livro: serifada, para o ar de livro (o texto de interface segue em Lexend).
+  --fonte-titulo: Literata, Georgia, serif;
+  --papel: #f6f4ef;
+  --filete: #e3e0d8;
+  --filete-forte: #cfcabe;
   // Faixa com os dois degradês da marca: o mar (azul) e o sol (amarelo ao coral).
   --marca-faixa: linear-gradient(
     90deg,
@@ -108,10 +134,52 @@ h3 {
 
 h1 {
   font: var(--mat-sys-headline-small);
+  font-family: var(--fonte-titulo);
+  font-weight: 500;
+  letter-spacing: -0.01em;
 }
 
 h2 {
   font: var(--mat-sys-title-large);
+  font-family: var(--fonte-titulo);
+  font-weight: 500;
+}
+
+// Bloco branco com filete, sobre o fundo de papel (cabeçalho com título, conteúdo e lista em linhas).
+.bloco {
+  background: var(--mat-sys-surface);
+  border: 1px solid var(--filete);
+  min-width: 0;
+
+  > header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 4px 10px;
+    padding: 14px 20px 12px;
+    border-bottom: 1px solid var(--filete);
+
+    h2 {
+      font-size: 19px;
+    }
+
+    .qt {
+      font: var(--mat-sys-body-small);
+      color: var(--mat-sys-on-surface-variant);
+    }
+
+    > a {
+      margin-left: auto;
+      font: var(--mat-sys-body-medium);
+      text-decoration: none;
+    }
+  }
+
+  > .vazio {
+    margin: 0;
+    padding: 16px 20px;
+    color: var(--mat-sys-on-surface-variant);
+  }
 }
 
 a {

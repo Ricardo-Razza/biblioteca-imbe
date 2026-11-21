@@ -1,4 +1,6 @@
 import { diasAntes, nomeDoArquivo } from '../relatorios/relatorios';
+import { Painel } from '../../core/api/modelos';
+import { detalhes } from './inicio';
 import { diaDaSemana, tetoDoEixo } from './movimento-semana';
 
 describe('painel e relatórios', () => {
@@ -12,6 +14,27 @@ describe('painel e relatórios', () => {
     expect(tetoDoEixo(3)).toBe(4);
     expect(tetoDoEixo(5)).toBe(8);
     expect(tetoDoEixo(12)).toBe(12);
+  });
+
+  it('linha de contexto dos indicadores', () => {
+    const base = {
+      hoje: '2026-11-19',
+      contadores: { emprestados: 5, atrasados: 2, venceHoje: 0, reservasParaSeparar: 2, leitoresBloqueados: 0 },
+      venceHoje: [],
+      atrasados: [{ diasAtraso: 3 }, { diasAtraso: 12 }],
+      paraSeparar: [{ prazoRetirada: '2026-11-19' }, { prazoRetirada: '2026-11-23' }],
+      movimento: [{ data: '2026-11-19', saidas: 4, devolucoes: 1 }],
+    } as unknown as Painel;
+    expect(detalhes(base)).toEqual({
+      emprestados: '+4 hoje',
+      atrasados: 'mais antigo há 12 dias',
+      separados: '1 com prazo hoje',
+    });
+    expect(detalhes({ ...base, atrasados: [], paraSeparar: [], movimento: [] })).toEqual({
+      emprestados: 'nenhuma saída hoje',
+      atrasados: 'nenhum em atraso',
+      separados: 'nenhum com prazo hoje',
+    });
   });
 
   it('período padrão', () => {

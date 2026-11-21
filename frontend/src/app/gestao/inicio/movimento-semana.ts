@@ -78,8 +78,8 @@ export function tetoDoEixo(maximo: number): number {
   styles: `
     :host {
       display: block;
-      --serie-saidas: var(--marca-azul);
-      --serie-devolucoes: var(--marca-coral);
+      --serie-saidas: var(--prefeitura-azul);
+      --serie-devolucoes: var(--prefeitura-verde);
     }
     .legenda {
       display: flex;
@@ -163,7 +163,7 @@ export function tetoDoEixo(maximo: number): number {
     }
     .barra {
       width: min(18px, 30%);
-      border-radius: 4px 4px 0 0;
+      border-radius: 0;
       min-height: 0;
     }
     .rotulo {

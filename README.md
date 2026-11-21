@@ -202,8 +202,8 @@ Como foi implementado (fase 4):
 ## Painel e relatórios
 
 **Início (`/painel/inicio`)**, a tela que abre ao entrar na gestão:
-- Cartões: livros emprestados (em aberto, atrasados inclusive), vencem hoje, atrasados, reservas para separar e leitores bloqueados. Atrasados e reservas levam à lista correspondente; cartão com pendência ganha a cor de alerta ou erro, sempre com o número e o texto.
-- Listas de até 10 itens: reservas para separar (tombo e localização, prazo de retirada), vencem hoje e atrasados (com telefone e dias de atraso).
+- Indicadores numa faixa única, separados por filetes, cada um com a sua cor no topo: livros emprestados (em aberto, atrasados inclusive), vencem hoje, atrasados, reservas para separar e leitores bloqueados. Embaixo do número, uma linha de contexto calculada com o que o painel já traz (saídas de hoje, atraso mais antigo, reservas com prazo hoje). Empréstimos, atrasados e reservas levam à lista correspondente.
+- Blocos com até 10 itens, em linhas com capa, livro, leitor, prazo e ação: reservas para separar (tombo e localização, prazo de retirada; Entregar leva às reservas), atrasados (telefone e dias de atraso; Devolver abre Devoluções com o tombo) e vencem hoje.
 - Gráfico de barras agrupadas com saídas e devoluções dos últimos 7 dias: uma escala só, legenda com o total da semana, detalhe do dia ao passar o mouse ou focar com o teclado e tabela equivalente para leitor de tela. Cores das duas séries conferidas para daltonismo.
 
 **Relatórios (`/painel/relatorios`)**, em CSV:
@@ -587,10 +587,10 @@ O servidor precisa de saída HTTPS para `brasilapi.com.br` (ISBN e feriados), `w
 
 - Nada de emojis como ícones. Usar um único conjunto de ícones (Material Symbols).
 - Usar uma cor principal da Prefeitura. Verde, âmbar e vermelho ficam só para situação, e sempre com texto junto ("Atrasado 3 dias").
-- Cartões e blocos com superfície própria e sombra leve (`--sombra-leve`), para separar os objetos do fundo. No site, o cartão do livro sobe um pouco e a sombra aumenta ao passar o mouse; na gestão, só o que é clicável reage, mudando a cor de fundo.
-- Botões **Empréstimo** e **Devoluções** sempre visíveis no topo. Na tela Início: Empréstimos ativos, Vencimentos ativos, Em atraso, Exemplares separados, Leitores bloqueados (cada indicador com sua cor da paleta da Prefeitura) e o Quadro de movimentações.
+- Fugir do visual genérico de painel: fundo em tom de papel (`--papel`), blocos brancos com filete fino (`--filete`, classe global `.bloco`) em vez de caixas arredondadas com sombra, cantos discretos nos botões (6 px) e listas em linhas, com capa, em vez de cartões. No site, o cartão do livro tem sombra leve (`--sombra-leve`), sobe um pouco e a sombra aumenta ao passar o mouse; na gestão, só o que é clicável reage, mudando a cor de fundo.
+- Botões **Empréstimo** e **Devoluções** sempre visíveis no topo. Na tela Início: Empréstimos ativos, Vencimentos ativos, Em atraso, Exemplares separados, Leitores bloqueados (faixa única, cada indicador com sua cor da paleta da Prefeitura no topo) e o Quadro de movimentações.
 - A tela Início mostra o que vence hoje e os atrasados.
-- Menu da gestão com 7 itens: Início, Acervo, Leitores, Empréstimos (abas Ativos, Atrasados e Histórico), Reservas, Relatórios e Configurações.
+- Menu da gestão marinho sólido, com a assinatura branca, 7 itens em grupos (Início; Balcão: Empréstimos, Reservas, Leitores; Acervo: Acervo, Relatórios, Configurações), filete amarelo no item ativo e a faixa de cinco cores da Prefeitura no pé. No celular vira uma linha rolável, sem a assinatura.
 - A tela Início também mostra as reservas para separar.
 - **Site público:** pensado primeiro para celular. Cabeçalho azul da Prefeitura com a foto das estantes, a assinatura branca e a busca "Encontre um livro" (barra arredondada com o botão dentro), em todas as páginas: buscar de qualquer página leva ao catálogo. Abas Catálogo e Minhas reservas logo abaixo do cabeçalho; filtros Assunto e "Disponíveis agora"; grade de capas com "3 disponíveis" ou "Todos emprestados"; ficha do livro com um único botão Reservar; rodapé com contato da biblioteca, como reservar e acesso rápido.
 - Capa em miniatura nas listas. Texto base de 15 a 16 px. Formulários em uma coluna.
@@ -600,9 +600,9 @@ O servidor precisa de saída HTTPS para `brasilapi.com.br` (ISBN e feriados), `w
   - Logos em `frontend/public/marca/`, recortadas do PDF do manual: vertical 1 sem o conceito (colorida e branca), horizontal com "UM LUGAR CHEIO DE VIDA" (colorida e branca) e o símbolo no favicon.
   - Assinatura da biblioteca (`app-assinatura`) no padrão das secretarias (pág. 18): marca vertical 1, fio vertical e "SALA LITERÁRIA CASTELINHO" em caixa alta, alinhado à esquerda (branca no cabeçalho azul do site). Ela aparece no menu da gestão, no topo do site e no login.
   - Respeitar o manual: a vertical 1 não fica com menos de 100 px de largura e a horizontal com menos de 170 px (pág. 15). Em fundo claro, a versão colorida; em fundo escuro, a branca (pág. 17).
-  - Faixa com os degradês do mar e do sol (`--marca-faixa`) no alto das telas. No site público, a faixa de cinco cores da Prefeitura (`--prefeitura-faixa`: marinho, azul `#0074BC`, verde `#50B848`, amarelo `#FAA61A` e vermelho `#F55047`, o mesmo padrão dos outros sistemas municipais) fica no alto do cabeçalho e no pé do rodapé.
+  - Faixa com os degradês do mar e do sol (`--marca-faixa`) no alto do cartão de login. No site público, a faixa de cinco cores da Prefeitura (`--prefeitura-faixa`: marinho, azul `#0074BC`, verde `#50B848`, amarelo `#FAA61A` e vermelho `#F55047`, o mesmo padrão dos outros sistemas municipais) fica no alto do cabeçalho e no pé do rodapé.
   - Rodapé do site em marinho, com a faixa da Prefeitura no fim: marca horizontal branca, `imbe.rs.gov.br` e `/prefeituraimbe`.
-  - Tipografia: Lexend Exa nos títulos e na assinatura (substituta da Termina), Lexend no texto.
+  - Tipografia: Lexend Exa na assinatura e na chamada da busca (substituta da Termina), Lexend no texto e Literata (serifada, `--fonte-titulo`) nos títulos de página, de bloco e de livro.
 - Cores de situação em variáveis CSS (`--situacao-ok`, `--situacao-alerta`, `--situacao-erro`) no `styles.scss`, com tons do verde, amarelo e vermelho institucionais, escurecidos no texto para manter contraste AA.
 - Cadastro pelo leitor USB: o campo de ISBN e o de tombo ficam focados e o Enter do leitor envia. Depois de salvar a obra, a ficha abre com o formulário de exemplar pronto; cada tombo bipado é adicionado e o campo volta a ficar focado para a próxima cópia.
 
@@ -677,6 +677,7 @@ O servidor precisa de saída HTTPS para `brasilapi.com.br` (ISBN e feriados), `w
 | 2026-11-21 | Unidade passa a se chamar Sala Literária Castelinho (assinatura, títulos e `biblioteca.publico.unidade.nome`). Site público: cabeçalho azul `#0074BC` com a busca dentro, abas abaixo, cartões com sombra e faixa de cinco cores da Prefeitura no rodapé. Gestão: Empréstimo/Devoluções, novos nomes dos indicadores do Início e textos dos relatórios ("Mais retirados") |
 | 2026-11-21 | Transições em degradê no site público: o pé do cabeçalho azul se dissolve no branco das abas e o topo do rodapé sai do fundo claro para o marinho, sem corte seco |
 | 2026-11-21 | Textos para o público e mensagens de erro falam "Sala Literária" no lugar de "biblioteca" (identificadores, pacotes e chaves de configuração continuam `biblioteca`). Indicadores do Início com cor própria da paleta da Prefeitura (azul, amarelo, vermelho, verde, marinho), ícone e fundo mais forte quando o número pede atenção. Menu da gestão com 280 px para o nome da assinatura caber |
+| 2026-11-21 | Novo visual para tirar a cara de painel genérico: fundo em tom de papel, blocos brancos com filete, títulos em Literata, botões com canto de 6 px. Gestão com menu marinho em grupos e Início com indicadores numa faixa única (linha de contexto embaixo do número) e listas em linhas com capa e ação (Entregar, Devolver) |
 
 ## Documentação
 - Toda decisão nova ou mudança de escopo atualiza o README.md

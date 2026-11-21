@@ -11,10 +11,12 @@ interface ItemMenu {
   rota: string;
   texto: string;
   icone: string;
+  /** Título do grupo que começa neste item (só no menu lateral). */
+  grupo?: string;
   soAdmin?: boolean;
 }
 
-/** Layout da gestão: menu lateral com os 7 itens e Empréstimo/Devoluções sempre no topo. */
+/** Layout da gestão: menu lateral marinho com os 7 itens em grupos e Empréstimo/Devoluções sempre no topo. */
 @Component({
   selector: 'app-layout-gestao',
   imports: [RouterOutlet, RouterLink, RouterLinkActive, MatButtonModule, MatIconModule, MatMenuModule, Assinatura],
@@ -22,14 +24,18 @@ interface ItemMenu {
     <div class="gestao">
       <nav class="menu" aria-label="Menu da gestão">
         <a class="marca" routerLink="inicio" aria-label="Sala Literária Castelinho: início da gestão">
-          <app-assinatura [tamanho]="13" />
+          <app-assinatura [branca]="true" [tamanho]="12" />
         </a>
         @for (item of itensVisiveis(); track item.rota) {
+          @if (item.grupo) {
+            <span class="grupo" aria-hidden="true">{{ item.grupo }}</span>
+          }
           <a class="item" [routerLink]="item.rota" routerLinkActive="ativo">
             <mat-icon>{{ item.icone }}</mat-icon>
             {{ item.texto }}
           </a>
         }
+        <span class="faixa" aria-hidden="true"></span>
       </nav>
       <div class="area">
         <header class="topo">
@@ -62,15 +68,18 @@ interface ItemMenu {
     .gestao {
       display: flex;
       min-height: 100vh;
-      border-top: 4px solid transparent;
-      border-image: var(--marca-faixa) 1;
     }
+    /* Menu marinho sólido, texto branco; o item ativo leva um filete amarelo à esquerda. */
     .menu {
-      width: 280px;
+      width: 264px;
       flex: none;
-      background: var(--mat-sys-surface-container-low);
-      border-right: 1px solid var(--mat-sys-outline-variant);
-      padding: 20px 12px 16px;
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow-y: auto;
+      background: var(--marca-marinho);
+      color: #fff;
+      padding: 24px 12px 0;
       box-sizing: border-box;
       display: flex;
       flex-direction: column;
@@ -78,40 +87,78 @@ interface ItemMenu {
     }
     .marca {
       display: flex;
-      padding: 0 8px 24px;
+      padding: 0 8px 20px;
       text-decoration: none;
-      border-radius: 8px;
+      border-radius: 4px;
+    }
+    .marca:focus-visible,
+    .item:focus-visible {
+      outline: 2px solid #fff;
+      outline-offset: -2px;
+    }
+    .grupo {
+      padding: 18px 12px 6px;
+      font: var(--mat-sys-label-small);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: rgb(255 255 255 / 0.55);
     }
     .item {
       display: flex;
       align-items: center;
       gap: 12px;
-      padding: 10px 12px;
-      border-radius: 8px;
-      color: var(--mat-sys-on-surface);
+      padding: 9px 12px;
+      border-left: 3px solid transparent;
+      color: rgb(255 255 255 / 0.8);
       text-decoration: none;
+      font: var(--mat-sys-body-medium);
+      font-size: 15px;
+    }
+    .item mat-icon {
+      font-size: 20px;
+      width: 20px;
+      height: 20px;
+      font-weight: 300;
     }
     .item:hover {
-      background: var(--mat-sys-surface-container-highest);
+      color: #fff;
+      background: rgb(255 255 255 / 0.06);
     }
     .item.ativo {
-      background: color-mix(in srgb, var(--marca-azul) 12%, transparent);
-      color: var(--marca-azul);
-      font-weight: 600;
+      color: #fff;
+      background: rgb(255 255 255 / 0.1);
+      border-left-color: var(--prefeitura-amarelo);
+      font-weight: 500;
+    }
+    /* Faixa de cinco cores da Prefeitura no pé do menu (a do marinho mais escura, para aparecer no fundo marinho). */
+    .faixa {
+      margin: auto -12px 0;
+      flex: none;
+      height: 6px;
+      background: linear-gradient(
+        90deg,
+        color-mix(in srgb, var(--marca-marinho) 70%, #000) 0 20%,
+        var(--prefeitura-azul) 20% 40%,
+        var(--prefeitura-verde) 40% 60%,
+        var(--prefeitura-amarelo) 60% 80%,
+        var(--prefeitura-vermelho) 80% 100%
+      );
     }
     .area {
       flex: 1;
       min-width: 0;
       display: flex;
       flex-direction: column;
+      background: var(--papel);
     }
     .topo {
       display: flex;
       flex-wrap: wrap;
       gap: 8px;
       align-items: center;
-      padding: 12px 24px;
-      border-bottom: 1px solid var(--mat-sys-outline-variant);
+      padding: 12px 32px;
+      background: var(--mat-sys-surface);
+      border-bottom: 1px solid var(--filete);
     }
     .espaco {
       flex: 1;
@@ -131,25 +178,40 @@ interface ItemMenu {
       }
     }
     .conteudo {
-      padding: 24px;
-      max-width: 1100px;
+      padding: 28px 32px 40px;
+      max-width: 1240px;
     }
     @media (max-width: 760px) {
       .gestao {
         flex-direction: column;
       }
       .menu {
+        position: static;
         width: auto;
+        height: auto;
         flex-direction: row;
         overflow-x: auto;
-        border-right: none;
-        border-bottom: 1px solid var(--mat-sys-outline-variant);
+        padding: 0 8px;
       }
-      .marca {
+      .marca,
+      .grupo,
+      .faixa {
         display: none;
       }
+      .item {
+        flex: none;
+        border-left: 0;
+        border-bottom: 3px solid transparent;
+        padding: 14px 10px 11px;
+        white-space: nowrap;
+        gap: 6px;
+      }
+      .item.ativo {
+        background: none;
+        border-bottom-color: var(--prefeitura-amarelo);
+      }
       .conteudo {
-        padding: 16px;
+        padding: 20px 16px 32px;
       }
     }
   `,
@@ -159,10 +221,10 @@ export class LayoutGestao {
   private readonly router = inject(Router);
   protected readonly itens: ItemMenu[] = [
     { rota: 'inicio', texto: 'Início', icone: 'home' },
-    { rota: 'acervo', texto: 'Acervo', icone: 'library_books' },
-    { rota: 'leitores', texto: 'Leitores', icone: 'group' },
-    { rota: 'emprestimos', texto: 'Empréstimos', icone: 'swap_horiz' },
+    { rota: 'emprestimos', texto: 'Empréstimos', icone: 'swap_horiz', grupo: 'Balcão' },
     { rota: 'reservas', texto: 'Reservas', icone: 'bookmark' },
+    { rota: 'leitores', texto: 'Leitores', icone: 'group' },
+    { rota: 'acervo', texto: 'Acervo', icone: 'library_books', grupo: 'Acervo' },
     { rota: 'relatorios', texto: 'Relatórios', icone: 'bar_chart' },
     { rota: 'configuracoes', texto: 'Configurações', icone: 'settings', soAdmin: true },
   ];
