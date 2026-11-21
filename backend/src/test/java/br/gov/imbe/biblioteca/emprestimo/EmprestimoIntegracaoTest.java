@@ -214,6 +214,13 @@ class EmprestimoIntegracaoTest {
                 .andExpect(jsonPath("$.itens[0].id").value(id));
         mvc.perform(get("/api/v1/emprestimos").param("q", "póstumas"))
                 .andExpect(jsonPath("$.itens[*].id", Matchers.hasItem((int) id)));
+        // Livro sem etiqueta: também pelo autor, pelo leitor ou por um trecho do tombo
+        for (String termo : new String[] { "autor de teste", "carla leitora", "e-3" }) {
+            mvc.perform(get("/api/v1/emprestimos").param("q", termo))
+                    .andExpect(jsonPath("$.itens[*].id", Matchers.hasItem((int) id)));
+        }
+        mvc.perform(get("/api/v1/emprestimos").param("q", "nada parecido com isso"))
+                .andExpect(jsonPath("$.total").value(0));
     }
 
     @Test

@@ -50,7 +50,7 @@ const TAMANHO = 20;
       <mat-label>Filtrar</mat-label>
       <mat-icon matPrefix>search</mat-icon>
       <input matInput [value]="q() ?? ''" (input)="digitar($any($event.target).value)" autocomplete="off" maxlength="100" />
-      <mat-hint>Título do livro ou nome do leitor.</mat-hint>
+      <mat-hint>Título, autor, tombo ou nome do leitor.</mat-hint>
     </mat-form-field>
 
     @if (carregando()) {

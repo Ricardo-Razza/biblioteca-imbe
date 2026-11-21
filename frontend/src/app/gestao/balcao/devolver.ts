@@ -11,13 +11,13 @@ import { mensagemDeErro } from '../../core/api/erro-api';
 import { Emprestimo, OcorrenciaDevolucao } from '../../core/api/modelos';
 import { dataBr, dias } from '../../shared/formatos';
 import { ItemEmprestimo } from '../emprestimos/item-emprestimo';
-import { Mascara } from '../../shared/mascaras';
 import { EmprestimosApi } from '../emprestimos/emprestimos-api';
 
 type Ocorrencia = OcorrenciaDevolucao | 'NENHUMA';
 
 /**
- * Devolver no balcão: bipa o tombo, confere o empréstimo e confirma (Enter confirma).
+ * Devolver no balcão: bipa o tombo ou procura pelo título, autor ou leitor (nem todo livro tem etiqueta), confere
+ * o empréstimo e confirma (Enter confirma). Tombo exato ou um só resultado abre a conferência; mais de um, a lista.
  * `?tombo=` abre com o tombo já buscado (vindo das listas).
  */
 @Component({
@@ -31,21 +31,32 @@ type Ocorrencia = OcorrenciaDevolucao | 'NENHUMA';
     MatProgressSpinnerModule,
     MatRadioModule,
     ItemEmprestimo,
-    Mascara,
   ],
   template: `
     <h1>Devoluções</h1>
 
     <form class="tombo" (submit)="buscar($event)">
-      <mat-form-field appearance="outline">
-        <mat-label>Tombo</mat-label>
+      <mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <mat-label>Livro ou leitor</mat-label>
         <mat-icon matPrefix>barcode_scanner</mat-icon>
-        <input #campoTombo matInput [formControl]="tombo" appMascara="tombo" autocomplete="off" />
-        <mat-hint>Bipe a etiqueta do livro devolvido.</mat-hint>
+        <input #campoTombo matInput [formControl]="tombo" autocomplete="off" maxlength="100" placeholder="Tombo, título, autor ou leitor" />
+        <mat-hint>Bipe a etiqueta ou digite tombo, título, autor ou nome do leitor.</mat-hint>
         <mat-error>{{ erroTombo() }}</mat-error>
       </mat-form-field>
       <button mat-stroked-button type="submit" [disabled]="buscando()">Buscar</button>
     </form>
+
+    @if (encontrados(); as lista) {
+      <section class="encontrados" aria-live="polite">
+        <h2>{{ lista.length }} empréstimos em aberto encontrados</h2>
+        @for (x of lista; track x.id) {
+          <app-item-emprestimo [e]="x">
+            <button mat-stroked-button type="button" (click)="escolher(x)">Devolver</button>
+          </app-item-emprestimo>
+        }
+        <button mat-button type="button" (click)="cancelar()"><mat-icon>close</mat-icon> Limpar a busca</button>
+      </section>
+    }
 
     @if (emprestimo(); as e) {
       <section class="conferencia">
@@ -107,12 +118,22 @@ type Ocorrencia = OcorrenciaDevolucao | 'NENHUMA';
     }
     .tombo {
       display: flex;
+      flex-wrap: wrap;
       gap: 12px;
       align-items: flex-start;
       max-width: 640px;
     }
     .tombo mat-form-field {
-      flex: 1;
+      flex: 1 1 240px;
+      min-width: 0;
+    }
+    .encontrados {
+      max-width: 760px;
+      margin-top: 8px;
+    }
+    .encontrados h2 {
+      margin: 8px 0;
+      font-size: 17px;
     }
     .tombo button {
       margin-top: 4px;
@@ -154,6 +175,8 @@ export class Devolver {
   protected readonly ocorrencia = new FormControl<Ocorrencia>('NENHUMA', { nonNullable: true });
   protected readonly observacao = new FormControl('', { nonNullable: true });
   protected readonly emprestimo = signal<Emprestimo | null>(null);
+  /** Mais de um empréstimo achado pelo título, autor ou leitor: o funcionário escolhe (nulo: sem lista). */
+  protected readonly encontrados = signal<Emprestimo[] | null>(null);
   protected readonly feitos = signal<{ e: Emprestimo }[]>([]);
   protected readonly buscando = signal(false);
   protected readonly enviando = signal(false);
@@ -205,21 +228,34 @@ export class Devolver {
     this.limpar();
   }
 
-  private procurar(tombo: string): void {
+  protected escolher(e: Emprestimo): void {
+    this.encontrados.set(null);
+    this.ocorrencia.setValue('NENHUMA');
+    this.observacao.setValue('');
+    this.emprestimo.set(e);
+    afterNextRender(() => this.botaoConfirmar()?.nativeElement.focus(), { injector: this.injector });
+  }
+
+  private procurar(termo: string): void {
+    if (termo.length < 2) {
+      this.marcarErroTombo('Digite pelo menos 2 letras do título, do autor ou do leitor.');
+      return;
+    }
     this.buscando.set(true);
     this.emprestimo.set(null);
+    this.encontrados.set(null);
     this.erro.set(null);
-    this.api.listar({ status: 'ATIVO', tombo, tamanho: 1 }).subscribe({
+    this.api.listar({ status: 'ATIVO', q: termo, tamanho: 20 }).subscribe({
       next: (p) => {
         this.buscando.set(false);
-        if (!p.itens.length) {
-          this.marcarErroTombo(`O tombo ${tombo.toUpperCase()} não está emprestado.`);
-          return;
+        const exato = p.itens.find((e) => e.exemplar.tombo === termo.toUpperCase());
+        if (exato || p.itens.length === 1) {
+          this.escolher(exato ?? p.itens[0]);
+        } else if (!p.itens.length) {
+          this.marcarErroTombo(`Nenhum empréstimo em aberto encontrado para "${termo}".`);
+        } else {
+          this.encontrados.set(p.itens);
         }
-        this.ocorrencia.setValue('NENHUMA');
-        this.observacao.setValue('');
-        this.emprestimo.set(p.itens[0]);
-        afterNextRender(() => this.botaoConfirmar()?.nativeElement.focus(), { injector: this.injector });
       },
       error: (err) => {
         this.buscando.set(false);
@@ -237,6 +273,7 @@ export class Devolver {
 
   private limpar(): void {
     this.emprestimo.set(null);
+    this.encontrados.set(null);
     this.tombo.reset('');
     this.campoTombo().nativeElement.focus();
   }

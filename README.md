@@ -444,6 +444,7 @@ Como as regras foram implementadas (fase 2):
 - **Limite:** empréstimos em aberto + reservas aguardando retirada, até `LIMITE_LIVROS_POR_LEITOR`.
 - **Leitor:** CPF obrigatório para todos, inclusive crianças (é o login da reserva pública). Menor de 18 exige o nome do responsável. Com livro emprestado, não pode ser desativado.
 - **Livro na saída:** nem todo livro tem etiqueta, então o campo Livro do Empréstimo aceita o tombo (bipado ou digitado), o ISBN (o código de barras da contracapa), um trecho do título ou o nome do autor (`GET /exemplares?q=`). Tombo exato empresta direto, como antes; o resto lista até 20 exemplares disponíveis ou reservados, com tombo e estante, e o funcionário escolhe qual sai. Reservado para outro leitor continua recusado na saída.
+- **Livro na devolução:** o campo Livro ou leitor de Devoluções aceita o tombo, um trecho do título, o autor ou o nome do leitor (`GET /emprestimos?status=ATIVO&q=`, que agora também procura no autor e no tombo). Tombo exato ou um único resultado abre a conferência; mais de um mostra a lista dos empréstimos em aberto para escolher qual voltou.
 - O banco garante um único empréstimo em aberto por exemplar (coluna gerada + índice único), e o exemplar é travado (`SELECT ... FOR UPDATE`) na saída e na devolução.
 - Parâmetros (tabela `parametro`): `PRAZO_EMPRESTIMO_DIAS`, `LIMITE_LIVROS_POR_LEITOR`, `MAXIMO_RENOVACOES`, `DIAS_POR_RENOVACAO`, `PRAZO_RETIRADA_RESERVA_DIAS_UTEIS`, cada um com faixa de valores aceitos.
 
@@ -464,7 +465,7 @@ Como as regras foram implementadas (fase 2):
 | `GET/POST /leitores?q=`, `GET/PUT /leitores/{id}`, `GET /leitores/{id}/situacao` | Leitores (busca por nome ou CPF) | Atendente |
 | `POST /leitores/{id}/desbloqueio` | Tira o bloqueio por atraso | Admin |
 | `POST /emprestimos`, `/{id}/renovacao`, `/{id}/devolucao` | Balcão | Atendente |
-| `GET /emprestimos?status=&leitorId=&tombo=&q=` | `ATIVO` (todos em aberto), `ATRASADO` ou `DEVOLVIDO` | Atendente |
+| `GET /emprestimos?status=&leitorId=&tombo=&q=` | `ATIVO` (todos em aberto), `ATRASADO` ou `DEVOLVIDO`; `q` procura no título, autor, tombo e nome do leitor | Atendente |
 | `GET /parametros` · `PUT /parametros/{chave}` | Prazos e limites | Atendente · Admin |
 | `GET /painel` | Contadores do dia, até 10 itens de vence hoje, atrasados e reservas para separar, saídas e devoluções dos últimos 7 dias | Atendente |
 | `GET /relatorios/{tipo}.csv?de=&ate=` | CSV: `emprestimos`, `atrasados`, `acervo`, `mais-emprestados`, `reservas`, `buscas-sem-resultado` (período padrão: últimos 30 dias; máximo 5 anos) | Atendente |
@@ -696,6 +697,7 @@ O servidor precisa de saída HTTPS para `brasilapi.com.br` (ISBN e feriados), `w
 | 2026-11-21 | Site público não lembra os dados do cidadão entre uma reserva e outra, nem durante a visita: CPF e nascimento funcionam como senha e não ficam no aparelho (computadores compartilhados). Pedir só CPF e nascimento a quem já é leitor foi descartado porque revelaria quem tem cadastro |
 | 2026-11-21 | Empréstimo no balcão aceita tombo, ISBN, título ou autor no mesmo campo, porque nem todo livro tem etiqueta: tombo exato sai direto, o resto mostra os exemplares para escolher |
 | 2026-11-21 | Máscara em todos os campos de formato fixo (CPF, telefone, tombo, busca por nome ou CPF) e faixa de anos nas datas, no site e na gestão: antes aceitavam qualquer quantidade de números e o ano 0221 |
+| 2026-11-21 | Devoluções também aceita título, autor ou nome do leitor além do tombo, pelo mesmo motivo do Empréstimo (livro sem etiqueta) |
 
 ## Documentação
 - Toda decisão nova ou mudança de escopo atualiza o README.md

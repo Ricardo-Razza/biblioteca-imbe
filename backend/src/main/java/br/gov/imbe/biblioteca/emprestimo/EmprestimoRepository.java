@@ -33,7 +33,7 @@ public interface EmprestimoRepository extends JpaRepository<Emprestimo, Long> {
 
     /**
      * Filtros opcionais (nulo = sem filtro). {@code situacao}: 0 em aberto, 1 atrasados, 2 devolvidos.
-     * {@code padrao} procura no título da obra e no nome do leitor.
+     * {@code padrao} procura no título da obra, no nome de um autor, no tombo e no nome do leitor.
      */
     @Query(value = """
             select e from Emprestimo e join e.exemplar x join x.obra o join e.leitor l
@@ -42,7 +42,9 @@ public interface EmprestimoRepository extends JpaRepository<Emprestimo, Long> {
                 or :situacao = 2 and e.dataDevolucao is not null)
               and (:leitorId is null or l.id = :leitorId)
               and (:tombo is null or x.tombo = :tombo)
-              and (:padrao is null or o.titulo like :padrao escape '!' or l.nome like :padrao escape '!')
+              and (:padrao is null or o.titulo like :padrao escape '!' or l.nome like :padrao escape '!'
+                   or x.tombo like :padrao escape '!'
+                   or exists (select 1 from ObraAutor oa where oa.obra = o and oa.autor.nome like :padrao escape '!'))
             """, countQuery = """
             select count(e) from Emprestimo e join e.exemplar x join x.obra o join e.leitor l
             where (:situacao = 0 and e.dataDevolucao is null
@@ -50,7 +52,9 @@ public interface EmprestimoRepository extends JpaRepository<Emprestimo, Long> {
                 or :situacao = 2 and e.dataDevolucao is not null)
               and (:leitorId is null or l.id = :leitorId)
               and (:tombo is null or x.tombo = :tombo)
-              and (:padrao is null or o.titulo like :padrao escape '!' or l.nome like :padrao escape '!')
+              and (:padrao is null or o.titulo like :padrao escape '!' or l.nome like :padrao escape '!'
+                   or x.tombo like :padrao escape '!'
+                   or exists (select 1 from ObraAutor oa where oa.obra = o and oa.autor.nome like :padrao escape '!'))
             """)
     Page<Emprestimo> buscar(@Param("situacao") int situacao, @Param("hoje") LocalDate hoje,
             @Param("leitorId") Long leitorId, @Param("tombo") String tombo, @Param("padrao") String padrao,

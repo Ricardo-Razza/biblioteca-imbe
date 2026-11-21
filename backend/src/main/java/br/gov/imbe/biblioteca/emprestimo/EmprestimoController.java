@@ -40,7 +40,7 @@ public class EmprestimoController {
 
     /**
      * {@code ?status=ATIVO} (padrão, todos em aberto), {@code ATRASADO} ou {@code DEVOLVIDO};
-     * {@code leitorId}, {@code tombo} e {@code q} (título ou nome do leitor) opcionais.
+     * {@code leitorId}, {@code tombo} e {@code q} (título, autor, tombo ou nome do leitor) opcionais.
      */
     @GetMapping("/emprestimos")
     public Pagina<EmprestimoResposta> listar(@RequestParam(required = false) StatusEmprestimo status,
