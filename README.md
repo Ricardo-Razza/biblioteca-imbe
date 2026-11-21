@@ -691,6 +691,7 @@ O servidor precisa de saída HTTPS para `brasilapi.com.br` (ISBN e feriados), `w
 | 2026-11-21 | Novo visual para tirar a cara de painel genérico: fundo em tom de papel, blocos brancos com filete, títulos em Literata, botões com canto de 6 px. Gestão com menu marinho em grupos e Início com indicadores numa faixa única (linha de contexto embaixo do número) e listas em linhas com capa e ação (Entregar, Devolver) |
 | 2026-11-21 | Site público no mesmo visual: estante "Chegaram à estante" na abertura do catálogo, filtro Ordenar (por título ou mais recentes), cartões com "N na estante". "Mais retirados" embaixo da busca vem dos empréstimos reais dos últimos 90 dias (autores), não das buscas |
 | 2026-11-21 | Buscas sem resultado do site contadas por termo e dia (V8), sem IP nem leitor, descartando termos curtos ou com cara de CPF/telefone; relatório "Buscas sem resultado" para orientar aquisições |
+| 2026-11-21 | Site público não lembra os dados do cidadão entre uma reserva e outra, nem durante a visita: CPF e nascimento funcionam como senha e não ficam no aparelho (computadores compartilhados). Pedir só CPF e nascimento a quem já é leitor foi descartado porque revelaria quem tem cadastro |
 
 ## Documentação
 - Toda decisão nova ou mudança de escopo atualiza o README.md
