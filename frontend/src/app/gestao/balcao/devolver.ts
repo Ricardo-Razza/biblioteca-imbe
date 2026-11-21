@@ -11,6 +11,7 @@ import { mensagemDeErro } from '../../core/api/erro-api';
 import { Emprestimo, OcorrenciaDevolucao } from '../../core/api/modelos';
 import { dataBr, dias } from '../../shared/formatos';
 import { ItemEmprestimo } from '../emprestimos/item-emprestimo';
+import { Mascara } from '../../shared/mascaras';
 import { EmprestimosApi } from '../emprestimos/emprestimos-api';
 
 type Ocorrencia = OcorrenciaDevolucao | 'NENHUMA';
@@ -30,6 +31,7 @@ type Ocorrencia = OcorrenciaDevolucao | 'NENHUMA';
     MatProgressSpinnerModule,
     MatRadioModule,
     ItemEmprestimo,
+    Mascara,
   ],
   template: `
     <h1>Devoluções</h1>
@@ -38,7 +40,7 @@ type Ocorrencia = OcorrenciaDevolucao | 'NENHUMA';
       <mat-form-field appearance="outline">
         <mat-label>Tombo</mat-label>
         <mat-icon matPrefix>barcode_scanner</mat-icon>
-        <input #campoTombo matInput [formControl]="tombo" autocomplete="off" />
+        <input #campoTombo matInput [formControl]="tombo" appMascara="tombo" autocomplete="off" />
         <mat-hint>Bipe a etiqueta do livro devolvido.</mat-hint>
         <mat-error>{{ erroTombo() }}</mat-error>
       </mat-form-field>

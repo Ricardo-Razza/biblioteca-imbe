@@ -12,6 +12,7 @@ import { camposComErro, mensagemDeErro } from '../../core/api/erro-api';
 import { LeitorRequisicao } from '../../core/api/modelos';
 import { cpfValido, formatarCpf } from '../../shared/formatos';
 import { aplicarErrosDoServidor, hojeIso, mensagemDoCampo, textoOuNulo } from '../../shared/formularios';
+import { Mascara, NASCIMENTO_MINIMO, dataEntre, digitosTelefone, formatarTelefone } from '../../shared/mascaras';
 import { LeitoresApi } from './leitores-api';
 
 function validarCpf(c: AbstractControl): ValidationErrors | null {
@@ -40,6 +41,7 @@ function idade(nascimento: string): number {
     MatIconModule,
     MatInputModule,
     MatProgressSpinnerModule,
+    Mascara,
   ],
   template: `
     <a mat-button [routerLink]="voltarPara()" class="voltar"><mat-icon>arrow_back</mat-icon> Voltar</a>
@@ -67,13 +69,13 @@ function idade(nascimento: string): number {
       </mat-form-field>
       <mat-form-field appearance="outline">
         <mat-label>CPF</mat-label>
-        <input matInput formControlName="cpf" inputmode="numeric" autocomplete="off" (blur)="formatarCpfDigitado()" />
+        <input matInput formControlName="cpf" appMascara="cpf" autocomplete="off" placeholder="000.000.000-00" />
         <mat-hint>Também é o acesso do leitor à reserva pelo site.</mat-hint>
         <mat-error>{{ msg('cpf') }}</mat-error>
       </mat-form-field>
       <mat-form-field appearance="outline">
         <mat-label>Data de nascimento</mat-label>
-        <input matInput type="date" formControlName="dataNascimento" [max]="hoje" />
+        <input matInput type="date" formControlName="dataNascimento" [min]="nascimentoMinimo" [max]="hoje" />
         <mat-error>{{ msg('dataNascimento') }}</mat-error>
       </mat-form-field>
       <mat-form-field appearance="outline">
@@ -84,7 +86,7 @@ function idade(nascimento: string): number {
       </mat-form-field>
       <mat-form-field appearance="outline">
         <mat-label>Telefone</mat-label>
-        <input matInput formControlName="telefone" inputmode="tel" />
+        <input matInput formControlName="telefone" type="tel" appMascara="telefone" placeholder="(51) 99999-9999" />
         <mat-error>{{ msg('telefone') }}</mat-error>
       </mat-form-field>
       <mat-form-field appearance="outline">
@@ -137,6 +139,7 @@ export class FormularioLeitor {
   private readonly fb = inject(FormBuilder).nonNullable;
 
   protected readonly hoje = hojeIso();
+  protected readonly nascimentoMinimo = NASCIMENTO_MINIMO;
   protected readonly salvando = signal(false);
   protected readonly erro = signal<string | null>(null);
   protected readonly edicao = computed(() => !!this.id());
@@ -149,9 +152,9 @@ export class FormularioLeitor {
   protected readonly form = this.fb.group({
     nome: ['', [Validators.required, Validators.maxLength(200)]],
     cpf: ['', [Validators.required, validarCpf]],
-    dataNascimento: ['', [Validators.required]],
+    dataNascimento: ['', [Validators.required, dataEntre(NASCIMENTO_MINIMO)]],
     responsavel: ['', [Validators.maxLength(200)]],
-    telefone: ['', [Validators.maxLength(20)]],
+    telefone: ['', [(c: AbstractControl) => (!c.value?.trim() || digitosTelefone(c.value) ? null : { telefone: true })]],
     email: ['', [Validators.email, Validators.maxLength(150)]],
     endereco: ['', [Validators.maxLength(255)]],
     ativo: [true],
@@ -170,7 +173,7 @@ export class FormularioLeitor {
             cpf: formatarCpf(l.cpf),
             dataNascimento: l.dataNascimento,
             responsavel: l.responsavel ?? '',
-            telefone: l.telefone ?? '',
+            telefone: formatarTelefone(l.telefone ?? ''),
             email: l.email ?? '',
             endereco: l.endereco ?? '',
             ativo: l.ativo,
@@ -189,13 +192,6 @@ export class FormularioLeitor {
     return mensagemDoCampo(c);
   }
 
-  protected formatarCpfDigitado(): void {
-    const c = this.form.controls.cpf;
-    if (cpfValido(c.value)) {
-      c.setValue(formatarCpf(c.value));
-    }
-  }
-
   protected salvar(): void {
     const resp = this.form.controls.responsavel;
     if (this.menor() && !resp.value.trim()) {
@@ -211,7 +207,7 @@ export class FormularioLeitor {
       cpf: v.cpf,
       dataNascimento: v.dataNascimento,
       responsavel: textoOuNulo(v.responsavel),
-      telefone: textoOuNulo(v.telefone),
+      telefone: v.telefone.trim() ? formatarTelefone(v.telefone.trim()) : null,
       email: textoOuNulo(v.email),
       endereco: textoOuNulo(v.endereco),
       ...(this.edicao() ? { ativo: v.ativo } : {}),

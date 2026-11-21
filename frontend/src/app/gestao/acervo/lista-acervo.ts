@@ -44,7 +44,7 @@ const TAMANHO = 20;
     <mat-form-field appearance="outline" class="busca" subscriptSizing="dynamic">
       <mat-label>Buscar</mat-label>
       <mat-icon matPrefix>search</mat-icon>
-      <input matInput [value]="q() ?? ''" (input)="digitar($any($event.target).value)" autocomplete="off" />
+      <input matInput [value]="q() ?? ''" (input)="digitar($any($event.target).value)" autocomplete="off" maxlength="100" />
       <mat-hint>ISBN, trecho do título ou nome do autor.</mat-hint>
     </mat-form-field>
 

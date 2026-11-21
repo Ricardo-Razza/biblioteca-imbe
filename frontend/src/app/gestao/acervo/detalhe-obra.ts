@@ -14,6 +14,7 @@ import { camposComErro, mensagemDeErro } from '../../core/api/erro-api';
 import { Exemplar, ExemplarAlteracao, Obra, SituacaoExemplar } from '../../core/api/modelos';
 import { CapaLivro } from '../../shared/capa-livro/capa-livro';
 import { aplicarErrosDoServidor, hojeIso, mensagemDoCampo, textoOuNulo } from '../../shared/formularios';
+import { Mascara, dataEntre } from '../../shared/mascaras';
 import { SeloSituacao } from '../../shared/selo-situacao/selo-situacao';
 import { Sessao } from '../../core/auth/sessao';
 import { AcervoApi } from './acervo-api';
@@ -49,6 +50,7 @@ const CONFIRMACOES: Partial<Record<SituacaoExemplar, string>> = {
     MatProgressSpinnerModule,
     MatSelectModule,
     CapaLivro,
+    Mascara,
     SeloSituacao,
   ],
   templateUrl: './detalhe-obra.html',
@@ -105,7 +107,7 @@ export class DetalheObra {
     localizacao: ['', [Validators.maxLength(100)]],
     estado: this.fb.control<'BOM' | 'DANIFICADO'>('BOM'),
     origem: this.fb.control<'COMPRA' | 'DOACAO' | null>(null),
-    dataAquisicao: [''],
+    dataAquisicao: ['', [dataEntre('1900-01-01')]],
   });
 
   protected readonly formAlteracao = this.fb.group({

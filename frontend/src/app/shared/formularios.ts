@@ -15,6 +15,8 @@ export function mensagemDoCampo(controle: AbstractControl | null): string {
   if (erros['max']) return `O máximo é ${erros['max'].max}.`;
   if (erros['pattern']) return 'Formato inválido.';
   if (erros['futura']) return 'A data não pode ser futura.';
+  if (erros['data']) return 'Data inválida. Confira o dia, o mês e o ano.';
+  if (erros['telefone']) return 'Telefone inválido. Use o DDD, ex.: (51) 99999-9999.';
   return 'Valor inválido.';
 }
 

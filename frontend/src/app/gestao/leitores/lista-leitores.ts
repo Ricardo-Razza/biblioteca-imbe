@@ -11,6 +11,7 @@ import { mensagemDeErro } from '../../core/api/erro-api';
 import { Leitor, Pagina } from '../../core/api/modelos';
 import { PaginadorPtBr } from '../../core/paginador-pt-br';
 import { dataBr, formatarCpf } from '../../shared/formatos';
+import { mascaraNomeOuCpf } from '../../shared/mascaras';
 import { Selo } from '../../shared/selo/selo';
 import { LeitoresApi } from './leitores-api';
 
@@ -38,7 +39,7 @@ const TAMANHO = 20;
     <mat-form-field appearance="outline" class="busca" subscriptSizing="dynamic">
       <mat-label>Buscar</mat-label>
       <mat-icon matPrefix>search</mat-icon>
-      <input matInput [value]="q() ?? ''" (input)="digitar($any($event.target).value)" autocomplete="off" />
+      <input matInput [value]="q() ?? ''" (input)="digitar($any($event.target))" autocomplete="off" maxlength="150" />
       <mat-hint>Nome ou CPF.</mat-hint>
     </mat-form-field>
 
@@ -168,7 +169,10 @@ export class ListaLeitores {
     inject(DestroyRef).onDestroy(() => clearTimeout(this.espera));
   }
 
-  protected digitar(texto: string): void {
+  /** Começando por número, vira CPF com máscara (no máximo 11 números); senão, nome. */
+  protected digitar(campo: HTMLInputElement): void {
+    const texto = mascaraNomeOuCpf(campo.value);
+    if (texto !== campo.value) campo.value = texto;
     clearTimeout(this.espera);
     this.espera = setTimeout(() => this.navegar(texto, 0), 300);
   }

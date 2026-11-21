@@ -7,6 +7,7 @@ import { MatInputModule } from '@angular/material/input';
 import { Leitor } from '../../core/api/modelos';
 import { LeitoresApi } from '../../gestao/leitores/leitores-api';
 import { formatarCpf } from '../formatos';
+import { mascaraNomeOuCpf } from '../mascaras';
 
 /** Procura o leitor pelo nome ou pelo CPF e emite o escolhido. */
 @Component({
@@ -21,7 +22,8 @@ import { formatarCpf } from '../formatos';
         matInput
         [matAutocomplete]="auto"
         autocomplete="off"
-        (input)="digitar($any($event.target).value)"
+        maxlength="150"
+        (input)="digitar($any($event.target))"
       />
       <mat-hint>Nome ou CPF.</mat-hint>
       <mat-autocomplete #auto="matAutocomplete" (optionSelected)="escolher($event)" [displayWith]="exibir">
@@ -74,7 +76,10 @@ export class BuscaLeitor {
     this.buscou.set(false);
   }
 
-  protected digitar(texto: string): void {
+  /** Começando por número, vira CPF com máscara (no máximo 11 números); senão, nome. */
+  protected digitar(campo: HTMLInputElement): void {
+    const texto = mascaraNomeOuCpf(campo.value);
+    if (texto !== campo.value) campo.value = texto;
     clearTimeout(this.espera);
     if (texto.trim().length < 2) {
       this.opcoes.set([]);

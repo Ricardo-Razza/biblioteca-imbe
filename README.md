@@ -607,6 +607,7 @@ O servidor precisa de saída HTTPS para `brasilapi.com.br` (ISBN e feriados), `w
 - **Site público:** pensado primeiro para celular. Cabeçalho azul da Prefeitura com a foto das estantes, a assinatura branca e a busca "Encontre um livro" (barra arredondada com o botão dentro), em todas as páginas: buscar de qualquer página leva ao catálogo. Abas Catálogo e Minhas reservas logo abaixo do cabeçalho; filtros Assunto e "Disponíveis agora"; estante "Chegaram à estante" na abertura; grade de capas com título em Literata e "3 na estante" ou "Todos emprestados"; "Mais retirados" embaixo da busca; ficha do livro com um único botão Reservar; rodapé com contato da biblioteca, como reservar e acesso rápido.
 - Capa em miniatura nas listas. Texto base de 15 a 16 px. Formulários em uma coluna.
 - Mensagens e confirmações dentro da tela, nunca `alert()` ou `confirm()`.
+- Campos com formato fixo usam a máscara enquanto se digita (diretiva `appMascara` em `shared/mascaras.ts`), que também limita o tamanho: CPF (`000.000.000-00`, 11 números), telefone (`(51) 99999-9999`, 11 números, o 55 do país sai), tombo (letras, números, ponto e hífen, até 30, em maiúsculas) e busca por nome ou CPF (começando por número, vira CPF). Datas passam por `dataEntre(...)`, porque o campo de data do navegador aceita qualquer ano: nascimento e aquisição de 1900 até hoje, feriado de 2000 a 2100, período dos relatórios a partir de 2000. Filtros de texto livre param em 100 caracteres.
 - **Identidade visual: Manual de Marca da Prefeitura de Imbé (2021-2028).**
   - Cores: azul da marca `#006EB7` como principal, azul-claro `#47BAEC`, marinho `#1F305F`, cinza `#677A90` e o sol de `#FBBC43` a `#EC5F65`. O tema do Material é gerado em `frontend/src/styles/_theme-colors.scss` (comando no `styles.scss`) e as cores da marca ficam em variáveis `--marca-*`.
   - Logos em `frontend/public/marca/`, recortadas do PDF do manual: vertical 1 sem o conceito (colorida e branca), horizontal com "UM LUGAR CHEIO DE VIDA" (colorida e branca) e o símbolo no favicon.
@@ -694,6 +695,7 @@ O servidor precisa de saída HTTPS para `brasilapi.com.br` (ISBN e feriados), `w
 | 2026-11-21 | Buscas sem resultado do site contadas por termo e dia (V8), sem IP nem leitor, descartando termos curtos ou com cara de CPF/telefone; relatório "Buscas sem resultado" para orientar aquisições |
 | 2026-11-21 | Site público não lembra os dados do cidadão entre uma reserva e outra, nem durante a visita: CPF e nascimento funcionam como senha e não ficam no aparelho (computadores compartilhados). Pedir só CPF e nascimento a quem já é leitor foi descartado porque revelaria quem tem cadastro |
 | 2026-11-21 | Empréstimo no balcão aceita tombo, ISBN, título ou autor no mesmo campo, porque nem todo livro tem etiqueta: tombo exato sai direto, o resto mostra os exemplares para escolher |
+| 2026-11-21 | Máscara em todos os campos de formato fixo (CPF, telefone, tombo, busca por nome ou CPF) e faixa de anos nas datas, no site e na gestão: antes aceitavam qualquer quantidade de números e o ano 0221 |
 
 ## Documentação
 - Toda decisão nova ou mudança de escopo atualiza o README.md

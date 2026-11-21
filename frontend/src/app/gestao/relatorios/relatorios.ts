@@ -209,6 +209,11 @@ export class Relatorios {
       this.erro.set('Informe as datas do período.');
       return;
     }
+    // O campo de data aceita qualquer ano (até 0221): confere antes de pedir o arquivo.
+    if (r.periodo && (this.de < '2000-01-01' || this.ate > this.hoje || this.de > this.ate)) {
+      this.erro.set('Período inválido. Confira o dia, o mês e o ano das duas datas.');
+      return;
+    }
     let params = new HttpParams();
     if (r.periodo) params = params.set('de', this.de).set('ate', this.ate);
     this.baixando.set(r.caminho);

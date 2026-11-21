@@ -76,7 +76,7 @@ import { EmprestimosApi } from '../emprestimos/emprestimos-api';
           <mat-form-field appearance="outline" subscriptSizing="dynamic">
             <mat-label>Livro</mat-label>
             <mat-icon matPrefix>barcode_scanner</mat-icon>
-            <input #campoTombo matInput [formControl]="tombo" autocomplete="off" placeholder="Tombo, ISBN, título ou autor" />
+            <input #campoTombo matInput [formControl]="tombo" autocomplete="off" placeholder="Tombo, ISBN, título ou autor" maxlength="100" />
             <mat-hint>Bipe a etiqueta ou digite tombo, ISBN, título ou autor.</mat-hint>
             <mat-error>{{ erroTombo() }}</mat-error>
           </mat-form-field>

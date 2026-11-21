@@ -87,7 +87,7 @@
         }
         <mat-form-field appearance="outline">
           <mat-label>Tombo</mat-label>
-          <input #campoTombo matInput formControlName="tombo" autocomplete="off" (keydown.enter)="enterNoTombo($event)" />
+          <input #campoTombo matInput formControlName="tombo" appMascara="tombo" autocomplete="off" (keydown.enter)="enterNoTombo($event)" />
           <mat-hint>Número da etiqueta (opcional). Em branco, o sistema gera AUTO-000123.</mat-hint>
           <mat-error>{{ erroTombo() }}</mat-error>
         </mat-form-field>
@@ -114,7 +114,7 @@
         </mat-form-field>
         <mat-form-field appearance="outline">
           <mat-label>Data de aquisição</mat-label>
-          <input matInput type="date" formControlName="dataAquisicao" [max]="hoje" />
+          <input matInput type="date" formControlName="dataAquisicao" min="1900-01-01" [max]="hoje" />
           <mat-error>{{ erro('dataAquisicao') }}</mat-error>
         </mat-form-field>
         @if (erroExemplar()) {

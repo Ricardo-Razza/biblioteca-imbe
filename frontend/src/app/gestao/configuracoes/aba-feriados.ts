@@ -7,6 +7,7 @@ import { MatInputModule } from '@angular/material/input';
 
 import { mensagemDeErro } from '../../core/api/erro-api';
 import { dataBr } from '../../shared/formatos';
+import { dataEntre } from '../../shared/mascaras';
 import { mensagemDoCampo } from '../../shared/formularios';
 import { Selo } from '../../shared/selo/selo';
 import { ConfiguracoesApi, Feriado } from './configuracoes-api';
@@ -70,7 +71,7 @@ const DIAS = ['domingo', 'segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sáb
       <form class="coluna" [formGroup]="form" (ngSubmit)="incluir()">
         <mat-form-field appearance="outline">
           <mat-label>Data</mat-label>
-          <input matInput type="date" formControlName="data" />
+          <input matInput type="date" formControlName="data" min="2000-01-01" max="2100-12-31" />
           <mat-error>{{ msg(form.controls.data) }}</mat-error>
         </mat-form-field>
         <mat-form-field appearance="outline">
@@ -149,7 +150,7 @@ export class AbaFeriados {
   protected readonly data = dataBr;
   protected readonly msg = mensagemDoCampo;
   protected readonly form = new FormGroup({
-    data: new FormControl('', { nonNullable: true, validators: Validators.required }),
+    data: new FormControl('', { nonNullable: true, validators: [Validators.required, dataEntre('2000-01-01', '2100-12-31')] }),
     descricao: new FormControl('', { nonNullable: true, validators: [Validators.required, Validators.maxLength(150)] }),
   });
 

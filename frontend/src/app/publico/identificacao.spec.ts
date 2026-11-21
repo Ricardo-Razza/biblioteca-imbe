@@ -2,14 +2,8 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideZonelessChangeDetection } from '@angular/core';
 import { By } from '@angular/platform-browser';
 
-import {
-  DadosIdentificacao,
-  Identificacao,
-  digitosTelefone,
-  formatarTelefone,
-  mascaraCpf,
-  mascaraTelefone,
-} from './identificacao';
+import { digitosTelefone, formatarTelefone, mascaraCpf, mascaraTelefone } from '../shared/mascaras';
+import { DadosIdentificacao, Identificacao } from './identificacao';
 
 /** CPF fictício com dígitos verificadores válidos. */
 const CPF = '529.982.247-25';

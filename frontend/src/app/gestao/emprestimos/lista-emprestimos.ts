@@ -49,7 +49,7 @@ const TAMANHO = 20;
     <mat-form-field appearance="outline" class="busca" subscriptSizing="dynamic">
       <mat-label>Filtrar</mat-label>
       <mat-icon matPrefix>search</mat-icon>
-      <input matInput [value]="q() ?? ''" (input)="digitar($any($event.target).value)" autocomplete="off" />
+      <input matInput [value]="q() ?? ''" (input)="digitar($any($event.target).value)" autocomplete="off" maxlength="100" />
       <mat-hint>Título do livro ou nome do leitor.</mat-hint>
     </mat-form-field>
 
