@@ -17,7 +17,7 @@ Sistema da Sala Literária Castelinho, a biblioteca municipal da Secretaria Muni
 | Backend | Java 25, Spring Boot 4, Maven |
 | Dependências do backend | Spring Web, Data JPA, Security, OAuth2 Resource Server (JWT), Validation, Flyway, Cache + Caffeine, Actuator, springdoc-openapi |
 | Frontend | Angular 22 (componentes standalone, signals), Angular Material com tema próprio, SCSS |
-| Banco | MySQL 8 |
+| Banco | MySQL 8 (ou MariaDB 10.11+, se for o da Prefeitura) |
 | Testes | JUnit 5, Testcontainers (MySQL), WireMock (APIs externas) |
 | Infra | Docker Compose: Nginx + API + MySQL, num servidor da Prefeitura |
 
@@ -530,7 +530,7 @@ Servidor Linux com Docker e Docker Compose. Tudo sobe com o `docker-compose.prod
 
 | Serviço | Imagem | O que faz |
 | --- | --- | --- |
-| `mysql` | `mysql:8.4` | Banco, no volume `mysql-dados`. Sem porta exposta |
+| `mysql` | `mysql:8.4` | Banco, no volume `mysql-dados`. Porta só em `127.0.0.1:PORTA_MYSQL` (padrão `3307`) |
 | `backend` | `backend/Dockerfile` (Temurin 25, usuário sem privilégios) | API na porta 8080 da rede interna; capas no volume `capas` |
 | `web` | `frontend/Dockerfile` (Nginx 1.28) | Serve o Angular, encaminha `/api` para o backend, HTTPS nas portas 80 e 443 |
 
@@ -571,26 +571,28 @@ Logs: `docker compose -f docker-compose.prod.yml logs -f backend` (limitados a 5
   `CREATE USER 'consulta'@'%' IDENTIFIED BY '...'; GRANT SELECT ON biblioteca.* TO 'consulta'@'%';`
   Alterar dados direto no banco passa por cima das regras do sistema e da auditoria: mudanças, pela gestão.
 
-**Banco da Prefeitura.** A API usa o MySQL da stack enquanto `DB_URL_EXTERNO` estiver vazia. Para usar um servidor da Prefeitura, basta preencher essa variável e trocar `DB_USER` e `DB_PASSWORD` (vale igual no `docker-compose.prod.yml`, pelo `.env`). O que pedir à TI:
+**Banco da Prefeitura.** A API usa o MySQL da stack enquanto `DB_URL_EXTERNO` estiver vazia. Para usar um servidor da Prefeitura, basta preencher essa variável e trocar `DB_USER` e `DB_PASSWORD` (vale igual no `docker-compose.prod.yml`, pelo `.env`). Serve **MySQL 8.0+** (`jdbc:mysql://...`) ou **MariaDB 10.11+** (`jdbc:mariadb://...`): o Flyway escolhe as migrations pelo banco da URL (`db/migration` + `db/banco/mysql` ou `db/banco/mariadb`), e a suíte de testes passa nos dois. O que pedir à TI:
 
 | Item | Por quê |
 | --- | --- |
-| MySQL **8.0 ou mais novo** (8.4 de preferência). **MariaDB não serve** | O esquema usa a collation `utf8mb4_0900_ai_ci`, `SELECT ... FOR UPDATE SKIP LOCKED` e colunas geradas |
-| Um banco `biblioteca` em `utf8mb4` / `utf8mb4_0900_ai_ci` | Busca sem diferenciar maiúsculas nem acentos |
+| MySQL 8.0 ou mais novo, ou MariaDB **10.11 ou mais novo** (a versão: `SELECT VERSION();`) | O esquema usa `SELECT ... FOR UPDATE SKIP LOCKED` (MariaDB 10.6+) e a collation `uca1400` (MariaDB 10.10+); 10.11 é a LTS mais antiga ainda com suporte |
+| Um banco `biblioteca` vazio, `CHARACTER SET utf8mb4`, collation `utf8mb4_0900_ai_ci` (MySQL) ou `utf8mb4_uca1400_ai_ci` (MariaDB) | Busca sem diferenciar maiúsculas nem acentos |
 | Um usuário só do sistema, nesse banco, com `SELECT, INSERT, UPDATE, DELETE, CREATE, ALTER, DROP, INDEX, REFERENCES` | O Flyway cria e altera as tabelas a cada versão nova, ao subir a API |
-| Liberação de rede do servidor da stack até o MySQL (porta 3306), de preferência com TLS (`?sslMode=REQUIRED` na URL) | O tráfego leva CPF e dados dos leitores |
+| Liberação de rede do servidor da stack até o banco (porta 3306), de preferência com TLS | O tráfego leva CPF e dados dos leitores. Na URL: MySQL `?sslMode=REQUIRED`; MariaDB `?sslMode=verify-full` (ou `trust`, com certificado autoassinado) |
 | Backup diário do lado da Prefeitura | O `deploy/backup.sh` só copia o MySQL da stack |
 
-Migração (com os dados atuais):
+Migração (com os dados atuais; serve para os dois bancos). Faça fora do horário de atendimento:
 
-1. Avise a equipe e pare só a API (*Containers > biblioteca-backend-1 > Stop*), para ninguém gravar durante a cópia.
-2. Copie o banco da stack, no servidor:
-   `docker exec biblioteca-mysql-1 sh -c 'exec mysqldump --single-transaction --no-tablespaces --set-gtid-purged=OFF -u"$MYSQL_USER" -p"$MYSQL_PASSWORD" "$MYSQL_DATABASE"' | gzip > biblioteca.sql.gz`
-3. Importe no banco da Prefeitura: `gunzip < biblioteca.sql.gz | mysql -h SERVIDOR -u USUARIO -p biblioteca`. A tabela `flyway_schema_history` vai junto, e a API sabe em que versão o banco está.
-4. Na stack: `DB_URL_EXTERNO=jdbc:mysql://SERVIDOR:3306/biblioteca?sslMode=REQUIRED`, `DB_USER` e `DB_PASSWORD` do usuário de lá. **Anote os valores antigos** (são os do MySQL da stack). *Update the stack*.
-5. Confira: login, números do Início iguais aos de antes, uma busca no site e uma reserva de teste cancelada em seguida.
+1. Pare só a API (*Containers > biblioteca-backend-1 > Stop*), para ninguém gravar durante a cópia.
+2. Copie **só os dados** do MySQL da stack, no servidor:
+   `docker exec biblioteca-mysql-1 sh -c 'exec mysqldump --no-create-info --replace --complete-insert --skip-add-locks --skip-triggers --no-tablespaces --set-gtid-purged=OFF --ignore-table="$MYSQL_DATABASE".flyway_schema_history -u"$MYSQL_USER" -p"$MYSQL_PASSWORD" "$MYSQL_DATABASE"' | gzip > dados.sql.gz`
+3. Na stack: `DB_URL_EXTERNO` (ex.: `jdbc:mariadb://SERVIDOR:3306/biblioteca?sslMode=verify-full`), `DB_USER` e `DB_PASSWORD` do usuário de lá, e `ADMIN_INICIAL_SENHA` **vazia** (os funcionários vêm na cópia). **Anote os valores antigos** (são os do MySQL da stack). *Update the stack*: a API sobe e o Flyway cria as tabelas no banco vazio, no formato daquele banco.
+4. Importe os dados: `gunzip < dados.sql.gz | docker run --rm -i mariadb:11.4 mariadb -h SERVIDOR -u USUARIO -p'SENHA' biblioteca` (ou pela aba *Importar* do phpMyAdmin de lá; o `--skip-add-locks` da cópia dispensa o privilégio `LOCK TABLES`). O `--replace` sobrescreve os parâmetros e feriados que o Flyway e a API acabaram de criar.
+5. Reinicie a API e confira: login, números do Início iguais aos de antes, uma busca no site e uma reserva de teste cancelada em seguida.
 
-Banco novo, sem dados: só o passo 4, com `ADMIN_INICIAL_SENHA`; o Flyway cria tudo. **Para voltar atrás**, apague `DB_URL_EXTERNO` e devolva `DB_USER` e `DB_PASSWORD` antigos: a API volta para o MySQL da stack, com os dados do dia da migração. O container do MySQL continua na stack, sem receber gravações novas, como cópia de segurança. Com o banco externo, o `deploy/backup.sh` continua útil só para as capas (volume `capas`): o banco passa a ser do backup da Prefeitura.
+Não copie o banco inteiro (com `CREATE TABLE`): o esquema do MariaDB é um pouco diferente do MySQL, e a tabela `flyway_schema_history` de um não vale no outro.
+
+Banco novo, sem dados: só o passo 3, com `ADMIN_INICIAL_SENHA`; o Flyway cria tudo. **Para voltar atrás**, apague `DB_URL_EXTERNO` e devolva `DB_USER` e `DB_PASSWORD` antigos: a API volta para o MySQL da stack, com os dados do dia da migração. O container do MySQL continua na stack, sem receber gravações novas, como cópia de segurança. Com o banco externo, o `deploy/backup.sh` continua útil só para as capas (volume `capas`): o banco passa a ser do backup da Prefeitura.
 
 ### GitHub Actions
 
@@ -733,7 +735,8 @@ O servidor precisa de saída HTTPS para `brasilapi.com.br` (ISBN e feriados), `w
 | 2026-11-21 | Empréstimo no balcão aceita tombo, ISBN, título ou autor no mesmo campo, porque nem todo livro tem etiqueta: tombo exato sai direto, o resto mostra os exemplares para escolher |
 | 2026-11-21 | Máscara em todos os campos de formato fixo (CPF, telefone, tombo, busca por nome ou CPF) e faixa de anos nas datas, no site e na gestão: antes aceitavam qualquer quantidade de números e o ano 0221 |
 | 2026-11-21 | Devoluções também aceita título, autor ou nome do leitor além do tombo, pelo mesmo motivo do Empréstimo (livro sem etiqueta) |
-| 2026-11-21 | Banco pronto para trocar pelo da Prefeitura sem mudar o compose: `DB_URL_EXTERNO` (vazia = MySQL da stack), exigindo MySQL 8 (não MariaDB); MySQL da stack com porta só em `127.0.0.1:PORTA_MYSQL` para o phpMyAdmin da VPS |
+| 2026-11-21 | Banco pronto para trocar pelo da Prefeitura sem mudar o compose: `DB_URL_EXTERNO` (vazia = MySQL da stack), MySQL 8 ou MariaDB 10.11+; MySQL da stack com porta só em `127.0.0.1:PORTA_MYSQL` para o phpMyAdmin da VPS |
+| 2026-11-21 | MariaDB 10.11+ suportado (o banco da Prefeitura é MariaDB): migrations comuns em `db/migration` e as que diferem (V1, V2, V5: collation e `CHECK` com `REGEXP`) em `db/banco/{mysql,mariadb}`, escolhidas pelo `{vendor}` do Flyway, sem mudar o checksum das já aplicadas no MySQL. Suíte de testes roda também em MariaDB (`-Dbanco.teste=mariadb:10.11`). Migração para outro banco copia só os dados |
 
 ## Documentação
 - Toda decisão nova ou mudança de escopo atualiza o README.md

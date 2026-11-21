@@ -30,7 +30,8 @@ spring:
       max-file-size: 10MB
       max-request-size: 11MB
   flyway:
-    locations: classpath:db/migration
+    # Comuns + as do banco ({vendor}: mysql ou mariadb, pela URL). Ver README, "Banco de dados".
+    locations: classpath:db/migration,classpath:db/banco/{vendor}
   threads:
     virtual:
       enabled: true

@@ -25,7 +25,7 @@ docker compose -f docker-compose.prod.yml up -d --build   # produção (precisa 
 - Um pacote por módulo (`isbn`, `acervo`, `leitor`, ...), cada um com `controller → service → repository`.
 - DTOs são `record`. Entidades JPA nunca saem na API.
 - Erros: lançar `RequisicaoInvalidaException` (400), `NaoAutenticadoException` (401), `RecursoNaoEncontradoException` (404), `ConflitoException` (409), `RegraNegocioException` (422), `LimiteExcedidoException` (429) ou `IndisponivelException` (503), todas em `comum.erro`. O `TratadorGlobalDeErros` transforma em `ProblemDetail` com mensagem em português.
-- Flyway em `src/main/resources/db/migration`, `V{n}__descricao.sql`. **Migration já aplicada não se edita**: crie uma nova.
+- Flyway em `src/main/resources/db/migration`, `V{n}__descricao.sql`. **Migration já aplicada não se edita**: crie uma nova. O banco pode ser MySQL 8 ou MariaDB 10.11+ (o da Prefeitura): migration nova tem que rodar nos dois. Se precisar de SQL diferente, vão duas cópias com o mesmo nome em `db/banco/mysql` e `db/banco/mariadb` (o Flyway escolhe pelo `{vendor}`). Nada de `REGEXP_LIKE` em `CHECK` (use `REGEXP`) nem collation `0900` fora do `db/banco/mysql`. Para rodar os testes no MariaDB: `./mvnw verify -Dbanco.teste=mariadb:10.11`.
 - Hibernate roda com `ddl-auto: validate`. Toda mudança de esquema passa por migration.
 - Enums no banco são `VARCHAR` com `CHECK`, mapeados com `@Enumerated(EnumType.STRING)` **e** `@JdbcTypeCode(SqlTypes.VARCHAR)`: sem isso o Hibernate espera `ENUM` nativo do MySQL e o `validate` falha.
 - Colunas `CHAR`, `TEXT` e `SMALLINT`: use `columnDefinition = "CHAR(13)"`, `columnDefinition = "TEXT"` e `Short` na entidade, senão o `validate` reclama do tipo.
