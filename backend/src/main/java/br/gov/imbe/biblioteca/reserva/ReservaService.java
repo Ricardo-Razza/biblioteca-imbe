@@ -293,7 +293,7 @@ public class ReservaService implements ReservasAtivas {
     private void exigirPodeReservar(Leitor leitor) {
         SituacaoLeitor s = emprestimos.situacao(leitor);
         if (!leitor.isAtivo()) {
-            throw new RegraNegocioException("Seu cadastro está inativo. Procure a biblioteca.");
+            throw new RegraNegocioException("Seu cadastro está inativo. Procure a Sala Literária.");
         }
         if (s.bloqueadoAte() != null) {
             throw new RegraNegocioException("Seu cadastro está bloqueado até " + data(s.bloqueadoAte())
@@ -301,7 +301,7 @@ public class ReservaService implements ReservasAtivas {
         }
         if (s.atrasados() > 0) {
             throw new RegraNegocioException(
-                    "Você tem livro com a devolução atrasada. Devolva na biblioteca antes de reservar.");
+                    "Você tem livro com a devolução atrasada. Devolva na Sala Literária antes de reservar.");
         }
         if (s.livrosEmUso() >= s.limite()) {
             throw new RegraNegocioException("Você já está com " + s.livrosEmUso() + " de " + s.limite()

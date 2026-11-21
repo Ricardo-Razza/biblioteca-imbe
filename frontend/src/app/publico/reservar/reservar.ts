@@ -71,7 +71,7 @@ import { dataComDia, protocoloLegivel } from '../textos';
       }
 
       <p class="regras">
-        Informe seus dados e um telefone para a biblioteca falar com você sobre a reserva.
+        Informe seus dados e um telefone para a Sala Literária falar com você sobre a reserva.
         @if (biblioteca(); as b) {
           O livro fica separado por {{ b.prazoRetiradaDiasUteis === 1 ? '1 dia útil' : b.prazoRetiradaDiasUteis + ' dias úteis' }},
           e cada pessoa pode ter até {{ b.limiteLivros }} livros, somando empréstimos e reservas.
@@ -79,7 +79,7 @@ import { dataComDia, protocoloLegivel } from '../textos';
       </p>
       <p class="texto-secundario">
         Ainda não tem cadastro? Pode reservar assim mesmo: o cadastro é feito com estes dados e completado na
-        biblioteca, quando você for retirar o livro. Leve um documento com foto.
+        Sala Literária, quando você for retirar o livro. Leve um documento com foto.
       </p>
 
       @if (erro()) {

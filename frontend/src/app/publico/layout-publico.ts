@@ -50,7 +50,7 @@ import { RodapePublico } from './rodape-publico';
       </div>
     </header>
 
-    <nav class="abas" aria-label="Site da biblioteca">
+    <nav class="abas" aria-label="Site da Sala Literária">
       <div class="faixa">
         <a routerLink="/" routerLinkActive="ativo" [routerLinkActiveOptions]="{ paths: 'exact', queryParams: 'ignored', matrixParams: 'ignored', fragment: 'ignored' }">
           <mat-icon aria-hidden="true">menu_book</mat-icon> Catálogo

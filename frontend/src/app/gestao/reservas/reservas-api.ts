@@ -50,7 +50,7 @@ export function seloReserva(r: Reserva, hoje: string): { texto: string; tom: Tom
       return { texto: `Entregue em ${dataBr(r.finalizadaEm)}`, tom: 'neutra' };
     case 'CANCELADA':
       return {
-        texto: `Cancelada ${r.canceladaPor === 'LEITOR' ? 'pelo leitor' : 'pela biblioteca'} em ${dataBr(r.finalizadaEm)}`,
+        texto: `Cancelada ${r.canceladaPor === 'LEITOR' ? 'pelo leitor' : 'pela Sala Literária'} em ${dataBr(r.finalizadaEm)}`,
         tom: 'neutra',
       };
     case 'EXPIRADA':

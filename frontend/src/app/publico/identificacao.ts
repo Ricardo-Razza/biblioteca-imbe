@@ -74,7 +74,7 @@ function hojeIso(): string {
         <mat-form-field appearance="outline">
           <mat-label>Telefone</mat-label>
           <input matInput formControlName="telefone" required type="tel" inputmode="tel" autocomplete="tel" placeholder="(51) 99999-9999" (blur)="formatarFone()" />
-          <mat-hint>Com DDD. A biblioteca usa só para falar sobre a reserva.</mat-hint>
+          <mat-hint>Com DDD. A Sala Literária usa só para falar sobre a reserva.</mat-hint>
           <mat-error>{{ form.controls.telefone.hasError('telefone') ? 'Telefone inválido. Use o DDD, ex.: (51) 99999-9999.' : 'Informe um telefone para contato.' }}</mat-error>
         </mat-form-field>
         <mat-form-field appearance="outline">

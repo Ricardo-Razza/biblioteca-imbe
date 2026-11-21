@@ -20,7 +20,7 @@ import { DadosBiblioteca } from '../core/api/modelos';
         </section>
 
         <section class="bloco" aria-labelledby="rodape-visite">
-          <h2 id="rodape-visite">Visite a biblioteca</h2>
+          <h2 id="rodape-visite">Visite a Sala Literária</h2>
           @if (temContato()) {
             <ul class="contato">
               @if (biblioteca()?.endereco; as endereco) {
@@ -66,7 +66,7 @@ import { DadosBiblioteca } from '../core/api/modelos';
             <p class="suave">
               Cada leitor fica com até {{ b.limiteLivros }} {{ b.limiteLivros === 1 ? 'livro' : 'livros' }} por vez, por
               {{ diasUteis(b.prazoEmprestimoDias) }}. Não precisa ter cadastro para reservar: quem ainda não tem é
-              cadastrado com os dados da reserva, e a biblioteca completa na retirada.
+              cadastrado com os dados da reserva, e a Sala Literária completa na retirada.
             </p>
           }
         </section>

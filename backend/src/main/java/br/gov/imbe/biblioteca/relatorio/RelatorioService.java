@@ -183,7 +183,7 @@ public class RelatorioService {
     static String canceladaPor(String v) {
         return v == null ? null : switch (v) {
             case "LEITOR" -> "Leitor";
-            case "BIBLIOTECA" -> "Biblioteca";
+            case "BIBLIOTECA" -> "Sala Literária";
             default -> v;
         };
     }

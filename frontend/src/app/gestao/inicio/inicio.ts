@@ -39,23 +39,28 @@ import { MovimentoSemana } from './movimento-semana';
 
     @if (painel(); as p) {
       <div class="cartoes">
-        <a class="cartao" routerLink="/painel/emprestimos">
+        <a class="cartao azul" routerLink="/painel/emprestimos">
+          <mat-icon class="icone" aria-hidden="true">menu_book</mat-icon>
           <span class="numero">{{ p.contadores.emprestados }}</span>
           <span>Empréstimos ativos</span>
         </a>
-        <div class="cartao" [class.alerta]="p.contadores.venceHoje > 0">
+        <div class="cartao amarelo" [class.destaque]="p.contadores.venceHoje > 0">
+          <mat-icon class="icone" aria-hidden="true">event</mat-icon>
           <span class="numero">{{ p.contadores.venceHoje }}</span>
           <span>Vencimentos ativos</span>
         </div>
-        <a class="cartao" [class.erro]="p.contadores.atrasados > 0" routerLink="/painel/emprestimos" [queryParams]="{ status: 'ATRASADO' }">
+        <a class="cartao vermelho" [class.destaque]="p.contadores.atrasados > 0" routerLink="/painel/emprestimos" [queryParams]="{ status: 'ATRASADO' }">
+          <mat-icon class="icone" aria-hidden="true">schedule</mat-icon>
           <span class="numero">{{ p.contadores.atrasados }}</span>
           <span>Em atraso</span>
         </a>
-        <a class="cartao" [class.alerta]="p.contadores.reservasParaSeparar > 0" routerLink="/painel/reservas">
+        <a class="cartao verde" [class.destaque]="p.contadores.reservasParaSeparar > 0" routerLink="/painel/reservas">
+          <mat-icon class="icone" aria-hidden="true">inventory_2</mat-icon>
           <span class="numero">{{ p.contadores.reservasParaSeparar }}</span>
           <span>Exemplares separados</span>
         </a>
-        <div class="cartao">
+        <div class="cartao marinho">
+          <mat-icon class="icone" aria-hidden="true">person_off</mat-icon>
           <span class="numero">{{ p.contadores.leitoresBloqueados }}</span>
           <span>Leitores bloqueados</span>
         </div>
@@ -161,37 +166,47 @@ import { MovimentoSemana } from './movimento-semana';
       gap: 12px;
       margin: 8px 0 24px;
     }
+    /* Cada indicador tem a sua cor da paleta da Prefeitura, para identificar de relance. */
     .cartao {
+      --cor: var(--marca-marinho);
+      --tinta: 8%;
+      position: relative;
       display: flex;
       flex-direction: column;
       gap: 2px;
-      padding: 14px 16px;
+      min-width: 0;
+      padding: 16px 16px 14px;
       border-radius: 12px;
-      border: 1px solid var(--mat-sys-outline-variant);
-      background: var(--mat-sys-surface-container-low);
+      border: 1px solid color-mix(in srgb, var(--cor) 30%, var(--mat-sys-outline-variant));
+      border-top: 4px solid var(--cor);
+      background: color-mix(in srgb, var(--cor) var(--tinta), var(--mat-sys-surface));
+      box-shadow: var(--sombra-leve);
       color: var(--mat-sys-on-surface-variant);
       text-decoration: none;
+      transition: box-shadow 0.15s, transform 0.15s;
+    }
+    .cartao.azul { --cor: var(--prefeitura-azul); }
+    .cartao.amarelo { --cor: var(--prefeitura-amarelo); }
+    .cartao.vermelho { --cor: var(--prefeitura-vermelho); }
+    .cartao.verde { --cor: var(--prefeitura-verde); }
+    .cartao.marinho { --cor: var(--marca-marinho); }
+    /* Número que pede atenção: fundo mais forte. */
+    .cartao.destaque {
+      --tinta: 18%;
     }
     a.cartao:hover {
-      background: var(--mat-sys-surface-container);
+      box-shadow: var(--sombra-media);
+      transform: translateY(-2px);
+    }
+    .cartao .icone {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      color: var(--cor);
     }
     .cartao .numero {
       font: var(--mat-sys-headline-medium);
       color: var(--mat-sys-on-surface);
-    }
-    .cartao.alerta {
-      border-color: var(--situacao-alerta);
-      background: var(--situacao-alerta-fundo);
-    }
-    .cartao.erro {
-      border-color: var(--situacao-erro);
-      background: var(--situacao-erro-fundo);
-    }
-    .cartao.alerta .numero {
-      color: var(--situacao-alerta);
-    }
-    .cartao.erro .numero {
-      color: var(--situacao-erro);
     }
     .colunas {
       display: grid;

@@ -588,7 +588,7 @@ O servidor precisa de saída HTTPS para `brasilapi.com.br` (ISBN e feriados), `w
 - Nada de emojis como ícones. Usar um único conjunto de ícones (Material Symbols).
 - Usar uma cor principal da Prefeitura. Verde, âmbar e vermelho ficam só para situação, e sempre com texto junto ("Atrasado 3 dias").
 - Cartões e blocos com superfície própria e sombra leve (`--sombra-leve`), para separar os objetos do fundo. No site, o cartão do livro sobe um pouco e a sombra aumenta ao passar o mouse; na gestão, só o que é clicável reage, mudando a cor de fundo.
-- Botões **Empréstimo** e **Devoluções** sempre visíveis no topo. Na tela Início: Empréstimos ativos, Vencimentos ativos, Em atraso, Exemplares separados, Leitores bloqueados e o Quadro de movimentações.
+- Botões **Empréstimo** e **Devoluções** sempre visíveis no topo. Na tela Início: Empréstimos ativos, Vencimentos ativos, Em atraso, Exemplares separados, Leitores bloqueados (cada indicador com sua cor da paleta da Prefeitura) e o Quadro de movimentações.
 - A tela Início mostra o que vence hoje e os atrasados.
 - Menu da gestão com 7 itens: Início, Acervo, Leitores, Empréstimos (abas Ativos, Atrasados e Histórico), Reservas, Relatórios e Configurações.
 - A tela Início também mostra as reservas para separar.
@@ -676,6 +676,7 @@ O servidor precisa de saída HTTPS para `brasilapi.com.br` (ISBN e feriados), `w
 | 2026-11-17 | Responsivo em qualquer aparelho (280 px a 1920 px sem rolagem lateral): `box-sizing: border-box` global, colunas da grade do catálogo que encolhem, barra da gestão que quebra linha no celular |
 | 2026-11-21 | Unidade passa a se chamar Sala Literária Castelinho (assinatura, títulos e `biblioteca.publico.unidade.nome`). Site público: cabeçalho azul `#0074BC` com a busca dentro, abas abaixo, cartões com sombra e faixa de cinco cores da Prefeitura no rodapé. Gestão: Empréstimo/Devoluções, novos nomes dos indicadores do Início e textos dos relatórios ("Mais retirados") |
 | 2026-11-21 | Transições em degradê no site público: o pé do cabeçalho azul se dissolve no branco das abas e o topo do rodapé sai do fundo claro para o marinho, sem corte seco |
+| 2026-11-21 | Textos para o público e mensagens de erro falam "Sala Literária" no lugar de "biblioteca" (identificadores, pacotes e chaves de configuração continuam `biblioteca`). Indicadores do Início com cor própria da paleta da Prefeitura (azul, amarelo, vermelho, verde, marinho), ícone e fundo mais forte quando o número pede atenção. Menu da gestão com 280 px para o nome da assinatura caber |
 
 ## Documentação
 - Toda decisão nova ou mudança de escopo atualiza o README.md

@@ -62,7 +62,8 @@ export function tetoDoEixo(maximo: number): number {
       </div>
     </div>
 
-    <table class="so-leitor-de-tela">
+    <!-- A classe fica num div: tabela ignora width: 1px e abria rolagem lateral no celular. -->
+    <div class="so-leitor-de-tela"><table>
       <caption>Saídas e devoluções nos últimos sete dias</caption>
       <thead>
         <tr><th scope="col">Dia</th><th scope="col">Saídas</th><th scope="col">Devoluções</th></tr>
@@ -72,7 +73,7 @@ export function tetoDoEixo(maximo: number): number {
           <tr><th scope="row">{{ data(d.data) }}</th><td>{{ d.saidas }}</td><td>{{ d.devolucoes }}</td></tr>
         }
       </tbody>
-    </table>
+    </table></div>
   `,
   styles: `
     :host {
