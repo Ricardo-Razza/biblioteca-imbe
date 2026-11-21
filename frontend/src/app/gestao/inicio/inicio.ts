@@ -86,7 +86,7 @@ export function detalhes(p: Painel): {
 
       <div class="grade">
         <div class="coluna-principal">
-          <section class="bloco" aria-labelledby="t-separados">
+          <section class="quadro" aria-labelledby="t-separados">
             <header>
               <h2 id="t-separados">Exemplares separados</h2>
               <span class="qt">{{ quantos(p.contadores.reservasParaSeparar, 'reserva', 'reservas') }}</span>
@@ -117,7 +117,7 @@ export function detalhes(p: Painel): {
             }
           </section>
 
-          <section class="bloco" aria-labelledby="t-atraso">
+          <section class="quadro" aria-labelledby="t-atraso">
             <header>
               <h2 id="t-atraso">Em atraso</h2>
               <span class="qt">{{ quantos(p.contadores.atrasados, 'empréstimo', 'empréstimos') }}</span>
@@ -152,7 +152,7 @@ export function detalhes(p: Painel): {
         </div>
 
         <div class="coluna-lateral">
-          <section class="bloco" aria-labelledby="t-vence">
+          <section class="quadro" aria-labelledby="t-vence">
             <header>
               <h2 id="t-vence">Vencimentos ativos</h2>
               <span class="qt">hoje</span>
@@ -179,7 +179,7 @@ export function detalhes(p: Painel): {
             }
           </section>
 
-          <section class="bloco" aria-labelledby="t-movimento">
+          <section class="quadro" aria-labelledby="t-movimento">
             <header>
               <h2 id="t-movimento">Quadro de movimentações</h2>
               <span class="qt">últimos 7 dias</span>

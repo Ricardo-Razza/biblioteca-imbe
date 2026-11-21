@@ -139,18 +139,13 @@ import { DadosBiblioteca } from '../core/api/modelos';
     h2 {
       margin: 0 0 14px;
       color: #fff;
-      font-family: var(--fonte-marca);
-      font-size: 13px;
-      font-weight: 600;
-      letter-spacing: 0.06em;
-      text-transform: uppercase;
+      font-family: var(--fonte-titulo);
+      font-size: 18px;
+      font-weight: 500;
     }
     p {
       margin: 0;
       line-height: 1.55;
-    }
-    .sobre h2 {
-      font-size: 15px;
     }
     .suave {
       color: #aebbd0;

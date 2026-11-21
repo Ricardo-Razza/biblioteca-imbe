@@ -4,10 +4,10 @@ import { TomSelo } from '../shared/selo/selo';
 
 const DIAS_SEMANA = ['domingo', 'segunda-feira', 'terça-feira', 'quarta-feira', 'quinta-feira', 'sexta-feira', 'sábado'];
 
-/** "3 disponíveis", "1 disponível", "Todos emprestados". */
+/** "3 na estante", "1 na estante", "Todos emprestados". */
 export function disponibilidade(n: number): string {
   if (n <= 0) return 'Todos emprestados';
-  return n === 1 ? '1 disponível' : `${n} disponíveis`;
+  return `${n} na estante`;
 }
 
 /** ABCD2345 → ABCD-2345, mais fácil de ler e anotar. */

@@ -5,8 +5,8 @@ import { dataComDia, disponibilidade, protocoloLegivel, seloReservaPublica } fro
 describe('textos do site público', () => {
   it('disponibilidade', () => {
     expect(disponibilidade(0)).toBe('Todos emprestados');
-    expect(disponibilidade(1)).toBe('1 disponível');
-    expect(disponibilidade(3)).toBe('3 disponíveis');
+    expect(disponibilidade(1)).toBe('1 na estante');
+    expect(disponibilidade(3)).toBe('3 na estante');
   });
 
   it('protocolo e data com dia da semana', () => {
