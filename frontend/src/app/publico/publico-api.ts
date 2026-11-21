@@ -18,6 +18,8 @@ export interface FiltroCatalogo {
   q?: string | null;
   assunto?: number | null;
   disponiveis?: boolean;
+  /** Padrão: por título. */
+  ordem?: 'titulo' | 'recentes';
   pagina?: number;
   tamanho?: number;
 }
@@ -39,11 +41,17 @@ export class PublicoApi {
     if (f.q?.trim()) params = params.set('q', f.q.trim());
     if (f.assunto != null) params = params.set('assunto', f.assunto);
     if (f.disponiveis) params = params.set('disponiveis', true);
+    if (f.ordem === 'recentes') params = params.set('ordem', 'recentes');
     return this.http.get<Pagina<ObraPublica>>(`${API}/obras`, { params });
   }
 
   obra(id: number): Observable<ObraPublicaDetalhe> {
     return this.http.get<ObraPublicaDetalhe>(`${API}/obras/${id}`);
+  }
+
+  /** Até 3 autores mais emprestados nos últimos 90 dias (vazio sem empréstimos). */
+  maisRetirados(): Observable<string[]> {
+    return this.http.get<string[]>(`${API}/mais-retirados`);
   }
 
   assuntos(): Observable<AssuntoPublico[]> {

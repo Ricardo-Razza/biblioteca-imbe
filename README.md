@@ -195,6 +195,9 @@ Como foi implementado (fase 4):
 - **Limites:** por IP, 300 consultas por minuto e 20 identificações (reservar, consultar, cancelar) a cada 10 minutos; por CPF, 10 identificações a cada 10 minutos, de qualquer IP. Passou: 429 "Muitas tentativas". Contadores em memória (Caffeine), suficientes para uma instância da API; o IP vem do Nginx (`server.forward-headers-strategy: native`).
 - **Feriados nacionais:** importados da BrasilAPI (`/api/feriados/v1/{ano}`) para o ano atual e o próximo, ao subir a API e todo dia às 3h10, só quando o ano ainda não tem nenhum. O administrador também pode buscar na aba Feriados. Data já cadastrada como municipal não é sobrescrita.
 - **Rodapé e confirmação:** nome, endereço, horário, telefone e e-mail vêm de `BIBLIOTECA_ENDERECO`, `BIBLIOTECA_HORARIO`, `BIBLIOTECA_TELEFONE` e `BIBLIOTECA_EMAIL` (vazios não aparecem; sem nenhum deles, o rodapé diz "em breve"). Prazo de retirada, limite de livros e prazo do empréstimo vêm dos parâmetros.
+- **Abertura do catálogo:** sem busca nem filtro, o catálogo abre com "Chegaram à estante" (as 6 obras cadastradas mais recentemente, sobre uma prateleira) e "Ver todos" ordena por mais recentes. O filtro Ordenar tem "Por título" (padrão) e "Mais recentes". O cartão diz "3 na estante" ou "Todos emprestados".
+- **Mais retirados:** embaixo da busca, até 3 autores com mais empréstimos nos últimos 90 dias (só obras visíveis no catálogo), cada um um atalho de busca. Dado real dos empréstimos, sem nenhum dado de leitor; some sem empréstimos no período e no celular estreito.
+- **Buscas sem resultado:** o que o site procurou e não achou fica contado por dia (ver Modelo de dados) e vira relatório na gestão, para orientar aquisições.
 - **Rodapé do site:** marca da Prefeitura, "Visite a biblioteca" (contato, com telefone e e-mail clicáveis), "Como reservar" em 3 passos com os prazos configurados e "Acesso rápido" (catálogo, minhas reservas, site da Prefeitura e área da equipe).
 
 ---
@@ -213,6 +216,7 @@ Como foi implementado (fase 4):
 | Empréstimos | saída no período | saída, devolução prevista, devolvido em, situação, renovações, ocorrência, tombo, título, leitor |
 | Atrasados | hoje | tombo, título, leitor, telefone, e-mail, saída, devolução prevista, dias de atraso |
 | Mais retirados | saída no período | posição, título, autores, ISBN, empréstimos (100 primeiros) |
+| Buscas sem resultado | dia da busca | termo, buscas, última busca (200 mais buscados) |
 | Reservas | feita no período | protocolo, feita em, título, tombo, leitor, situação, prazo, finalizada em, cancelada por |
 | Acervo | tudo | tombo, ISBN, título, autores, editora, ano, localização, estado, situação, aquisição, origem |
 
@@ -397,6 +401,11 @@ erDiagram
         varchar chave PK
         varchar valor
     }
+    BUSCA_SEM_RESULTADO {
+        varchar termo PK
+        date dia PK
+        int vezes
+    }
 ```
 
 - Um empréstimo está **atrasado** quando `data_devolucao` é nula e `data_prevista` é anterior a hoje. Não existe tabela de histórico: o histórico é a própria tabela `emprestimo`.
@@ -404,6 +413,7 @@ erDiagram
 - O **total de exemplares** de uma obra não conta os baixados. A API devolve `totalExemplares` e `exemplaresDisponiveis` junto com a obra.
 - **Tombo:** até 30 letras, números, ponto ou hífen, sem barra nem espaço (vai no caminho da URL). Gravado em maiúsculas e único sem diferenciar caixa. **Opcional no cadastro do exemplar:** em branco, o sistema gera `AUTO-` + o id com 6 dígitos (`AUTO-000123`); os prefixos `AUTO-` e `TMP-` são reservados e não podem ser digitados. Na tela, Enter com o campo vazio não cadastra (evita exemplar sem tombo por bipe falho): é preciso clicar em "Adicionar sem tombo". A importação em lote continua igual: linha sem tombo cadastra só a obra, para não duplicar exemplares ao reimportar a planilha.
 - **Situação do exemplar:** `RESERVADO` e `EMPRESTADO` só mudam pelos fluxos de reserva e empréstimo. Manualmente (Admin) só se marca `EXTRAVIADO`, `BAIXADO` ou a volta de um extraviado para `DISPONIVEL`. `BAIXADO` é definitivo: o exemplar não muda mais. Localização e estado podem mudar com o exemplar emprestado.
+- **Busca sem resultado** (V8): o que o site público procurou e não achou, um contador por termo e por dia, sem IP nem leitor. Só conta a busca sem filtro, na primeira página; o termo vai normalizado (minúsculas, espaços únicos, até 100 caracteres) e é descartado com menos de 3 caracteres ou com 5 dígitos ou mais (CPF, telefone, protocolo), para não guardar dado pessoal.
 - Obra, exemplar e leitor com histórico nunca são apagados, só desativados ou baixados.
 - O esquema é versionado com Flyway (`V{n}__descricao.sql`). Migration já aplicada não se edita.
 
@@ -456,7 +466,7 @@ Como as regras foram implementadas (fase 2):
 | `GET /emprestimos?status=&leitorId=&tombo=&q=` | `ATIVO` (todos em aberto), `ATRASADO` ou `DEVOLVIDO` | Atendente |
 | `GET /parametros` · `PUT /parametros/{chave}` | Prazos e limites | Atendente · Admin |
 | `GET /painel` | Contadores do dia, até 10 itens de vence hoje, atrasados e reservas para separar, saídas e devoluções dos últimos 7 dias | Atendente |
-| `GET /relatorios/{tipo}.csv?de=&ate=` | CSV: `emprestimos`, `atrasados`, `acervo`, `mais-emprestados`, `reservas` (período padrão: últimos 30 dias; máximo 5 anos) | Atendente |
+| `GET /relatorios/{tipo}.csv?de=&ate=` | CSV: `emprestimos`, `atrasados`, `acervo`, `mais-emprestados`, `reservas`, `buscas-sem-resultado` (período padrão: últimos 30 dias; máximo 5 anos) | Atendente |
 | `GET /reservas?status=&leitorId=&q=` · `GET /reservas/{id}` · `POST /reservas/{id}/retirada` · `POST /reservas/{id}/cancelamento` | Reservas na gestão (`status` aceita vários; padrão aguardando) | Atendente |
 | `GET/POST /funcionarios`, `PUT /funcionarios/{id}`, `POST /funcionarios/{id}/senha-provisoria` | Funcionários | Admin |
 | `GET /feriados?ano=` · `POST /feriados`, `DELETE /feriados/{data}`, `POST /feriados/importacao?ano=` | Feriados (importação dos nacionais pela BrasilAPI) | Atendente · Admin |
@@ -467,7 +477,8 @@ Como as regras foram implementadas (fase 2):
 
 | Método e rota | Descrição |
 | --- | --- |
-| `GET /publico/obras?q=&assunto=&disponiveis=true` | Catálogo paginado (só dados da obra e quantidade disponível) |
+| `GET /publico/obras?q=&assunto=&disponiveis=true&ordem=recentes` | Catálogo paginado (só dados da obra e quantidade disponível); `ordem` padrão por título |
+| `GET /publico/mais-retirados` | Até 3 nomes de autores mais emprestados nos últimos 90 dias |
 | `GET /publico/obras/{id}` | Ficha do livro |
 | `GET /publico/assuntos` | Lista para os filtros, com a quantidade de obras |
 | `GET /publico/biblioteca` | Nome, endereço, horário, telefone, e-mail, prazo de retirada, limite de livros e prazo do empréstimo |
@@ -587,12 +598,12 @@ O servidor precisa de saída HTTPS para `brasilapi.com.br` (ISBN e feriados), `w
 
 - Nada de emojis como ícones. Usar um único conjunto de ícones (Material Symbols).
 - Usar uma cor principal da Prefeitura. Verde, âmbar e vermelho ficam só para situação, e sempre com texto junto ("Atrasado 3 dias").
-- Fugir do visual genérico de painel: fundo em tom de papel (`--papel`), blocos brancos com filete fino (`--filete`, classe global `.bloco`) em vez de caixas arredondadas com sombra, cantos discretos nos botões (6 px) e listas em linhas, com capa, em vez de cartões. No site, o cartão do livro tem sombra leve (`--sombra-leve`), sobe um pouco e a sombra aumenta ao passar o mouse; na gestão, só o que é clicável reage, mudando a cor de fundo.
+- Fugir do visual genérico de painel: fundo em tom de papel (`--papel`), blocos brancos com filete fino (`--filete`, classe global `.quadro`) em vez de caixas arredondadas com sombra, cantos discretos nos botões (6 px) e listas em linhas, com capa, em vez de cartões. No site, o cartão do livro tem sombra leve (`--sombra-leve`), sobe um pouco e a sombra aumenta ao passar o mouse; na gestão, só o que é clicável reage, mudando a cor de fundo.
 - Botões **Empréstimo** e **Devoluções** sempre visíveis no topo. Na tela Início: Empréstimos ativos, Vencimentos ativos, Em atraso, Exemplares separados, Leitores bloqueados (faixa única, cada indicador com sua cor da paleta da Prefeitura no topo) e o Quadro de movimentações.
 - A tela Início mostra o que vence hoje e os atrasados.
 - Menu da gestão marinho sólido, com a assinatura branca, 7 itens em grupos (Início; Balcão: Empréstimos, Reservas, Leitores; Acervo: Acervo, Relatórios, Configurações), filete amarelo no item ativo e a faixa de cinco cores da Prefeitura no pé. No celular vira uma linha rolável, sem a assinatura.
 - A tela Início também mostra as reservas para separar.
-- **Site público:** pensado primeiro para celular. Cabeçalho azul da Prefeitura com a foto das estantes, a assinatura branca e a busca "Encontre um livro" (barra arredondada com o botão dentro), em todas as páginas: buscar de qualquer página leva ao catálogo. Abas Catálogo e Minhas reservas logo abaixo do cabeçalho; filtros Assunto e "Disponíveis agora"; grade de capas com "3 disponíveis" ou "Todos emprestados"; ficha do livro com um único botão Reservar; rodapé com contato da biblioteca, como reservar e acesso rápido.
+- **Site público:** pensado primeiro para celular. Cabeçalho azul da Prefeitura com a foto das estantes, a assinatura branca e a busca "Encontre um livro" (barra arredondada com o botão dentro), em todas as páginas: buscar de qualquer página leva ao catálogo. Abas Catálogo e Minhas reservas logo abaixo do cabeçalho; filtros Assunto e "Disponíveis agora"; estante "Chegaram à estante" na abertura; grade de capas com título em Literata e "3 na estante" ou "Todos emprestados"; "Mais retirados" embaixo da busca; ficha do livro com um único botão Reservar; rodapé com contato da biblioteca, como reservar e acesso rápido.
 - Capa em miniatura nas listas. Texto base de 15 a 16 px. Formulários em uma coluna.
 - Mensagens e confirmações dentro da tela, nunca `alert()` ou `confirm()`.
 - **Identidade visual: Manual de Marca da Prefeitura de Imbé (2021-2028).**
@@ -678,6 +689,8 @@ O servidor precisa de saída HTTPS para `brasilapi.com.br` (ISBN e feriados), `w
 | 2026-11-21 | Transições em degradê no site público: o pé do cabeçalho azul se dissolve no branco das abas e o topo do rodapé sai do fundo claro para o marinho, sem corte seco |
 | 2026-11-21 | Textos para o público e mensagens de erro falam "Sala Literária" no lugar de "biblioteca" (identificadores, pacotes e chaves de configuração continuam `biblioteca`). Indicadores do Início com cor própria da paleta da Prefeitura (azul, amarelo, vermelho, verde, marinho), ícone e fundo mais forte quando o número pede atenção. Menu da gestão com 280 px para o nome da assinatura caber |
 | 2026-11-21 | Novo visual para tirar a cara de painel genérico: fundo em tom de papel, blocos brancos com filete, títulos em Literata, botões com canto de 6 px. Gestão com menu marinho em grupos e Início com indicadores numa faixa única (linha de contexto embaixo do número) e listas em linhas com capa e ação (Entregar, Devolver) |
+| 2026-11-21 | Site público no mesmo visual: estante "Chegaram à estante" na abertura do catálogo, filtro Ordenar (por título ou mais recentes), cartões com "N na estante". "Mais retirados" embaixo da busca vem dos empréstimos reais dos últimos 90 dias (autores), não das buscas |
+| 2026-11-21 | Buscas sem resultado do site contadas por termo e dia (V8), sem IP nem leitor, descartando termos curtos ou com cara de CPF/telefone; relatório "Buscas sem resultado" para orientar aquisições |
 
 ## Documentação
 - Toda decisão nova ou mudança de escopo atualiza o README.md

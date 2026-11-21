@@ -2,47 +2,71 @@ import { Component, computed, effect, inject, input, signal } from '@angular/cor
 import { toSignal } from '@angular/core/rxjs-interop';
 import { Router, RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
-import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSelectModule } from '@angular/material/select';
-import { catchError, of } from 'rxjs';
+import { MatSlideToggleModule } from '@angular/material/slide-toggle';
+import { catchError, map, of } from 'rxjs';
 
 import { mensagemDeErro } from '../../core/api/erro-api';
 import { ObraPublica, Pagina } from '../../core/api/modelos';
 import { CapaLivro } from '../../shared/capa-livro/capa-livro';
-import { Selo } from '../../shared/selo/selo';
 import { PublicoApi } from '../publico-api';
 import { disponibilidade } from '../textos';
 
 const TAMANHO = 24;
+const NA_ESTANTE = 6;
 
-/** Catálogo: título, filtros e grade de capas (a busca fica no cabeçalho do site). Tudo na URL (?q=&assunto=&disponiveis=&pagina=). */
+/**
+ * Catálogo: estante com os últimos cadastrados (só na abertura, sem busca nem filtro), título, filtros e grade
+ * de capas. A busca fica no cabeçalho do site. Tudo na URL (?q=&assunto=&disponiveis=&ordem=&pagina=).
+ */
 @Component({
   selector: 'app-catalogo',
   imports: [
     RouterLink,
     MatButtonModule,
-    MatCheckboxModule,
     MatFormFieldModule,
     MatIconModule,
     MatProgressBarModule,
     MatSelectModule,
+    MatSlideToggleModule,
     CapaLivro,
-    Selo,
   ],
   template: `
-    <section class="topo-catalogo" aria-labelledby="titulo-catalogo">
-      <h1 id="titulo-catalogo">
-        @if (q()) {
-          Resultados para “{{ q() }}”
-        } @else {
-          Catálogo
-        }
-      </h1>
+    @if (abertura() && novidades().length) {
+      <section class="novidades" aria-labelledby="titulo-novidades">
+        <div class="titulo-secao">
+          <h2 id="titulo-novidades">Chegaram à estante</h2>
+          <p>Os últimos livros cadastrados no acervo</p>
+          <a routerLink="/" [queryParams]="{ ordem: 'recentes' }">Ver todos</a>
+        </div>
+        <ul class="estante">
+          @for (o of novidades(); track o.id) {
+            <li>
+              <a [routerLink]="['/livro', o.id]" [attr.aria-label]="o.titulo">
+                <app-capa-livro [obraId]="o.id" [temCapa]="o.temCapa" [titulo]="o.titulo" />
+              </a>
+            </li>
+          }
+        </ul>
+      </section>
+    }
+
+    <section class="catalogo" aria-labelledby="titulo-catalogo">
+      <div class="titulo-secao">
+        <h1 id="titulo-catalogo">
+          @if (q()) {
+            Resultados para “{{ q() }}”
+          } @else {
+            Catálogo
+          }
+        </h1>
+      </div>
+
       <div class="filtros">
-        <mat-form-field appearance="outline" subscriptSizing="dynamic" class="assunto">
+        <mat-form-field appearance="outline" subscriptSizing="dynamic" class="campo">
           <mat-label>Assunto</mat-label>
           <mat-select [value]="assuntoId()" (valueChange)="navegar({ assunto: $event, pagina: null })">
             <mat-option [value]="null">Todos</mat-option>
@@ -51,107 +75,170 @@ const TAMANHO = 24;
             }
           </mat-select>
         </mat-form-field>
-        <mat-checkbox [checked]="soDisponiveis()" (change)="navegar({ disponiveis: $event.checked ? 1 : null, pagina: null })">
+        <mat-form-field appearance="outline" subscriptSizing="dynamic" class="campo curto">
+          <mat-label>Ordenar</mat-label>
+          <mat-select [value]="ordemAtual()" (valueChange)="navegar({ ordem: $event === 'recentes' ? 'recentes' : null, pagina: null })">
+            <mat-option value="titulo">Por título</mat-option>
+            <mat-option value="recentes">Mais recentes</mat-option>
+          </mat-select>
+        </mat-form-field>
+        <mat-slide-toggle [checked]="soDisponiveis()" (change)="navegar({ disponiveis: $event.checked ? 1 : null, pagina: null })">
           Disponíveis agora
-        </mat-checkbox>
+        </mat-slide-toggle>
+        @if (resultado(); as r) {
+          <p class="contagem" role="status">
+            @if (r.total === 0) {
+              Nenhum livro encontrado
+            } @else {
+              {{ r.total === 1 ? '1 livro' : r.total + ' livros' }}
+            }
+          </p>
+        }
       </div>
-    </section>
 
-    @if (carregando()) {
-      <mat-progress-bar mode="indeterminate" />
-    }
-    @if (erro()) {
-      <p class="aviso erro" role="alert"><mat-icon>error</mat-icon> {{ erro() }}</p>
-    }
-
-    @if (resultado(); as r) {
-      <p class="contagem texto-secundario" role="status">
-        @if (r.total === 0) {
-          Nenhum livro encontrado. Tente outras palavras ou tire os filtros.
-        } @else {
-          {{ r.total === 1 ? '1 livro' : r.total + ' livros' }}
-        }
-      </p>
-      <ul class="grade">
-        @for (o of r.itens; track o.id) {
-          <li>
-            <a class="cartao" [routerLink]="['/livro', o.id]">
-              <app-capa-livro [obraId]="o.id" [temCapa]="o.temCapa" [mini]="true" [titulo]="o.titulo" />
-              <span class="titulo">{{ o.titulo }}</span>
-              @if (o.autores.length) {
-                <span class="autor texto-secundario">{{ o.autores.join(', ') }}</span>
-              }
-              <app-selo [tom]="o.disponiveis > 0 ? 'ok' : 'neutra'">{{ disponivel(o.disponiveis) }}</app-selo>
-            </a>
-          </li>
-        }
-      </ul>
-      @if (r.totalPaginas > 1) {
-        <nav class="paginas" aria-label="Páginas do catálogo">
-          <button mat-stroked-button type="button" [disabled]="r.pagina === 0" (click)="irPara(r.pagina - 1)">
-            <mat-icon>chevron_left</mat-icon> Anterior
-          </button>
-          <span>Página {{ r.pagina + 1 }} de {{ r.totalPaginas }}</span>
-          <button mat-stroked-button type="button" [disabled]="r.pagina + 1 >= r.totalPaginas" (click)="irPara(r.pagina + 1)">
-            Próxima <mat-icon iconPositionEnd>chevron_right</mat-icon>
-          </button>
-        </nav>
+      @if (carregando()) {
+        <mat-progress-bar mode="indeterminate" />
       }
-    }
+      @if (erro()) {
+        <p class="aviso erro" role="alert"><mat-icon>error</mat-icon> {{ erro() }}</p>
+      }
+
+      @if (resultado(); as r) {
+        @if (r.total === 0) {
+          <p class="vazio">Tente outras palavras ou tire os filtros.</p>
+        }
+        <ul class="grade">
+          @for (o of r.itens; track o.id) {
+            <li>
+              <a class="cartao" [routerLink]="['/livro', o.id]">
+                <app-capa-livro [obraId]="o.id" [temCapa]="o.temCapa" [mini]="true" [titulo]="o.titulo" />
+                <span class="titulo">{{ o.titulo }}</span>
+                @if (o.autores.length) {
+                  <span class="autor">{{ o.autores.join(', ') }}</span>
+                }
+                <span class="disponivel" [class.nao]="o.disponiveis <= 0">{{ disponivel(o.disponiveis) }}</span>
+              </a>
+            </li>
+          }
+        </ul>
+        @if (r.totalPaginas > 1) {
+          <nav class="paginas" aria-label="Páginas do catálogo">
+            <button mat-stroked-button type="button" [disabled]="r.pagina === 0" (click)="irPara(r.pagina - 1)">
+              <mat-icon>chevron_left</mat-icon> Anterior
+            </button>
+            <span>Página {{ r.pagina + 1 }} de {{ r.totalPaginas }}</span>
+            <button mat-stroked-button type="button" [disabled]="r.pagina + 1 >= r.totalPaginas" (click)="irPara(r.pagina + 1)">
+              Próxima <mat-icon iconPositionEnd>chevron_right</mat-icon>
+            </button>
+          </nav>
+        }
+      }
+    </section>
   `,
   styles: `
-    /* Título e filtros num bloco próprio, destacado do fundo */
-    .topo-catalogo {
+    .titulo-secao {
       display: flex;
       flex-wrap: wrap;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px 24px;
-      margin-bottom: 20px;
-      padding: 16px 20px;
-      border-radius: 12px;
-      background: var(--mat-sys-surface);
-      box-shadow: var(--sombra-leve);
+      align-items: baseline;
+      gap: 4px 14px;
+      margin-bottom: 18px;
     }
-    h1 {
+    h1,
+    h2 {
       min-width: 0;
       overflow-wrap: anywhere;
+      font-size: clamp(22px, 3.2vw, 28px);
+      line-height: 1.2;
     }
+    .titulo-secao p {
+      margin: 0;
+      color: var(--mat-sys-on-surface-variant);
+      font: var(--mat-sys-body-medium);
+    }
+    .titulo-secao a {
+      margin-left: auto;
+      font: var(--mat-sys-body-medium);
+      text-decoration: none;
+    }
+
+    /* Prateleira: capas em pé sobre uma tábua. */
+    .novidades {
+      margin-bottom: 44px;
+    }
+    .estante {
+      list-style: none;
+      margin: 0;
+      padding: 0 8px;
+      display: grid;
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+      gap: clamp(12px, 2.4vw, 28px);
+      align-items: end;
+      border-bottom: 10px solid color-mix(in srgb, var(--marca-marinho) 14%, var(--papel));
+      box-shadow: 0 6px 0 -2px color-mix(in srgb, var(--marca-marinho) 22%, var(--papel));
+    }
+    .estante a {
+      display: block;
+      --largura-capa: 100%;
+      border-radius: 2px;
+      transition: transform 0.15s;
+    }
+    .estante a:hover,
+    .estante a:focus-visible {
+      transform: translateY(-4px);
+    }
+    .estante app-capa-livro {
+      border-radius: 2px;
+      box-shadow:
+        0 2px 2px rgb(0 0 0 / 0.15),
+        6px 6px 14px rgb(31 48 95 / 0.18);
+    }
+
     .filtros {
       min-width: 0;
       max-width: 100%;
       display: flex;
       flex-wrap: wrap;
       align-items: center;
-      gap: 8px 24px;
+      gap: 12px 16px;
+      margin-bottom: 22px;
+      padding-bottom: 18px;
+      border-bottom: 1px solid var(--filete);
     }
-    .assunto {
-      width: 260px;
+    .campo {
+      width: 240px;
       max-width: 100%;
     }
+    .campo.curto {
+      width: 190px;
+    }
     .contagem {
-      margin: 12px 0;
+      margin: 0 0 0 auto;
+      font: var(--mat-sys-body-medium);
+      color: var(--mat-sys-on-surface-variant);
+    }
+    .vazio {
+      margin: 0 0 16px;
+      color: var(--mat-sys-on-surface-variant);
     }
     .grade {
       list-style: none;
       padding: 0;
       margin: 0;
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(min(150px, 100%), 1fr));
-      gap: 20px 16px;
+      grid-template-columns: repeat(auto-fill, minmax(min(160px, 100%), 1fr));
+      gap: 22px 20px;
     }
     .grade > li {
       min-width: 0;
     }
-    /* min-width: 0 deixa o nome longo do autor ser cortado com reticências em vez de alargar a coluna */
+    /* Cartão branco com sombra leve; capa com sombra própria, título em serifa, disponibilidade em texto. */
     .cartao {
       min-width: 0;
       display: flex;
       flex-direction: column;
-      gap: 6px;
       height: 100%;
-      padding: 10px 10px 12px;
-      border-radius: 12px;
+      padding: 12px 12px 14px;
+      border-radius: 4px;
       background: var(--mat-sys-surface);
       box-shadow: var(--sombra-leve);
       color: inherit;
@@ -166,36 +253,97 @@ const TAMANHO = 24;
       box-shadow: var(--sombra-media);
       transform: translateY(-2px);
     }
+    .cartao app-capa-livro {
+      border-radius: 2px;
+      box-shadow: 0 1px 2px rgb(0 0 0 / 0.2);
+    }
     .titulo {
+      margin-top: 12px;
+      font-family: var(--fonte-titulo);
+      font-size: 16px;
       font-weight: 500;
+      line-height: 1.3;
       display: -webkit-box;
       -webkit-line-clamp: 2;
       -webkit-box-orient: vertical;
       overflow: hidden;
     }
     .autor {
-      font: var(--mat-sys-body-medium);
+      margin-top: 4px;
+      font: var(--mat-sys-body-small);
+      color: var(--mat-sys-on-surface-variant);
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
     }
-    app-selo {
-      align-self: flex-start;
+    .disponivel {
+      margin-top: auto;
+      padding-top: 10px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font: var(--mat-sys-body-small);
+      color: var(--situacao-ok);
+    }
+    .disponivel::before {
+      content: '';
+      flex: none;
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--prefeitura-verde);
+    }
+    .disponivel.nao {
+      color: var(--mat-sys-on-surface-variant);
+    }
+    .disponivel.nao::before {
+      background: var(--filete-forte);
     }
     .paginas {
       display: flex;
+      flex-wrap: wrap;
       align-items: center;
       justify-content: center;
       gap: 16px;
-      margin-top: 24px;
+      margin-top: 28px;
+    }
+    @media (max-width: 600px) {
+      .estante {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+      .estante li:nth-child(n + 4) {
+        display: none;
+      }
+      .titulo-secao p {
+        order: 3;
+        width: 100%;
+      }
+      .contagem {
+        width: 100%;
+        margin-left: 0;
+      }
     }
     @media (max-width: 480px) {
       .grade {
         grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 12px 10px;
+        gap: 14px 12px;
       }
-      .topo-catalogo {
-        padding: 14px 16px;
+      .cartao {
+        padding: 10px 10px 12px;
+      }
+      .titulo {
+        font-size: 15px;
+      }
+      .campo,
+      .campo.curto {
+        width: calc(50% - 8px);
+        min-width: 0;
+      }
+    }
+    @media (max-width: 340px) {
+      .campo,
+      .campo.curto {
+        width: 100%;
       }
     }
   `,
@@ -204,14 +352,29 @@ export class Catalogo {
   readonly q = input<string>();
   readonly assunto = input<string>();
   readonly disponiveis = input<string>();
+  readonly ordem = input<string>();
   readonly pagina = input<string>();
 
   private readonly api = inject(PublicoApi);
   private readonly router = inject(Router);
 
   protected readonly assuntos = toSignal(this.api.assuntos().pipe(catchError(() => of([]))), { initialValue: [] });
+  /** Últimos cadastrados, para a estante da abertura (falha não atrapalha o catálogo). */
+  protected readonly novidades = toSignal(
+    this.api.obras({ ordem: 'recentes', tamanho: NA_ESTANTE }).pipe(
+      map((p) => p.itens),
+      catchError(() => of([] as ObraPublica[])),
+    ),
+    { initialValue: [] as ObraPublica[] },
+  );
   protected readonly assuntoId = computed(() => (this.assunto() ? Number(this.assunto()) : null));
   protected readonly soDisponiveis = computed(() => !!this.disponiveis());
+  protected readonly ordemAtual = computed(() => (this.ordem() === 'recentes' ? 'recentes' : 'titulo'));
+  protected readonly paginaAtual = computed(() => Math.max(0, Number(this.pagina() ?? 0) || 0));
+  /** Catálogo aberto sem busca, filtro nem página: aí aparece a estante. */
+  protected readonly abertura = computed(
+    () => !this.q() && this.assuntoId() == null && !this.soDisponiveis() && this.ordemAtual() === 'titulo' && this.paginaAtual() === 0,
+  );
   protected readonly resultado = signal<Pagina<ObraPublica> | null>(null);
   protected readonly carregando = signal(false);
   protected readonly erro = signal<string | null>(null);
@@ -223,9 +386,10 @@ export class Catalogo {
         q: this.q(),
         assunto: this.assuntoId(),
         disponiveis: this.soDisponiveis(),
-        pagina: Math.max(0, Number(this.pagina() ?? 0) || 0),
+        ordem: this.ordemAtual(),
+        pagina: this.paginaAtual(),
         tamanho: TAMANHO,
-      };
+      } as const;
       this.carregando.set(true);
       this.erro.set(null);
       const s = this.api.obras(filtro).subscribe({

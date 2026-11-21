@@ -16,10 +16,14 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
+import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.RequestPostProcessor;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import com.jayway.jsonpath.JsonPath;
 
@@ -39,6 +43,12 @@ class PublicoIntegracaoTest {
 
     @PersistenceContext
     EntityManager em;
+
+    @Autowired
+    JdbcClient jdbc;
+
+    @Autowired
+    PlatformTransactionManager transacoes;
 
     RequestPostProcessor ip;
     long disponivel;
@@ -136,6 +146,50 @@ class PublicoIntegracaoTest {
                 .andExpect(jsonPath("$.prazoRetiradaDiasUteis").isNumber())
                 .andExpect(jsonPath("$.limiteLivros").isNumber())
                 .andExpect(jsonPath("$.prazoEmprestimoDias").isNumber());
+    }
+
+    @Test
+    void ordemDosMaisRecentes() throws Exception {
+        mvc.perform(get("/api/v1/publico/obras").param("q", "público").param("ordem", "recentes").with(ip))
+                .andExpect(jsonPath("$.itens[0].id").value(emprestada))
+                .andExpect(jsonPath("$.itens[1].id").value(disponivel));
+        mvc.perform(get("/api/v1/publico/obras").param("q", "público").param("ordem", "qualquer").with(ip))
+                .andExpect(jsonPath("$.itens[0].titulo").value("Dom Casmurro Público"));
+    }
+
+    @Test
+    void maisRetiradosTrazSoOsAutores() throws Exception {
+        String corpo = mvc.perform(get("/api/v1/publico/mais-retirados").with(ip))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(Matchers.lessThanOrEqualTo(3)))
+                .andReturn().getResponse().getContentAsString();
+        assertThat(JsonPath.<java.util.List<String>>read(corpo, "$")).contains("Machado de Assis");
+        assertThat(corpo).doesNotContain("Leitor do Catálogo").doesNotContain("P-10");
+    }
+
+    @Test
+    void buscaSemResultadoFicaContadaSoSemFiltroESemDigitos() throws Exception {
+        // A contagem grava em transação própria (fica no banco): termo único por execução, sem dígitos.
+        String termo = "inexistente " + Long.toString(System.nanoTime(), 36).replaceAll("\\d", "q");
+        mvc.perform(get("/api/v1/publico/obras").param("q", termo).with(ip)).andExpect(jsonPath("$.total").value(0));
+        mvc.perform(get("/api/v1/publico/obras").param("q", "  " + termo.toUpperCase() + " ").with(ip));
+        mvc.perform(get("/api/v1/publico/obras").param("q", termo).param("disponiveis", "true").with(ip));
+        mvc.perform(get("/api/v1/publico/obras").param("q", termo).param("page", "1").with(ip));
+        assertThat(vezes(termo)).isEqualTo(2);
+
+        mvc.perform(get("/api/v1/publico/obras").param("q", "machado").with(ip)).andExpect(jsonPath("$.total").value(2));
+        assertThat(vezes("machado")).isZero();
+        String cpf = Dados.cpf();
+        mvc.perform(get("/api/v1/publico/obras").param("q", cpf).with(ip)).andExpect(jsonPath("$.total").value(0));
+        assertThat(vezes(cpf)).isZero();
+    }
+
+    /** Lê numa transação nova: a do teste tem uma foto do banco anterior à gravação (REPEATABLE READ). */
+    private int vezes(String termo) {
+        TransactionTemplate nova = new TransactionTemplate(transacoes);
+        nova.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
+        return nova.execute(s -> jdbc.sql("select coalesce(sum(vezes), 0) from busca_sem_resultado where termo = :t")
+                .param("t", termo).query(Integer.class).single());
     }
 
     @Test

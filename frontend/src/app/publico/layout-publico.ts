@@ -46,6 +46,14 @@ import { RodapePublico } from './rodape-publico';
               <span class="rotulo">Buscar</span>
             </button>
           </div>
+          @if (maisRetirados().length) {
+            <p class="retirados">
+              Mais retirados:
+              @for (autor of maisRetirados(); track autor) {
+                <a routerLink="/" [queryParams]="{ q: autor }">{{ autor }}</a>
+              }
+            </p>
+          }
         </form>
       </div>
     </header>
@@ -148,9 +156,9 @@ import { RodapePublico } from './rodape-publico';
       gap: 10px;
     }
     .chamada {
-      font-family: var(--fonte-marca);
-      font-size: clamp(20px, 4.2vw, 28px);
-      font-weight: 600;
+      font-family: var(--fonte-titulo);
+      font-size: clamp(20px, 4.2vw, 26px);
+      font-weight: 500;
       line-height: 1.2;
     }
     /* Barra arredondada com o botão dentro; a borda tem a cor do botão. */
@@ -226,6 +234,20 @@ import { RodapePublico } from './rodape-publico';
     .so-icone {
       display: none;
     }
+    /* Autores mais emprestados nos últimos 90 dias, como atalho de busca. */
+    .retirados {
+      margin: 0;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 2px 14px;
+      font: var(--mat-sys-body-small);
+      color: rgb(255 255 255 / 0.85);
+    }
+    .retirados a {
+      color: #fff;
+      font-weight: 500;
+      text-underline-offset: 3px;
+    }
     /* Abas logo abaixo do cabeçalho */
     .abas {
       background: var(--mat-sys-surface);
@@ -288,6 +310,9 @@ import { RodapePublico } from './rodape-publico';
       .so-icone {
         display: inline-block;
       }
+      .retirados {
+        display: none;
+      }
     }
     /* Celular estreito: as duas abas numa linha só */
     @media (max-width: 380px) {
@@ -308,8 +333,12 @@ export class LayoutPublico {
   private readonly router = inject(Router);
 
   protected texto = '';
-  protected readonly biblioteca = toSignal(inject(PublicoApi).biblioteca().pipe(catchError(() => of(null))), {
+  private readonly api = inject(PublicoApi);
+  protected readonly biblioteca = toSignal(this.api.biblioteca().pipe(catchError(() => of(null))), {
     initialValue: null,
+  });
+  protected readonly maisRetirados = toSignal(this.api.maisRetirados().pipe(catchError(() => of([] as string[]))), {
+    initialValue: [] as string[],
   });
 
   constructor() {

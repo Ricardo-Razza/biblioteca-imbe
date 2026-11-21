@@ -25,6 +25,7 @@ public class RelatorioService {
     static final int DIAS_PADRAO = 30;
     static final int MAXIMO_DIAS = 366 * 5;
     static final int LIMITE_MAIS_EMPRESTADOS = 100;
+    static final int LIMITE_BUSCAS_SEM_RESULTADO = 200;
 
     private static final DateTimeFormatter DATA = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
@@ -64,6 +65,7 @@ public class RelatorioService {
             case ACERVO -> acervo(csv);
             case MAIS_EMPRESTADOS -> maisEmprestados(csv, inicio, fim);
             case RESERVAS -> reservas(csv, inicio, fim);
+            case BUSCAS_SEM_RESULTADO -> buscasSemResultado(csv, inicio, fim);
         }
 
         String periodo = tipo.periodo ? " de " + DATA.format(inicio) + " a " + DATA.format(fim) : "";
@@ -123,6 +125,12 @@ public class RelatorioService {
                     RelatorioRepository.data(rs, "prazo_retirada"), dataHora(rs, "finalizada_em"),
                     canceladaPor(rs.getString("cancelada_por")));
         });
+    }
+
+    private void buscasSemResultado(Csv csv, LocalDate de, LocalDate ate) {
+        csv.linha("Termo", "Buscas", "Última busca");
+        consultas.buscasSemResultado(de, ate, LIMITE_BUSCAS_SEM_RESULTADO, rs -> csv.linha(rs.getString("termo"),
+                rs.getLong("total"), RelatorioRepository.data(rs, "ultima")));
     }
 
     private static Integer inteiro(ResultSet rs, String coluna) throws SQLException {

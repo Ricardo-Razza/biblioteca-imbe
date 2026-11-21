@@ -75,13 +75,20 @@ public class PublicoController {
     public Pagina<ObraPublica> obras(@RequestParam(required = false) String q,
             @RequestParam(required = false) Long assunto,
             @RequestParam(defaultValue = "false") boolean disponiveis,
+            @RequestParam(required = false) String ordem,
             @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "24") int size) {
-        return catalogo.buscar(q, assunto, disponiveis, page, size);
+        return catalogo.buscar(q, assunto, disponiveis, CatalogoService.Ordem.de(ordem), page, size);
     }
 
     @GetMapping("/obras/{id}")
     public ObraPublica.Detalhe obra(@PathVariable Long id) {
         return catalogo.ficha(id);
+    }
+
+    /** Até 3 autores mais emprestados nos últimos 90 dias, para o "Mais retirados" embaixo da busca. */
+    @GetMapping("/mais-retirados")
+    public List<String> maisRetirados() {
+        return catalogo.maisRetirados();
     }
 
     @GetMapping("/assuntos")

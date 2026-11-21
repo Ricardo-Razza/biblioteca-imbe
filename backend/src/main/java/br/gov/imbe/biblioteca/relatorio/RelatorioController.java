@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 import br.gov.imbe.biblioteca.relatorio.RelatorioService.Arquivo;
 
 /**
- * {@code GET /api/v1/relatorios/{tipo}.csv}: emprestimos, atrasados, acervo, mais-emprestados e reservas.
+ * {@code GET /api/v1/relatorios/{tipo}.csv}: emprestimos, atrasados, acervo, mais-emprestados, reservas e buscas-sem-resultado.
  * Os de período aceitam {@code de} e {@code ate} (aaaa-mm-dd); sem eles, os últimos 30 dias. Perfil: Atendente.
  */
 @RestController

@@ -1,5 +1,6 @@
 package br.gov.imbe.biblioteca.publico;
 
+import java.time.LocalDate;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -57,6 +58,21 @@ interface CatalogoRepository extends Repository<Obra, Long> {
             where o.id = :id and exists (select 1 from Exemplar x where x.obra = o and x.situacao in :visiveis)
             """)
     Optional<Obra> visivel(@Param("id") Long id, @Param("visiveis") Collection<SituacaoExemplar> visiveis);
+
+    /**
+     * Autores das obras visíveis mais emprestadas desde {@code desde}, do mais retirado para o menos. Só o nome:
+     * nada de leitor nem de empréstimo sai daqui.
+     */
+    @Query("""
+            select a.nome from Emprestimo e
+              join e.exemplar x join x.obra o join o.autores oa join oa.autor a
+            where e.dataSaida >= :desde
+              and exists (select 1 from Exemplar v where v.obra = o and v.situacao in :visiveis)
+            group by a.id, a.nome
+            order by count(e) desc, a.nome
+            """)
+    List<String> autoresMaisRetirados(@Param("desde") LocalDate desde,
+            @Param("visiveis") Collection<SituacaoExemplar> visiveis, Pageable limite);
 
     /** Assuntos com alguma obra visível, com a quantidade de obras, em ordem alfabética. */
     @Query("""

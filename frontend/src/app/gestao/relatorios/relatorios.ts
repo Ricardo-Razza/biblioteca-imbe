@@ -48,6 +48,13 @@ export const RELATORIOS: Relatorio[] = [
     periodo: true,
   },
   {
+    caminho: 'buscas-sem-resultado',
+    titulo: 'Buscas sem resultado',
+    descricao: 'O que os visitantes procuraram no site e não encontraram no acervo: ajuda a decidir o que adquirir.',
+    icone: 'search_off',
+    periodo: true,
+  },
+  {
     caminho: 'acervo',
     titulo: 'Acervo',
     descricao: 'Todos os exemplares, com tombo, localização, estado e situação.',
@@ -82,7 +89,7 @@ export function nomeDoArquivo(disposicao: string | null, padrao: string): string
 
     <section class="periodo" aria-labelledby="titulo-periodo">
       <h2 id="titulo-periodo">Período</h2>
-      <p class="texto-secundario">Referente a Empréstimos, Mais retirados e Reservas.</p>
+      <p class="texto-secundario">Referente a Empréstimos, Mais retirados, Reservas e Buscas sem resultado.</p>
       <mat-form-field appearance="outline">
         <mat-label>De</mat-label>
         <input matInput type="date" [(ngModel)]="de" [max]="ate" required />

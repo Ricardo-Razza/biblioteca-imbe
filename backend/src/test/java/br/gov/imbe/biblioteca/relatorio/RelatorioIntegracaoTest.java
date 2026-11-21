@@ -17,6 +17,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
@@ -212,6 +213,20 @@ class RelatorioIntegracaoTest {
         int menos = texto.indexOf("Obra Menos Lida");
         assertThat(grande).isPositive().isLessThan(menos);
         assertThat(texto).containsPattern(";Grande Sertão: Veredas;[^;]*;\\d{13};2\\r\\n");
+    }
+
+    @Test
+    void buscasSemResultadoSomamOsDiasDoPeriodo(@Autowired JdbcClient jdbc) throws Exception {
+        // Termo inventado e datas de 2001: não cruza com o que outros testes gravam de verdade.
+        String termo = "relatorio sem acervo " + Long.toString(System.nanoTime(), 36).replaceAll("\\d", "x");
+        LocalDate dia = LocalDate.of(2001, 3, 10);
+        jdbc.sql("insert into busca_sem_resultado (termo, dia, vezes) values (:t, :d, 2), (:t, :d2, 3)")
+                .param("t", termo).param("d", dia).param("d2", dia.plusDays(1)).update();
+
+        String texto = csv("/api/v1/relatorios/buscas-sem-resultado.csv?de=2001-03-01&ate=2001-03-31");
+        assertThat(texto).startsWith("Termo;Buscas;Última busca\r\n").contains(termo + ";5;11/03/2001\r\n");
+        assertThat(csv("/api/v1/relatorios/buscas-sem-resultado.csv?de=2001-04-01&ate=2001-04-30"))
+                .doesNotContain(termo);
     }
 
     @Test

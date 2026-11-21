@@ -9,7 +9,8 @@ enum TipoRelatorio {
     ATRASADOS("atrasados", "Empréstimos atrasados", false),
     ACERVO("acervo", "Acervo", false),
     MAIS_EMPRESTADOS("mais-emprestados", "Livros mais emprestados", true),
-    RESERVAS("reservas", "Reservas", true);
+    RESERVAS("reservas", "Reservas", true),
+    BUSCAS_SEM_RESULTADO("buscas-sem-resultado", "Buscas sem resultado no site", true);
 
     final String caminho;
     final String nome;

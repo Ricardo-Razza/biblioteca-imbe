@@ -175,6 +175,18 @@ class RelatorioRepository {
                 """).param("de", de).param("depois", ate.plusDays(1)).query(linha);
     }
 
+    /** Termos que mais vezes não acharam nada no período, com o dia da última vez. */
+    void buscasSemResultado(LocalDate de, LocalDate ate, int limite, RowCallbackHandler linha) {
+        jdbc.sql("""
+                select termo, sum(vezes) total, max(dia) ultima
+                  from busca_sem_resultado
+                 where dia between :de and :ate
+                 group by termo
+                 order by total desc, termo
+                 limit :limite
+                """).param("de", de).param("ate", ate).param("limite", limite).query(linha);
+    }
+
     static LocalDate data(ResultSet rs, String coluna) throws SQLException {
         Date d = rs.getDate(coluna);
         return d == null ? null : d.toLocalDate();
