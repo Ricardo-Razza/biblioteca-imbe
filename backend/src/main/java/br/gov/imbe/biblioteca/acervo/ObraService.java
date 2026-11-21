@@ -110,7 +110,7 @@ public class ObraService {
         return new ConflitoException("Já existe uma obra com o ISBN " + isbn + ". Adicione um exemplar a ela.");
     }
 
-    private static Optional<Isbn> comoIsbn(String termo) {
+    static Optional<Isbn> comoIsbn(String termo) {
         String digitos = termo.replaceAll("[\\s-]", "");
         if (!digitos.matches("\\d{13}|\\d{9}[\\dXx]")) {
             return Optional.empty();

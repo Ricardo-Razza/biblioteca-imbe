@@ -8,7 +8,10 @@ import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 
 import { mensagemDeErro } from '../../core/api/erro-api';
-import { Emprestimo, Leitor, SituacaoLeitor } from '../../core/api/modelos';
+import { Emprestimo, Exemplar, Leitor, SituacaoLeitor } from '../../core/api/modelos';
+import { CapaLivro } from '../../shared/capa-livro/capa-livro';
+import { SeloSituacao } from '../../shared/selo-situacao/selo-situacao';
+import { AcervoApi } from '../acervo/acervo-api';
 import { BuscaLeitor } from '../../shared/busca-leitor/busca-leitor';
 import { dataBr, formatarCpf } from '../../shared/formatos';
 import { ItemEmprestimo } from '../emprestimos/item-emprestimo';
@@ -16,7 +19,9 @@ import { LeitoresApi } from '../leitores/leitores-api';
 import { EmprestimosApi } from '../emprestimos/emprestimos-api';
 
 /**
- * Emprestar no balcão: escolhe o leitor, confere se pode e bipa os tombos, um atrás do outro.
+ * Emprestar no balcão: escolhe o leitor, confere se pode e informa os livros, um atrás do outro. Nem todo livro
+ * tem etiqueta: o campo aceita o tombo (bipado ou digitado), o ISBN, um trecho do título ou o autor. Tombo exato
+ * empresta direto; o resto mostra os exemplares encontrados para escolher.
  * `?leitor=` abre com o leitor já escolhido (vindo da ficha).
  */
 @Component({
@@ -30,7 +35,9 @@ import { EmprestimosApi } from '../emprestimos/emprestimos-api';
     MatInputModule,
     MatProgressSpinnerModule,
     BuscaLeitor,
+    CapaLivro,
     ItemEmprestimo,
+    SeloSituacao,
   ],
   template: `
     <h1>Empréstimo</h1>
@@ -66,11 +73,11 @@ import { EmprestimosApi } from '../emprestimos/emprestimos-api';
         </div>
       } @else {
         <form class="tombo" (submit)="emprestar($event)">
-          <mat-form-field appearance="outline">
-            <mat-label>Tombo</mat-label>
+          <mat-form-field appearance="outline" subscriptSizing="dynamic">
+            <mat-label>Livro</mat-label>
             <mat-icon matPrefix>barcode_scanner</mat-icon>
-            <input #campoTombo matInput [formControl]="tombo" autocomplete="off" />
-            <mat-hint>Bipe a etiqueta do livro.</mat-hint>
+            <input #campoTombo matInput [formControl]="tombo" autocomplete="off" placeholder="Tombo, ISBN, título ou autor" />
+            <mat-hint>Bipe a etiqueta ou digite tombo, ISBN, título ou autor.</mat-hint>
             <mat-error>{{ erroTombo() }}</mat-error>
           </mat-form-field>
           <button mat-flat-button type="submit" [disabled]="enviando()">
@@ -80,6 +87,25 @@ import { EmprestimosApi } from '../emprestimos/emprestimos-api';
             Emprestar
           </button>
         </form>
+
+        @if (encontrados(); as lista) {
+          <section class="encontrados" aria-live="polite">
+            <h2>{{ lista.length === 1 ? '1 exemplar encontrado' : lista.length + ' exemplares encontrados' }}</h2>
+            @for (x of lista; track x.id) {
+              <div class="linha">
+                <app-capa-livro class="capa" [obraId]="x.obra.id" [mini]="true" [titulo]="x.obra.titulo" />
+                <div class="info">
+                  <span class="titulo">{{ x.obra.titulo }}</span>
+                  <span class="texto-secundario">{{ x.obra.autores.join(', ') }}</span>
+                  <span class="texto-secundario">Tombo {{ x.tombo }}{{ x.localizacao ? ' · ' + x.localizacao : '' }}</span>
+                </div>
+                <app-selo-situacao [situacao]="x.situacao" />
+                <button mat-stroked-button type="button" [disabled]="enviando()" (click)="emprestarTombo(x.tombo)">Emprestar</button>
+              </div>
+            }
+            <button mat-button type="button" (click)="limparBusca()"><mat-icon>close</mat-icon> Limpar a busca</button>
+          </section>
+        }
       }
 
       @if (feitos().length) {
@@ -131,12 +157,44 @@ import { EmprestimosApi } from '../emprestimos/emprestimos-api';
     }
     .tombo {
       display: flex;
+      flex-wrap: wrap;
       gap: 12px;
       align-items: flex-start;
       max-width: 640px;
     }
     .tombo mat-form-field {
-      flex: 1;
+      flex: 1 1 240px;
+      min-width: 0;
+    }
+    .encontrados {
+      max-width: 760px;
+      margin-top: 16px;
+    }
+    .encontrados h2 {
+      margin: 0 0 8px;
+      font-size: 17px;
+    }
+    .linha {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px 14px;
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--filete);
+      background: var(--mat-sys-surface);
+    }
+    .linha .capa {
+      --largura-capa: 34px;
+      flex: none;
+    }
+    .info {
+      flex: 1 1 200px;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+    }
+    .titulo {
+      font-weight: 600;
     }
     .tombo button {
       margin-top: 4px;
@@ -152,6 +210,7 @@ export class Emprestar {
   readonly leitor = input<string>();
 
   private readonly leitores = inject(LeitoresApi);
+  private readonly acervo = inject(AcervoApi);
   private readonly emprestimos = inject(EmprestimosApi);
   private readonly router = inject(Router);
   private readonly injector = inject(Injector);
@@ -163,6 +222,8 @@ export class Emprestar {
   protected readonly enviando = signal(false);
   protected readonly erro = signal<string | null>(null);
   protected readonly erroTombo = signal('');
+  /** Exemplares achados por título, autor ou ISBN, para escolher (nulo: sem busca aberta). */
+  protected readonly encontrados = signal<Exemplar[] | null>(null);
   protected readonly tombo = new FormControl('', { nonNullable: true });
   protected readonly data = dataBr;
 
@@ -183,17 +244,47 @@ export class Emprestar {
   protected trocarLeitor(): void {
     this.situacao.set(null);
     this.feitos.set([]);
-    this.tombo.reset('');
+    this.limparBusca();
     if (this.leitor()) {
       this.router.navigate([], { queryParams: { leitor: null }, replaceUrl: true });
     }
   }
 
+  /** Tombo exato empresta direto (o leitor de código de barras continua igual); o resto vira lista para escolher. */
   protected emprestar(evento: Event): void {
     evento.preventDefault();
+    const termo = this.tombo.value.trim();
+    if (!this.situacao() || !termo || this.enviando()) {
+      return;
+    }
+    if (termo.length < 2) {
+      this.mostrarErro('Digite pelo menos 2 letras do título ou do autor.');
+      return;
+    }
+    this.enviando.set(true);
+    this.acervo.buscarParaEmprestimo(termo).subscribe({
+      next: (lista) => {
+        this.enviando.set(false);
+        const exato = lista.find((x) => x.tombo === termo.toUpperCase());
+        if (exato) {
+          this.emprestarTombo(exato.tombo);
+        } else if (!lista.length) {
+          this.encontrados.set(null);
+          this.mostrarErro(`Nenhum livro disponível encontrado para "${termo}".`);
+        } else {
+          this.encontrados.set(lista);
+        }
+      },
+      error: (err) => {
+        this.enviando.set(false);
+        this.mostrarErro(mensagemDeErro(err));
+      },
+    });
+  }
+
+  protected emprestarTombo(tombo: string): void {
     const s = this.situacao();
-    const tombo = this.tombo.value.trim();
-    if (!s || !tombo || this.enviando()) {
+    if (!s || this.enviando()) {
       return;
     }
     this.enviando.set(true);
@@ -201,17 +292,26 @@ export class Emprestar {
       next: (e) => {
         this.enviando.set(false);
         this.feitos.update((l) => [e, ...l]);
-        this.tombo.reset('');
+        this.limparBusca();
         this.atualizarSituacao(s.leitorId, true);
       },
       error: (err) => {
         this.enviando.set(false);
-        this.erroTombo.set(mensagemDeErro(err));
-        this.tombo.setErrors({ servidor: true });
-        this.tombo.markAsTouched();
-        this.campoTombo()?.nativeElement.select();
+        this.mostrarErro(mensagemDeErro(err));
       },
     });
+  }
+
+  protected limparBusca(): void {
+    this.encontrados.set(null);
+    this.tombo.reset('');
+  }
+
+  private mostrarErro(mensagem: string): void {
+    this.erroTombo.set(mensagem);
+    this.tombo.setErrors({ servidor: true });
+    this.tombo.markAsTouched();
+    this.campoTombo()?.nativeElement.select();
   }
 
   private atualizarSituacao(id: number, focar: boolean): void {

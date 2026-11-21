@@ -443,6 +443,7 @@ Como as regras foram implementadas (fase 2):
 - **Devolução com ocorrência:** `DANIFICADO` volta ao acervo marcado como danificado (a equipe decide se dá baixa); `EXTRAVIADO` (o leitor perdeu) deixa o exemplar extraviado.
 - **Limite:** empréstimos em aberto + reservas aguardando retirada, até `LIMITE_LIVROS_POR_LEITOR`.
 - **Leitor:** CPF obrigatório para todos, inclusive crianças (é o login da reserva pública). Menor de 18 exige o nome do responsável. Com livro emprestado, não pode ser desativado.
+- **Livro na saída:** nem todo livro tem etiqueta, então o campo Livro do Empréstimo aceita o tombo (bipado ou digitado), o ISBN (o código de barras da contracapa), um trecho do título ou o nome do autor (`GET /exemplares?q=`). Tombo exato empresta direto, como antes; o resto lista até 20 exemplares disponíveis ou reservados, com tombo e estante, e o funcionário escolhe qual sai. Reservado para outro leitor continua recusado na saída.
 - O banco garante um único empréstimo em aberto por exemplar (coluna gerada + índice único), e o exemplar é travado (`SELECT ... FOR UPDATE`) na saída e na devolução.
 - Parâmetros (tabela `parametro`): `PRAZO_EMPRESTIMO_DIAS`, `LIMITE_LIVROS_POR_LEITOR`, `MAXIMO_RENOVACOES`, `DIAS_POR_RENOVACAO`, `PRAZO_RETIRADA_RESERVA_DIAS_UTEIS`, cada um com faixa de valores aceitos.
 
@@ -458,7 +459,7 @@ Como as regras foram implementadas (fase 2):
 | `GET/POST /obras`, `PUT /obras/{id}` | Acervo (`GET` com `?q=` e `?semCapa=true`) | Atendente |
 | `POST /obras/{id}/capa` · `GET /obras/{id}/capa?tamanho=mini` | Capa | Atendente · público |
 | `GET /isbn/{isbn}/capa?tamanho=mini` | Prévia da capa da fonte, antes de salvar | Atendente |
-| `GET/POST /obras/{id}/exemplares` · `GET /exemplares/tombo/{tombo}` | Exemplares | Atendente |
+| `GET/POST /obras/{id}/exemplares` · `GET /exemplares/tombo/{tombo}` · `GET /exemplares?q=` | Exemplares (`q`: tombo, ISBN, título ou autor; só disponíveis e reservados, para o Empréstimo) | Atendente |
 | `PATCH /exemplares/{id}` | Situação (baixa, extravio), estado e localização | Admin |
 | `GET/POST /leitores?q=`, `GET/PUT /leitores/{id}`, `GET /leitores/{id}/situacao` | Leitores (busca por nome ou CPF) | Atendente |
 | `POST /leitores/{id}/desbloqueio` | Tira o bloqueio por atraso | Admin |
@@ -692,6 +693,7 @@ O servidor precisa de saída HTTPS para `brasilapi.com.br` (ISBN e feriados), `w
 | 2026-11-21 | Site público no mesmo visual: estante "Chegaram à estante" na abertura do catálogo, filtro Ordenar (por título ou mais recentes), cartões com "N na estante". "Mais retirados" embaixo da busca vem dos empréstimos reais dos últimos 90 dias (autores), não das buscas |
 | 2026-11-21 | Buscas sem resultado do site contadas por termo e dia (V8), sem IP nem leitor, descartando termos curtos ou com cara de CPF/telefone; relatório "Buscas sem resultado" para orientar aquisições |
 | 2026-11-21 | Site público não lembra os dados do cidadão entre uma reserva e outra, nem durante a visita: CPF e nascimento funcionam como senha e não ficam no aparelho (computadores compartilhados). Pedir só CPF e nascimento a quem já é leitor foi descartado porque revelaria quem tem cadastro |
+| 2026-11-21 | Empréstimo no balcão aceita tombo, ISBN, título ou autor no mesmo campo, porque nem todo livro tem etiqueta: tombo exato sai direto, o resto mostra os exemplares para escolher |
 
 ## Documentação
 - Toda decisão nova ou mudança de escopo atualiza o README.md

@@ -169,6 +169,28 @@ class ExemplarIntegracaoTest {
     }
 
     @Test
+    void buscaDoBalcaoPorTomboIsbnTituloOuAutorSoComOQuePodeSair() throws Exception {
+        cadastrarERetornarId("BIB.0042");
+        cadastrarERetornarId("BIB.0043");
+        long extraviado = cadastrarERetornarId("BIB.0044");
+        alterar(extraviado, "{\"situacao\": \"EXTRAVIADO\"}").andExpect(status().isOk());
+
+        // tombo exato vem primeiro, sem diferenciar caixa
+        mvc.perform(get("/api/v1/exemplares").param("q", "bib.0043"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].tombo").value("BIB.0043"))
+                .andExpect(jsonPath("$[0].obra.titulo").value("Ensaio sobre a cegueira"));
+        for (String termo : new String[] { "978-85-359-0277-8", "sobre a CEGUEIRA", "josé saramago" }) {
+            mvc.perform(get("/api/v1/exemplares").param("q", termo))
+                    .andExpect(jsonPath("$[*].tombo", Matchers.hasItems("BIB.0042", "BIB.0043")))
+                    .andExpect(jsonPath("$[*].tombo", Matchers.not(Matchers.hasItem("BIB.0044"))));
+        }
+        mvc.perform(get("/api/v1/exemplares").param("q", "BIB.0044")).andExpect(jsonPath("$.length()").value(0));
+        mvc.perform(get("/api/v1/exemplares").param("q", "e")).andExpect(jsonPath("$.length()").value(0));
+        mvc.perform(get("/api/v1/exemplares").param("q", "100%_!")).andExpect(status().isOk());
+    }
+
+    @Test
     void listaDaObraEmOrdemDeTombo() throws Exception {
         cadastrarERetornarId("B2");
         cadastrarERetornarId("A1");

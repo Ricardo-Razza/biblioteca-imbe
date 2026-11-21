@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
 
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -75,6 +76,27 @@ public class ExemplarService {
         String t = normalizarTombo(tombo);
         return exemplares.findByTombo(t).map(ExemplarResposta::de)
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Nenhum exemplar com o tombo " + t + "."));
+    }
+
+    /** Máximo de exemplares na busca do balcão. */
+    static final int LIMITE_BUSCA_BALCAO = 20;
+
+    /**
+     * Busca do balcão para emprestar: nem todo livro tem etiqueta, então o termo pode ser o tombo, o ISBN, um
+     * trecho do título ou o nome de um autor. Só traz o que pode sair (disponível ou reservado; a reserva de
+     * outro leitor o próprio empréstimo recusa). Termo com menos de 2 letras devolve vazio.
+     */
+    @Transactional(readOnly = true)
+    public List<ExemplarResposta> buscarParaEmprestimo(String termo) {
+        String t = termo == null ? "" : termo.strip();
+        if (t.length() < 2) {
+            return List.of();
+        }
+        String isbn = ObraService.comoIsbn(t).map(i -> i.valor()).orElse(null);
+        String padrao = "%" + t.replace("!", "!!").replace("%", "!%").replace("_", "!_") + "%";
+        return exemplares.buscarNoBalcao(normalizarTombo(t), isbn, padrao,
+                List.of(SituacaoExemplar.DISPONIVEL, SituacaoExemplar.RESERVADO),
+                PageRequest.of(0, LIMITE_BUSCA_BALCAO)).stream().map(ExemplarResposta::de).toList();
     }
 
     /** Localização e estado primeiro, depois a situação: um exemplar emprestado ainda pode mudar de estante. */

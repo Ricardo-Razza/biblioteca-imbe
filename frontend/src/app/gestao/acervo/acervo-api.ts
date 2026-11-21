@@ -56,6 +56,11 @@ export class AcervoApi {
     return this.http.post<Obra>(`${API}/obras/${id}/capa`, corpo);
   }
 
+  /** Balcão: exemplares disponíveis ou reservados por tombo, ISBN, título ou autor (tombo exato primeiro). */
+  buscarParaEmprestimo(termo: string): Observable<Exemplar[]> {
+    return this.http.get<Exemplar[]>(`${API}/exemplares`, { params: { q: termo } });
+  }
+
   exemplares(obraId: number): Observable<Exemplar[]> {
     return this.http.get<Exemplar[]>(`${API}/obras/${obraId}/exemplares`);
   }
