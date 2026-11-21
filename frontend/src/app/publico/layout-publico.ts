@@ -96,12 +96,12 @@ import { RodapePublico } from './rodape-publico';
       left: 0;
       right: 0;
       bottom: 0;
-      height: 88px;
+      height: 36px;
       z-index: -1;
       background: linear-gradient(
         180deg,
         transparent 0%,
-        color-mix(in srgb, var(--mat-sys-surface) 35%, transparent) 45%,
+        color-mix(in srgb, var(--mat-sys-surface) 30%, transparent) 50%,
         color-mix(in srgb, var(--mat-sys-surface) 80%, transparent) 75%,
         var(--mat-sys-surface) 100%
       );
@@ -126,7 +126,7 @@ import { RodapePublico } from './rodape-publico';
       gap: 24px 40px;
       padding-top: 32px;
       /* espaço para o degradê do pé, abaixo da busca */
-      padding-bottom: 96px;
+      padding-bottom: 48px;
     }
     .marca {
       display: flex;
@@ -269,7 +269,7 @@ import { RodapePublico } from './rodape-publico';
     @media (max-width: 480px) {
       .topo .faixa {
         padding-top: 24px;
-        padding-bottom: 80px;
+        padding-bottom: 40px;
       }
       .barra {
         height: 52px;
