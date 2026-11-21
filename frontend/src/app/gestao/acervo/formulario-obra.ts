@@ -108,15 +108,11 @@ export interface DadosFormularioObra {
     </form>
   `,
   styles: `
+    /* Ano, páginas e idioma lado a lado quando cabem; cada um desce sozinho quando a largura acaba. */
     .linha {
       display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 12px;
-    }
-    @media (max-width: 560px) {
-      .linha {
-        grid-template-columns: 1fr;
-      }
+      grid-template-columns: repeat(auto-fit, minmax(min(140px, 100%), 1fr));
+      gap: 20px;
     }
     mat-spinner {
       display: inline-block;

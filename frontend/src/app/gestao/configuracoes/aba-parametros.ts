@@ -26,12 +26,14 @@ import { ConfiguracoesApi } from './configuracoes-api';
     @if (parametros().length) {
       <form class="coluna" [formGroup]="form" (ngSubmit)="salvar()">
         @for (p of parametros(); track p.chave) {
-          <mat-form-field appearance="outline">
-            <mat-label>{{ p.descricao }}</mat-label>
-            <input matInput type="number" [formControlName]="p.chave" [min]="p.minimo" [max]="p.maximo" />
-            <mat-hint>De {{ p.minimo }} a {{ p.maximo }}.</mat-hint>
-            <mat-error>{{ msg(form.get(p.chave)) }}</mat-error>
-          </mat-form-field>
+          <div class="parametro">
+            <label class="descricao" [for]="'param-' + p.chave">{{ p.descricao }}</label>
+            <mat-form-field appearance="outline">
+              <input matInput type="number" [id]="'param-' + p.chave" [formControlName]="p.chave" [min]="p.minimo" [max]="p.maximo" />
+              <mat-hint>De {{ p.minimo }} a {{ p.maximo }}.</mat-hint>
+              <mat-error>{{ msg(form.get(p.chave)) }}</mat-error>
+            </mat-form-field>
+          </div>
         }
         <div class="acoes">
           <button mat-flat-button type="submit" [disabled]="ocupado() || form.pristine">Salvar</button>
@@ -46,6 +48,16 @@ import { ConfiguracoesApi } from './configuracoes-api';
     }
     form {
       max-width: 480px;
+    }
+    /* A descrição vem do banco e é longa: fica acima do campo, quebrando linha, em vez de rótulo cortado. */
+    .parametro {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .descricao {
+      font: var(--mat-sys-body-large);
+      color: var(--mat-sys-on-surface);
     }
     .aviso {
       max-width: 640px;

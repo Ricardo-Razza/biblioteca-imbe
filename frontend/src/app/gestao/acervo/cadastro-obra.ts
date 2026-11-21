@@ -117,8 +117,10 @@ const TAMANHO_MAXIMO_CAPA = 10 * 1024 * 1024;
     .topo {
       margin-bottom: 4px;
     }
+    /* Capa ao lado do formulário quando cabe; senão o formulário desce e ocupa a largura toda. */
     .conferencia {
       display: flex;
+      flex-wrap: wrap;
       gap: 24px;
       align-items: flex-start;
       margin-top: 16px;
@@ -135,12 +137,8 @@ const TAMANHO_MAXIMO_CAPA = 10 * 1024 * 1024;
       text-align: center;
     }
     app-formulario-obra {
-      flex: 1;
-    }
-    @media (max-width: 760px) {
-      .conferencia {
-        flex-direction: column;
-      }
+      flex: 1 1 320px;
+      min-width: 0;
     }
   `,
 })
