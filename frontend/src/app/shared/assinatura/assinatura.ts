@@ -46,7 +46,7 @@ import { Component, computed, input } from '@angular/core';
       line-height: 1.25;
       letter-spacing: 0.02em;
       text-transform: uppercase;
-      white-space: nowrap;
+      /* Sem nowrap: sem espaço para as duas linhas (menu da gestão), quebra em três. */
     }
   `,
   host: { '[class.branca]': 'branca()' },
@@ -55,6 +55,10 @@ export class Assinatura {
   /** Altura da marca em px. 85 px dá os 100 px de largura mínimos do manual. */
   readonly altura = input(85);
   readonly branca = input(false);
+  /** Tamanho do nome em px; sem valor, acompanha a altura da marca. */
+  readonly tamanho = input<number>();
   // Em tela muito estreita o nome encolhe junto (a marca não passa dos 100 px mínimos do manual).
-  protected readonly tamanhoNome = computed(() => `min(${Math.max(13, Math.round(this.altura() * 0.17))}px, 4.2vw)`);
+  protected readonly tamanhoNome = computed(
+    () => `min(${this.tamanho() ?? Math.max(13, Math.round(this.altura() * 0.17))}px, 4.2vw)`,
+  );
 }

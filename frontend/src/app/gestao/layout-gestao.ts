@@ -22,7 +22,7 @@ interface ItemMenu {
     <div class="gestao">
       <nav class="menu" aria-label="Menu da gestão">
         <a class="marca" routerLink="inicio" aria-label="Sala Literária Castelinho: início da gestão">
-          <app-assinatura />
+          <app-assinatura [tamanho]="13" />
         </a>
         @for (item of itensVisiveis(); track item.rota) {
           <a class="item" [routerLink]="item.rota" routerLinkActive="ativo">
@@ -66,7 +66,7 @@ interface ItemMenu {
       border-image: var(--marca-faixa) 1;
     }
     .menu {
-      width: 256px;
+      width: 280px;
       flex: none;
       background: var(--mat-sys-surface-container-low);
       border-right: 1px solid var(--mat-sys-outline-variant);
