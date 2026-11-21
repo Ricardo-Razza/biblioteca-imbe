@@ -87,8 +87,24 @@ import { RodapePublico } from './rodape-publico';
       background: var(--prefeitura-azul) url('/imagens/cabecalho-livros.jpg') center 40% / cover no-repeat;
       border-top: 6px solid transparent;
       border-image: var(--prefeitura-faixa) 1;
-      box-shadow: 0 6px 18px rgb(0 0 0 / 0.22);
       color: #fff;
+    }
+    /* Pé do cabeçalho em degradê: o azul se dissolve no branco das abas, sem corte seco. */
+    .topo::after {
+      content: '';
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: 88px;
+      z-index: -1;
+      background: linear-gradient(
+        180deg,
+        transparent 0%,
+        color-mix(in srgb, var(--mat-sys-surface) 35%, transparent) 45%,
+        color-mix(in srgb, var(--mat-sys-surface) 80%, transparent) 75%,
+        var(--mat-sys-surface) 100%
+      );
     }
     .topo::before {
       content: '';
@@ -109,7 +125,8 @@ import { RodapePublico } from './rodape-publico';
       justify-content: space-between;
       gap: 24px 40px;
       padding-top: 32px;
-      padding-bottom: 36px;
+      /* espaço para o degradê do pé, abaixo da busca */
+      padding-bottom: 96px;
     }
     .marca {
       display: flex;
@@ -252,7 +269,7 @@ import { RodapePublico } from './rodape-publico';
     @media (max-width: 480px) {
       .topo .faixa {
         padding-top: 24px;
-        padding-bottom: 28px;
+        padding-bottom: 80px;
       }
       .barra {
         height: 52px;

@@ -112,15 +112,23 @@ import { DadosBiblioteca } from '../core/api/modelos';
     </footer>
   `,
   styles: `
+    /* Topo do rodapé em degradê: o fundo claro da página se dissolve no marinho, sem corte seco. */
     .rodape {
-      background: var(--marca-marinho);
+      background: linear-gradient(
+          180deg,
+          var(--mat-sys-surface-container-low) 0,
+          color-mix(in srgb, var(--marca-marinho) 30%, var(--mat-sys-surface-container-low)) 36px,
+          color-mix(in srgb, var(--marca-marinho) 75%, var(--mat-sys-surface-container-low)) 72px,
+          var(--marca-marinho) 112px
+        )
+        var(--marca-marinho);
       color: #d5deea;
       font: var(--mat-sys-body-medium);
     }
     .grade {
       max-width: 1120px;
       margin: 0 auto;
-      padding: 40px 16px 32px;
+      padding: 136px 16px 32px;
       display: grid;
       grid-template-columns: 1.3fr 1fr 1.2fr 0.8fr;
       gap: 32px;
@@ -301,7 +309,7 @@ import { DadosBiblioteca } from '../core/api/modelos';
       .grade {
         grid-template-columns: 1fr;
         gap: 28px;
-        padding-top: 32px;
+        padding-top: 128px;
       }
     }
   `,

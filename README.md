@@ -675,6 +675,7 @@ O servidor precisa de saída HTTPS para `brasilapi.com.br` (ISBN e feriados), `w
 | 2026-11-17 | Cabeçalho do site público com foto das estantes da biblioteca ao fundo, sob véu branco para a marca continuar legível (`public/imagens/cabecalho-livros.jpg`, 1920 px, sem metadados) |
 | 2026-11-17 | Responsivo em qualquer aparelho (280 px a 1920 px sem rolagem lateral): `box-sizing: border-box` global, colunas da grade do catálogo que encolhem, barra da gestão que quebra linha no celular |
 | 2026-11-21 | Unidade passa a se chamar Sala Literária Castelinho (assinatura, títulos e `biblioteca.publico.unidade.nome`). Site público: cabeçalho azul `#0074BC` com a busca dentro, abas abaixo, cartões com sombra e faixa de cinco cores da Prefeitura no rodapé. Gestão: Empréstimo/Devoluções, novos nomes dos indicadores do Início e textos dos relatórios ("Mais retirados") |
+| 2026-11-21 | Transições em degradê no site público: o pé do cabeçalho azul se dissolve no branco das abas e o topo do rodapé sai do fundo claro para o marinho, sem corte seco |
 
 ## Documentação
 - Toda decisão nova ou mudança de escopo atualiza o README.md
