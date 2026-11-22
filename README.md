@@ -737,6 +737,7 @@ O servidor precisa de saída HTTPS para `brasilapi.com.br` (ISBN e feriados), `w
 | 2026-11-21 | Devoluções também aceita título, autor ou nome do leitor além do tombo, pelo mesmo motivo do Empréstimo (livro sem etiqueta) |
 | 2026-11-21 | Banco pronto para trocar pelo da Prefeitura sem mudar o compose: `DB_URL_EXTERNO` (vazia = MySQL da stack), MySQL 8 ou MariaDB 10.11+; MySQL da stack com porta só em `127.0.0.1:PORTA_MYSQL` para o phpMyAdmin da VPS |
 | 2026-11-21 | MariaDB 10.11+ suportado (o banco da Prefeitura é MariaDB): migrations comuns em `db/migration` e as que diferem (V1, V2, V5: collation e `CHECK` com `REGEXP`) em `db/banco/{mysql,mariadb}`, escolhidas pelo `{vendor}` do Flyway, sem mudar o checksum das já aplicadas no MySQL. Suíte de testes roda também em MariaDB (`-Dbanco.teste=mariadb:10.11`). Migração para outro banco copia só os dados |
+| 2026-11-22 | Rolagem entre páginas pelo `provideRolagem`: página nova abre no topo (Reservar caía no rodapé do formulário), voltar do navegador restaura a posição e mudança só de filtro ou ordem não rola |
 
 ## Documentação
 - Toda decisão nova ou mudança de escopo atualiza o README.md
