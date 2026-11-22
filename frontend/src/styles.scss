@@ -117,13 +117,19 @@ canvas {
   max-width: 100%;
 }
 
+// Ao puxar a página além do topo ou do rodapé (iPhone), o navegador mostra o fundo do html: marinho, como as
+// pontas do cabeçalho e do rodapé, em vez de uma faixa branca. O body (que cresce com o conteúdo) cobre o resto.
+html {
+  background-color: var(--marca-marinho);
+}
+
 body {
   color-scheme: light;
   background-color: var(--mat-sys-surface);
   color: var(--mat-sys-on-surface);
   font: var(--mat-sys-body-large);
   margin: 0;
-  height: 100%;
+  min-height: 100%;
 }
 
 h1,
