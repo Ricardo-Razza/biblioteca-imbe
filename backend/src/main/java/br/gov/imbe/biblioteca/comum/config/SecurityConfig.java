@@ -13,6 +13,9 @@ import org.springframework.security.access.hierarchicalroles.RoleHierarchyImpl;
 import org.springframework.security.authentication.AbstractAuthenticationToken;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.config.annotation.web.configurers.HeadersConfigurer.ContentTypeOptionsConfig;
+import org.springframework.security.config.annotation.web.configurers.HeadersConfigurer.FrameOptionsConfig;
+import org.springframework.security.config.annotation.web.configurers.HeadersConfigurer.HstsConfig;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -60,6 +63,13 @@ public class SecurityConfig {
                 .formLogin(AbstractHttpConfigurer::disable)
                 .logout(AbstractHttpConfigurer::disable)
                 .sessionManagement(sessao -> sessao.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                // HSTS, X-Frame-Options e nosniff vêm do Nginx (fonte única), para a mesma resposta em toda rota,
+                // inclusive as estáticas que o backend não serve. Aqui fica só o Cache-Control (no-store nas
+                // respostas autenticadas), que o proxy não tem como decidir por resposta.
+                .headers(h -> h
+                        .httpStrictTransportSecurity(HstsConfig::disable)
+                        .frameOptions(FrameOptionsConfig::disable)
+                        .contentTypeOptions(ContentTypeOptionsConfig::disable))
                 .oauth2ResourceServer(rs -> rs
                         .jwt(jwt -> jwt.jwtAuthenticationConverter(conversorJwt))
                         .authenticationEntryPoint(semLogin)
